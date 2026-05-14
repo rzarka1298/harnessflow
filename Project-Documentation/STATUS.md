@@ -9,18 +9,20 @@ _Last updated: 2026-05-14_
 | Date | Item | Commit |
 | --- | --- | --- |
 | 2026-05-14 | Approved 14-week project plan written and saved to `~/.claude/plans/i-am-developing-a-serialized-codd.md` | (pre-repo) |
-| 2026-05-14 | Repo scaffold: LICENSE, README, ARCHITECTURE, CLAUDE.md, Makefile, .gitignore, .env.example, .envrc.example | _pending first commit_ |
-| 2026-05-14 | Project-Documentation skeleton — all 10 subfolders, all overview stubs, README, STATUS, ROADMAP | _pending first commit_ |
-| 2026-05-14 | Pre-seeded ADRs 0001–0008 + INDEX.md | _pending first commit_ |
-| 2026-05-14 | Developer toolchain installed: go, terraform, helm, buf, sqlc, golang-migrate, golangci-lint, uv, gitleaks | (local env) |
+| 2026-05-14 | Repo scaffold: LICENSE, README, ARCHITECTURE, CLAUDE.md, Makefile, .gitignore, .env.example, .envrc.example | 92b178c |
+| 2026-05-14 | Project-Documentation skeleton — all 10 subfolders, all overview stubs, README, STATUS, ROADMAP | 92b178c |
+| 2026-05-14 | Pre-seeded ADRs 0001–0008 + INDEX.md | 92b178c |
+| 2026-05-14 | Developer toolchain installed: go 1.26.3, terraform 1.15.3, helm 4.2.0, buf 1.69.0, sqlc 1.31.1, golang-migrate, golangci-lint, uv 0.6.3, gitleaks | (local env) |
+| 2026-05-14 | Public GitHub repo created: https://github.com/rzarka1298/harnessflow | — |
+| 2026-05-14 | First commit pushed to origin/main | 92b178c |
 
 ## IN FLIGHT
 
-**Branch:** `main` (about to be created and pushed to GitHub).
+**Branch:** none — `main` is at 92b178c, fully synced with `origin/main`. Ready to branch.
 
-**Current task:** complete day-1 initial scaffold and push to `origin/main` on `rzarka1298/harnessflow`.
+**Current task:** none in flight. Day 1 of Week 1 complete.
 
-**Next file to touch:** none — once the first commit lands, switch to a `feat/api-monorepo-skeleton` branch and begin Week 1, Day 2 work.
+**Next file to touch:** `apps/api/go.mod` — create on a new `feat/api-monorepo-skeleton` branch as the start of Week 1, Day 2.
 
 ## NEXT (top 3 from ROADMAP)
 
