@@ -1,0 +1,7 @@
+# Copy to `.envrc` and run `direnv allow`.
+# Auto-loads .env when you cd into this directory.
+dotenv
+
+# Project-local language toolchain hints (optional)
+# export GOFLAGS="-mod=readonly"
+# export PYTHONDONTWRITEBYTECODE=1

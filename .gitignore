@@ -1,0 +1,75 @@
+# --- secrets ---
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+.envrc
+
+# --- Go ---
+/apps/api/bin/
+/apps/api/coverage.out
+*.test
+*.out
+vendor/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+.uv/
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+.turbo/
+.vercel/
+*.tsbuildinfo
+.npm/
+.yarn/
+
+# --- Editors / OS ---
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Docker / data volumes ---
+data/
+tmp/
+*.log
+.docker-volumes/
+
+# --- Terraform ---
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# --- Build artifacts ---
+*.tar.gz
+*.zip
+
+# --- Generated code (committed snapshot exception handled per-dir via .gitkeep) ---
+# Buf-generated code lives under packages/sdk/gen/ — we DO commit it for clone-and-run UX.
+# See ADR-0009 (to be written) if behavior changes.
+
+# --- Local-only Claude session files ---
+.claude/settings.local.json
