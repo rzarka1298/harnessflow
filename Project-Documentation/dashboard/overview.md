@@ -1,8 +1,16 @@
 # Dashboard — Overview
 
-**Location:** `apps/dashboard/` (Next.js 15, App Router, TypeScript).
+**Location:** `apps/dashboard/` (Next.js 16, App Router, TypeScript).
 
 **Responsibility:** UI for inspecting workflows, runs, traces, and evals. Same Connect services as the Go backend, via Connect-ES.
+
+## Current state (2026-05-15)
+
+Week 1 skeleton only. `apps/dashboard` scaffolded via `create-next-app` — Next.js **16.2.6** (App Router, src dir, `@/*` import alias), TypeScript, Tailwind v4, ESLint. Single landing page at `src/app/page.tsx`. Builds, lints clean.
+
+> **Note:** create-next-app installed Next 16, newer than the "15" named in the original plan. App Router model is unchanged. `apps/dashboard/AGENTS.md` warns that Next 16 has API breaking changes vs. older training data — consult `node_modules/next/dist/docs/` before writing dashboard code in Week 4.
+
+Pages, RPC client (Connect-ES), React Flow DAG viewer, and TanStack Query land Week 4.
 
 ## Pages
 

@@ -4,6 +4,17 @@
 
 **Responsibility:** Accept workflow YAML, validate against JSON Schema, persist to Postgres, and compile YAML into deterministic Temporal Workflow functions. Expose the Connect-Go API the dashboard and external clients consume.
 
+## Current state (2026-05-15)
+
+Week 1 skeleton only. `apps/api` is a Go module (`github.com/rzarka1298/harnessflow/apps/api`) with:
+- `cmd/api/main.go` — entrypoint with graceful shutdown
+- `internal/config/` — env-based config loader
+- `internal/server/` — Chi router, slog request logging, `/healthz` + `/readyz`
+- `internal/{workflow,temporal,store,otel}/` — empty dirs, populated Week 2
+- `Dockerfile` — multi-stage distroless build
+
+No Temporal, Postgres, or Connect services yet — those land Week 2.
+
 ## Key files (planned)
 
 | File | What |

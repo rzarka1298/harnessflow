@@ -4,6 +4,16 @@
 
 **Responsibility:** Long-running Python processes that register against the Temporal cluster and execute activities — the actual LLM calls, retrieval, tool execution, and verification. Workers are stateless; all durability is in Temporal.
 
+## Current state (2026-05-15)
+
+Week 1 skeleton only. `apps/worker` is a uv-managed package with:
+- `pyproject.toml` — deps: `temporalio`, `pydantic`, `structlog`; dev: `ruff`, `mypy`, `pytest`
+- `harnessflow_worker/config.py` — Pydantic `WorkerConfig` from env
+- `harnessflow_worker/__main__.py` — logs a startup banner; real Temporal worker loop lands Week 3
+- `Dockerfile` — uv-based build
+
+LLMClient, activities, retrieval, and OTel land Week 3. `ruff` + `mypy --strict` both pass.
+
 ## Architecture
 
 ```
