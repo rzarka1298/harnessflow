@@ -1,0 +1,17 @@
+# Grafana dashboard provisioning for HarnessFlow local dev.
+# Dashboards are loaded from /var/lib/grafana/dashboards (mounted from
+# infrastructure/grafana/dashboards/). The HarnessFlow dashboard JSON lands
+# in Week 5 — see ROADMAP.md.
+apiVersion: 1
+
+providers:
+  - name: harnessflow
+    orgId: 1
+    folder: HarnessFlow
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

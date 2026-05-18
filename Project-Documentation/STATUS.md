@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-15_
+_Last updated: 2026-05-15 (Week 1 Day 3)_
 
 ## DONE
 
@@ -15,21 +15,29 @@ _Last updated: 2026-05-15_
 | 2026-05-14 | Developer toolchain installed: go 1.26.3, terraform 1.15.3, helm 4.2.0, buf 1.69.0, sqlc 1.31.1, golang-migrate, golangci-lint, uv 0.6.3, gitleaks | (local env) |
 | 2026-05-14 | Public GitHub repo created: https://github.com/rzarka1298/harnessflow | — |
 | 2026-05-14 | First commit pushed to origin/main | 92b178c |
-| 2026-05-15 | **Week 1 Day 2** — monorepo skeleton: `apps/api` (Go, Chi, slog, /healthz+/readyz), `apps/worker` (Python/uv, Temporal+Pydantic+structlog deps, config), `apps/dashboard` (Next.js 16.2.6 App Router + Tailwind). All 3 build, run, lint, type-check clean. `.golangci.yml` added. | _pending branch merge_ |
+| 2026-05-15 | **Week 1 Day 2** — monorepo skeleton: `apps/api` (Go, Chi, slog, /healthz+/readyz), `apps/worker` (Python/uv, Temporal+Pydantic+structlog deps, config), `apps/dashboard` (Next.js 16.2.6 App Router + Tailwind). All 3 build, run, lint, type-check clean. `.golangci.yml` added. | ff022d2 |
+| 2026-05-15 | **Week 1 Day 3** — docker-compose dev stack: postgres, redis, temporal, temporal-ui, otel-collector, jaeger, prometheus, grafana, minio. Observability configs + Grafana provisioning. Makefile up/down/logs/ps/restart/nuke. Verified: all UIs 200, Temporal SERVING, Prometheus targets up, OTLP span flows to Jaeger. | _pending branch merge_ |
 
 ## IN FLIGHT
 
-**Branch:** `feat/api-monorepo-skeleton` — about to commit + merge to `main`.
+**Branch:** `feat/infra-docker-compose` — about to commit + merge to `main`.
 
-**Current task:** finishing Week 1 Day 2 — commit the monorepo skeleton, merge to `main`, push.
+**Current task:** finishing Week 1 Day 3 — commit the docker-compose stack, merge to `main`, push.
 
-**Next file to touch:** `docker-compose.yml` at repo root — start of Week 1 Day 3.
+**Next file to touch:** `packages/sdk/proto/workflow/v1/workflow.proto` — start of Week 1 Day 4–5.
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 1, Day 3**: Stand up `docker-compose.yml` with Postgres, Temporal (via `temporalio/auto-setup` image), Redis, OTel Collector, Jaeger, Prometheus, Grafana. Verify all UIs reachable on standard ports. Fill in the `make up`/`make down`/`make logs` targets.
-2. **Week 1, Day 4–5**: Author the first proto files (`packages/sdk/proto/workflow/v1/workflow.proto`, `run/v1/run.proto`, `eval/v1/eval.proto`) and the JSON Schema for workflow YAML (`packages/sdk/schema/workflow.schema.json`). Wire `make proto` to run Buf + datamodel-codegen and commit generated outputs to `packages/sdk/gen/`.
-3. **Week 2**: Postgres schema (sqlc), YAML→Temporal compiler, Connect services. See ROADMAP.md Phase 1.
+1. **Week 1, Day 4–5**: Author the first proto files (`packages/sdk/proto/workflow/v1/workflow.proto`, `run/v1/run.proto`, `eval/v1/eval.proto`) and the JSON Schema for workflow YAML (`packages/sdk/schema/workflow.schema.json`). Wire `make proto` to run Buf + datamodel-codegen and commit generated outputs to `packages/sdk/gen/`.
+2. **Week 2**: Postgres schema (sqlc), YAML→Temporal compiler, Connect services. See ROADMAP.md Phase 1.
+3. **Week 3**: Python worker registers against Temporal; activity types + LLMClient.
+
+## Dev stack quick reference
+
+- `make up` / `make down` / `make ps` / `make logs` / `make nuke` (deletes volumes).
+- UIs: Temporal `:8233`, Jaeger `:16686`, Prometheus `:9090`, Grafana `:3000`, MinIO `:9001`.
+- OTLP ingest: gRPC `localhost:4317`, HTTP `localhost:4318`. Postgres `:5432`, Redis `:6379`, Temporal gRPC `:7233`.
+- Credentials are all `harnessflow`/`harnessflow` (local dev only).
 
 ## Notes for next session
 

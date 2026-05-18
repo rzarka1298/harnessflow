@@ -1,19 +1,39 @@
 # HarnessFlow developer Makefile
 # Targets are scaffolded; bodies will be implemented as the corresponding code lands.
 
-.PHONY: help up down logs proto demo eval test lint fmt clean tools-check
+.PHONY: help up down logs ps restart nuke proto demo eval demo-bandit test lint fmt clean tools-check
+
+COMPOSE := docker compose
 
 help: ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 up: ## Start the full local dev stack (docker-compose).
-	@echo "TODO(week-1): docker compose up -d && wait-for healthchecks"
+	$(COMPOSE) up -d
+	@echo ""
+	@echo "stack starting. UIs:"
+	@echo "  Temporal     http://localhost:8233"
+	@echo "  Jaeger       http://localhost:16686"
+	@echo "  Prometheus   http://localhost:9090"
+	@echo "  Grafana      http://localhost:3000"
+	@echo "  MinIO        http://localhost:9001  (harnessflow / harnessflow)"
+	@echo ""
+	@echo "run 'make ps' to watch health, 'make logs' to tail."
 
-down: ## Stop the dev stack.
-	@echo "TODO(week-1): docker compose down"
+down: ## Stop the dev stack (keeps volumes).
+	$(COMPOSE) down
 
 logs: ## Tail logs from the dev stack.
-	@echo "TODO(week-1): docker compose logs -f"
+	$(COMPOSE) logs -f
+
+ps: ## Show dev stack container status.
+	$(COMPOSE) ps
+
+restart: ## Restart the dev stack.
+	$(COMPOSE) restart
+
+nuke: ## Stop the dev stack AND delete all volumes (destructive).
+	$(COMPOSE) down -v
 
 proto: ## Regenerate proto/JSON-schema clients (Go, Python, TS). Idempotent.
 	@echo "TODO(week-1): buf generate && datamodel-codegen ..."

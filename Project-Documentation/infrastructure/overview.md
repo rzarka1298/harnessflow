@@ -2,6 +2,14 @@
 
 **Locations:** `docker-compose.yml`, `infrastructure/helm/`, `infrastructure/terraform/`, `infrastructure/kubernetes/`.
 
+## Current state (2026-05-15)
+
+Week 1 Day 3 complete — the docker-compose dev stack is up and verified. `make up` starts 9 services (postgres, redis, temporal, temporal-ui, otel-collector, jaeger, prometheus, grafana, minio), all healthchecked. Verified: every UI returns 200, Temporal gRPC frontend reports `SERVING`, all 3 Prometheus scrape targets are `up`, Grafana datasources (Prometheus + Jaeger) are provisioned, and an OTLP test span flows app → otel-collector → Jaeger.
+
+Config files: `infrastructure/otel/collector-config.yaml`, `infrastructure/prometheus/prometheus.yml`, `infrastructure/grafana/provisioning/{datasources,dashboards}/`. Makefile targets `up`/`down`/`logs`/`ps`/`restart`/`nuke` are live.
+
+Not yet in compose: `api`, `worker`, `dashboard` — they run on the host against this stack until wired in (api Week 2, worker Week 3, dashboard Week 4). Helm and Terraform are untouched (Weeks 10–11).
+
 **Responsibility:** Three deployment surfaces:
 1. **Local development** — `docker-compose up`. Daily driver. Week 1.
 2. **Local Kubernetes (kind)** — `helm install harnessflow ./infrastructure/helm/harnessflow`. Week 10.

@@ -1,0 +1,47 @@
+# OpenTelemetry Collector configuration for HarnessFlow local dev.
+#
+# Both apps/api (Go) and apps/worker (Python) export OTLP to this collector.
+# It fans traces out to Jaeger and exposes metrics for Prometheus to scrape.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+
+exporters:
+  # Traces → Jaeger (OTLP-native receiver).
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+  # Metrics → scraped by Prometheus from :8889.
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    resource_to_telemetry_conversion:
+      enabled: true
+  # Console output for local debugging.
+  debug:
+    verbosity: normal
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/jaeger, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus, debug]
