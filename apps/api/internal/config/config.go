@@ -16,6 +16,9 @@ type Config struct {
 	TemporalHost      string
 	TemporalNamespace string
 	TemporalTaskQueue string
+	// OTLPEndpoint is the OTel collector gRPC endpoint (e.g. localhost:4317).
+	// Empty disables tracing.
+	OTLPEndpoint string
 }
 
 // Load reads configuration from environment variables, applying defaults.
@@ -35,6 +38,7 @@ func Load() (*Config, error) {
 		TemporalHost:      envStr("TEMPORAL_HOST", "localhost:7233"),
 		TemporalNamespace: envStr("TEMPORAL_NAMESPACE", "default"),
 		TemporalTaskQueue: envStr("TEMPORAL_TASK_QUEUE", "harnessflow-tasks"),
+		OTLPEndpoint:      envStr("OTEL_EXPORTER_OTLP_ENDPOINT_GRPC", "localhost:4317"),
 	}, nil
 }
 
