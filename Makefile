@@ -1,7 +1,7 @@
 # HarnessFlow developer Makefile
 # Targets are scaffolded; bodies will be implemented as the corresponding code lands.
 
-.PHONY: help up down logs ps restart nuke proto demo eval demo-bandit test lint fmt clean tools-check
+.PHONY: help up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval demo-bandit test lint fmt clean tools-check
 
 COMPOSE := docker compose
 
@@ -43,6 +43,10 @@ SCHEMA := packages/sdk/schema/workflow.schema.json
 GEN_GO := packages/sdk/gen/go
 GEN_PY := packages/sdk/gen/python
 
+# Local-dev DATABASE_URL — matches docker-compose.yml. CI overrides this.
+DATABASE_URL ?= postgres://harnessflow:harnessflow@localhost:5432/harnessflow?sslmode=disable
+API_MIGRATIONS := apps/api/migrations
+
 proto: ## Regenerate proto + JSON-schema clients (Go, Python, TS). Idempotent.
 	@echo ">> buf lint"
 	buf lint
@@ -60,6 +64,19 @@ proto: ## Regenerate proto + JSON-schema clients (Go, Python, TS). Idempotent.
 	go run github.com/atombender/go-jsonschema@$(GO_JSONSCHEMA_VERSION) \
 		-p schema --output $(GEN_GO)/schema/workflow.go $(SCHEMA)
 	@echo ">> codegen complete — packages/sdk/gen/ is up to date"
+
+sqlc: ## Regenerate sqlc bindings for apps/api.
+	cd apps/api && sqlc generate
+	@echo ">> sqlc complete"
+
+migrate-up: ## Apply all pending Postgres migrations.
+	migrate -path $(API_MIGRATIONS) -database "$(DATABASE_URL)" up
+
+migrate-down: ## Roll back the most recent migration.
+	migrate -path $(API_MIGRATIONS) -database "$(DATABASE_URL)" down 1
+
+migrate-status: ## Print current migration version.
+	migrate -path $(API_MIGRATIONS) -database "$(DATABASE_URL)" version
 
 demo: ## Run the canonical research-assistant demo workflow end-to-end.
 	@echo "TODO(week-4): scripts/demo.sh"

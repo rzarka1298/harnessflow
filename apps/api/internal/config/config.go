@@ -12,6 +12,7 @@ type Config struct {
 	APIPort     int
 	LogLevel    string
 	Environment string
+	DatabaseURL string
 }
 
 // Load reads configuration from environment variables, applying defaults.
@@ -24,6 +25,10 @@ func Load() (*Config, error) {
 		APIPort:     port,
 		LogLevel:    envStr("LOG_LEVEL", "info"),
 		Environment: envStr("ENVIRONMENT", "development"),
+		DatabaseURL: envStr(
+			"DATABASE_URL",
+			"postgres://harnessflow:harnessflow@localhost:5432/harnessflow?sslmode=disable",
+		),
 	}, nil
 }
 
