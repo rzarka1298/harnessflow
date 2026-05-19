@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-19 (Week 1 Day 4–5)_
+_Last updated: 2026-05-19 (Week 2 complete)_
 
 ## DONE
 
@@ -17,21 +17,24 @@ _Last updated: 2026-05-19 (Week 1 Day 4–5)_
 | 2026-05-14 | First commit pushed to origin/main | 92b178c |
 | 2026-05-15 | **Week 1 Day 2** — monorepo skeleton: `apps/api` (Go, Chi, slog, /healthz+/readyz), `apps/worker` (Python/uv, Temporal+Pydantic+structlog deps, config), `apps/dashboard` (Next.js 16.2.6 App Router + Tailwind). All 3 build, run, lint, type-check clean. `.golangci.yml` added. | ff022d2 |
 | 2026-05-15 | **Week 1 Day 3** — docker-compose dev stack: postgres, redis, temporal, temporal-ui, otel-collector, jaeger, prometheus, grafana, minio. Observability configs + Grafana provisioning. Makefile up/down/logs/ps/restart/nuke. Verified: all UIs 200, Temporal SERVING, Prometheus targets up, OTLP span flows to Jaeger. | 35748c5 |
-| 2026-05-19 | **Week 1 Day 4–5** — SDK contracts: proto files for WorkflowService/RunService/EvalService; workflow YAML JSON Schema + DSL SPEC.md. `make proto` wired (buf → Go/Python/TS, datamodel-codegen → Pydantic, go-jsonschema → Go structs); verified idempotent. Generated code committed; `go.work` joins the gen Go module. | _pending branch merge_ |
+| 2026-05-19 | **Week 1 Day 4–5** — SDK contracts: proto files for WorkflowService/RunService/EvalService; workflow YAML JSON Schema + DSL SPEC.md. `make proto` wired (buf → Go/Python/TS, datamodel-codegen → Pydantic, go-jsonschema → Go structs); verified idempotent. Generated code committed; `go.work` joins the gen Go module. | 36365ef |
+| 2026-05-19 | **Week 2, commit 1/3** — Postgres schema + sqlc + store: migrations 0001_init (workflows, workflow_runs, workflow_steps), sqlc.yaml + queries, pgx pool. Makefile `sqlc`/`migrate-up`/`migrate-down`/`migrate-status`. Migration applied. | (branch) |
+| 2026-05-19 | **Week 2, commit 2/3** — YAML→Temporal compiler: `internal/workflow` parser (sigs.k8s.io/yaml + Kahn topo sort + cross-field validation), `HarnessFlowWorkflow` Temporal function, Week-2 stub activities (replaced by Python in Week 3), Temporal client + worker wiring. Parser unit tests pass; api boots and worker polls. | (branch) |
+| 2026-05-19 | **Week 2, commit 3/3** — Connect handlers + OTel: WorkflowService + RunService backed by Postgres + Temporal; OTLP/gRPC tracer init; Connect + Temporal OTel interceptors. End-to-end demo verified: POST workflow → POST run → Temporal `COMPLETED` → 1+1 Postgres rows → **single 16-span Jaeger trace** spanning Connect RPC → Temporal client → workflow → each activity start+run. | _pending branch merge_ |
 
 ## IN FLIGHT
 
-**Branch:** `feat/sdk-proto-schema` — about to commit + merge to `main`.
+**Branch:** `feat/api-postgres-store` — 3 commits, about to merge to `main`.
 
-**Current task:** finishing Week 1 Day 4–5 — commit proto/schema/codegen, merge to `main`, push. **This completes Week 1.**
+**Current task:** finishing Week 2 — merge to `main`, push. **This completes Week 2.**
 
-**Next file to touch:** `apps/api/migrations/0001_init.up.sql` — start of Week 2 (Postgres schema).
+**Next file to touch:** `apps/worker/harnessflow_worker/llm/client.py` — start of Week 3 (LLMClient).
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 2, Postgres schema**: Author migrations (`workflows`, `workflow_versions`, `workflow_runs`, `workflow_steps`), wire `sqlc` to generate type-safe queries into `apps/api/internal/store/`.
-2. **Week 2, YAML→Temporal compiler**: `apps/api/internal/workflow/{parser,compiler}.go` — parse workflow YAML to an IR, compile to a Temporal workflow function.
-3. **Week 2, Connect services**: implement `WorkflowService` + `RunService` handlers in `apps/api/internal/server/`, backed by Postgres + Temporal client.
+1. **Week 3, LLMClient**: ~200-line `apps/worker/harnessflow_worker/llm/client.py` — OpenAI + Anthropic with provider routing, declared fallback graph, OTel GenAI semconv spans, $-cost accounting.
+2. **Week 3, real activities**: implement `llm_call`/`retrieve`/`tool_call`/`verify` in Python; register on the same `harnessflow-tasks` queue. Remove the Go-side stub activities (Workflow stays in Go).
+3. **Week 3, single-LLM-step demo**: a workflow with one real LLM step that returns a real response with cost/tokens persisted; the full trace still flows Go → Temporal → Python → OpenAI.
 
 ## Dev stack quick reference
 

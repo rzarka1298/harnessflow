@@ -4,18 +4,27 @@
 
 **Responsibility:** Accept workflow YAML, validate against JSON Schema, persist to Postgres, and compile YAML into deterministic Temporal Workflow functions. Expose the Connect-Go API the dashboard and external clients consume.
 
-## Current state (2026-05-19)
+## Current state (2026-05-19) — end of Week 2
 
-Week 1 complete. `apps/api` is a Go module (`github.com/rzarka1298/harnessflow/apps/api`) with:
-- `cmd/api/main.go` — entrypoint with graceful shutdown
-- `internal/config/` — env-based config loader
-- `internal/server/` — Chi router, slog request logging, `/healthz` + `/readyz`
-- `internal/{workflow,temporal,store,otel}/` — empty dirs, populated Week 2
-- `Dockerfile` — multi-stage distroless build
+`apps/api` is wired end-to-end: HTTP → Connect handlers → Postgres + Temporal client → Workflow + stub activities → OTel-traced through the whole path.
+
+Layout:
+- `cmd/api/main.go` — OTel → Postgres → Temporal+worker → Connect HTTP, with cross-channel graceful shutdown.
+- `internal/config/` — env loader (API_PORT, DATABASE_URL, TEMPORAL_*, OTEL_EXPORTER_OTLP_ENDPOINT_GRPC).
+- `internal/server/` — `http.ServeMux` (Chi was swapped out — Connect's owned URL prefixes don't survive Chi `Mount`'s path rewrite), slog request log, `/healthz`+`/readyz`, WorkflowService + RunService Connect handlers.
+- `internal/store/` — sqlc-generated bindings + a hand-written `pool.go` pgx-pool helper.
+- `internal/workflow/` — DSL parser (Kahn topo sort + cross-field validation), `HarnessFlowWorkflow` Temporal function (interprets the parsed IR), Week-2 stub activities, `NewWorker` registration.
+- `internal/temporal/` — `client.Dial` wrapper with the OTel tracing interceptor.
+- `internal/otel/` — OTLP/gRPC tracer + W3C propagator, shutdown hook.
+- `migrations/` — 0001_init (workflows, workflow_runs, workflow_steps).
+
+**Compiler model.** One generic Temporal workflow function interprets the IR at runtime; we do not generate Go code per user workflow. Determinism is preserved by passing a pre-computed topological order from the parser; the workflow never iterates the `Steps` map directly.
+
+**OTel correlation works end-to-end.** A single inbound Connect RPC's trace ID covers the Temporal client `StartWorkflow`, the `RunWorkflow:HarnessFlowWorkflow` execution span, and each activity's `StartActivity`/`RunActivity` pair — verified in Jaeger (16 spans / trace). This is the work Week 5 had budgeted to "verify"; it lands here because the Temporal Go SDK's `contrib/opentelemetry` interceptor + Connect's `otelconnect` `WithTrustRemote` interoperate cleanly.
 
 **SDK contracts (Week 1 Day 4–5):** proto files in `packages/sdk/proto/harnessflow/{workflow,run,eval}/v1/` define `WorkflowService`, `RunService`, `EvalService`. The workflow YAML DSL is defined by `packages/sdk/schema/workflow.schema.json` + `packages/workflow-dsl/SPEC.md`. `make proto` generates committed Go (Connect-Go), Python, and TypeScript clients into `packages/sdk/gen/`. The generated Go is its own module, joined to `apps/api` via the repo-root `go.work`.
 
-No Temporal, Postgres, or Connect *handlers* yet — the compiler and service implementations land Week 2.
+**Open for Week 3:** the stub activities live in Go and get swapped for real Python activities. The Workflow function stays in Go.
 
 ## Key files (planned)
 
