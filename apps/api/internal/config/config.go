@@ -9,10 +9,13 @@ import (
 
 // Config holds all runtime configuration for the API service.
 type Config struct {
-	APIPort     int
-	LogLevel    string
-	Environment string
-	DatabaseURL string
+	APIPort           int
+	LogLevel          string
+	Environment       string
+	DatabaseURL       string
+	TemporalHost      string
+	TemporalNamespace string
+	TemporalTaskQueue string
 }
 
 // Load reads configuration from environment variables, applying defaults.
@@ -29,6 +32,9 @@ func Load() (*Config, error) {
 			"DATABASE_URL",
 			"postgres://harnessflow:harnessflow@localhost:5432/harnessflow?sslmode=disable",
 		),
+		TemporalHost:      envStr("TEMPORAL_HOST", "localhost:7233"),
+		TemporalNamespace: envStr("TEMPORAL_NAMESPACE", "default"),
+		TemporalTaskQueue: envStr("TEMPORAL_TASK_QUEUE", "harnessflow-tasks"),
 	}, nil
 }
 

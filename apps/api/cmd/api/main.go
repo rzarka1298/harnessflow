@@ -14,6 +14,9 @@ import (
 
 	"github.com/rzarka1298/harnessflow/apps/api/internal/config"
 	"github.com/rzarka1298/harnessflow/apps/api/internal/server"
+	"github.com/rzarka1298/harnessflow/apps/api/internal/store"
+	hftemporal "github.com/rzarka1298/harnessflow/apps/api/internal/temporal"
+	"github.com/rzarka1298/harnessflow/apps/api/internal/workflow"
 )
 
 func main() {
@@ -35,26 +38,55 @@ func run() error {
 		slog.String("environment", cfg.Environment),
 	)
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// --- Postgres -----------------------------------------------------------
+	pool, err := store.NewPool(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return fmt.Errorf("postgres: %w", err)
+	}
+	defer pool.Close()
+	log.Info("postgres connected")
+
+	// --- Temporal client + worker ------------------------------------------
+	tc, err := hftemporal.NewClient(hftemporal.Config{
+		HostPort:  cfg.TemporalHost,
+		Namespace: cfg.TemporalNamespace,
+		TaskQueue: cfg.TemporalTaskQueue,
+	})
+	if err != nil {
+		return fmt.Errorf("temporal client: %w", err)
+	}
+	defer tc.Close()
+	log.Info("temporal connected", slog.String("host", cfg.TemporalHost))
+
+	tw := workflow.NewWorker(tc, cfg.TemporalTaskQueue)
+	workerStop := make(chan any)
+	workerErrCh := make(chan error, 1)
+	go func() { workerErrCh <- tw.Run(workerStop) }()
+	defer close(workerStop)
+	log.Info("temporal worker started", slog.String("task_queue", cfg.TemporalTaskQueue))
+
+	// --- HTTP server --------------------------------------------------------
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.APIPort),
 		Handler:           server.New(log),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
-
-	// Run the server until a signal arrives.
-	errCh := make(chan error, 1)
+	httpErrCh := make(chan error, 1)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			errCh <- err
+			httpErrCh <- err
 		}
 	}()
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
+	// --- Wait for shutdown or failure --------------------------------------
 	select {
-	case err := <-errCh:
-		return err
+	case err := <-httpErrCh:
+		return fmt.Errorf("http server: %w", err)
+	case err := <-workerErrCh:
+		return fmt.Errorf("temporal worker: %w", err)
 	case <-ctx.Done():
 		log.Info("shutdown signal received")
 	}
