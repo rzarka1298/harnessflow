@@ -35,8 +35,31 @@ restart: ## Restart the dev stack.
 nuke: ## Stop the dev stack AND delete all volumes (destructive).
 	$(COMPOSE) down -v
 
-proto: ## Regenerate proto/JSON-schema clients (Go, Python, TS). Idempotent.
-	@echo "TODO(week-1): buf generate && datamodel-codegen ..."
+# Pinned codegen tool versions — keep these stable so `make proto` is
+# reproducible and CI's `git diff --exit-code` check stays meaningful.
+DATAMODEL_CODEGEN_VERSION := 0.57.0
+GO_JSONSCHEMA_VERSION := v0.23.1
+SCHEMA := packages/sdk/schema/workflow.schema.json
+GEN_GO := packages/sdk/gen/go
+GEN_PY := packages/sdk/gen/python
+
+proto: ## Regenerate proto + JSON-schema clients (Go, Python, TS). Idempotent.
+	@echo ">> buf lint"
+	buf lint
+	@echo ">> buf generate (Go + Connect, Python, TypeScript)"
+	buf generate
+	@echo ">> go mod tidy (generated Go module)"
+	cd $(GEN_GO) && go mod tidy
+	@echo ">> Pydantic models from JSON schema"
+	uvx --from 'datamodel-code-generator==$(DATAMODEL_CODEGEN_VERSION)' datamodel-codegen \
+		--input $(SCHEMA) --input-file-type jsonschema \
+		--output $(GEN_PY)/workflow_schema.py \
+		--output-model-type pydantic_v2.BaseModel \
+		--use-double-quotes --target-python-version 3.12 --disable-timestamp
+	@echo ">> Go structs from JSON schema"
+	go run github.com/atombender/go-jsonschema@$(GO_JSONSCHEMA_VERSION) \
+		-p schema --output $(GEN_GO)/schema/workflow.go $(SCHEMA)
+	@echo ">> codegen complete — packages/sdk/gen/ is up to date"
 
 demo: ## Run the canonical research-assistant demo workflow end-to-end.
 	@echo "TODO(week-4): scripts/demo.sh"

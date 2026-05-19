@@ -4,16 +4,18 @@
 
 **Responsibility:** Accept workflow YAML, validate against JSON Schema, persist to Postgres, and compile YAML into deterministic Temporal Workflow functions. Expose the Connect-Go API the dashboard and external clients consume.
 
-## Current state (2026-05-15)
+## Current state (2026-05-19)
 
-Week 1 skeleton only. `apps/api` is a Go module (`github.com/rzarka1298/harnessflow/apps/api`) with:
+Week 1 complete. `apps/api` is a Go module (`github.com/rzarka1298/harnessflow/apps/api`) with:
 - `cmd/api/main.go` — entrypoint with graceful shutdown
 - `internal/config/` — env-based config loader
 - `internal/server/` — Chi router, slog request logging, `/healthz` + `/readyz`
 - `internal/{workflow,temporal,store,otel}/` — empty dirs, populated Week 2
 - `Dockerfile` — multi-stage distroless build
 
-No Temporal, Postgres, or Connect services yet — those land Week 2.
+**SDK contracts (Week 1 Day 4–5):** proto files in `packages/sdk/proto/harnessflow/{workflow,run,eval}/v1/` define `WorkflowService`, `RunService`, `EvalService`. The workflow YAML DSL is defined by `packages/sdk/schema/workflow.schema.json` + `packages/workflow-dsl/SPEC.md`. `make proto` generates committed Go (Connect-Go), Python, and TypeScript clients into `packages/sdk/gen/`. The generated Go is its own module, joined to `apps/api` via the repo-root `go.work`.
+
+No Temporal, Postgres, or Connect *handlers* yet — the compiler and service implementations land Week 2.
 
 ## Key files (planned)
 

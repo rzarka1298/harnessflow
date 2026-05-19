@@ -1,0 +1,31 @@
+# Buf code generation for HarnessFlow.
+# Outputs are committed under packages/sdk/gen/ so a fresh clone never needs
+# codegen tools. CI enforces `make proto && git diff --exit-code`.
+version: v2
+# clean is intentionally off: packages/sdk/gen/go is a Go module whose go.mod,
+# go.sum, and hand-bridged schema/ package must survive regeneration. Codegen
+# overwrites its own files in place, which keeps `make proto` idempotent.
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/rzarka1298/harnessflow/packages/sdk/gen/go
+plugins:
+  # --- Go: protobuf messages + Connect-Go services ---
+  - remote: buf.build/protocolbuffers/go
+    out: packages/sdk/gen/go
+    opt: paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: packages/sdk/gen/go
+    opt: paths=source_relative
+
+  # --- Python: protobuf messages + type stubs ---
+  - remote: buf.build/protocolbuffers/python
+    out: packages/sdk/gen/python
+  - remote: buf.build/protocolbuffers/pyi
+    out: packages/sdk/gen/python
+
+  # --- TypeScript: protobuf-es v2 (consumed by Connect-ES in the dashboard) ---
+  - remote: buf.build/bufbuild/es
+    out: packages/sdk/gen/ts
+    opt: target=ts

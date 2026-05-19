@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+// Package harnessflow.eval.v1 defines evaluation runs and their scores, and the
+// RPC surface for triggering and inspecting them.
+package harnessflow.eval.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// EvalStatus is the lifecycle state of an evaluation run.
+enum EvalStatus {
+  EVAL_STATUS_UNSPECIFIED = 0;
+  EVAL_STATUS_PENDING = 1;
+  EVAL_STATUS_RUNNING = 2;
+  EVAL_STATUS_COMPLETED = 3;
+  EVAL_STATUS_FAILED = 4;
+}
+
+// ScorerScore is the aggregate result of one scorer over an eval dataset.
+message ScorerScore {
+  // scorer is the scorer name: exact_match, llm_judge, embedding_similarity,
+  // latency, cost.
+  string scorer = 1;
+  // score is the aggregate value; semantics depend on the scorer.
+  double score = 2;
+  // passed reflects whether the score met the workflow's gate threshold.
+  bool passed = 3;
+}
+
+// EvalCaseResult is the outcome of one dataset case within an eval run.
+message EvalCaseResult {
+  string case_id = 1;
+  string run_id = 2;
+  repeated ScorerScore scores = 3;
+}
+
+// EvalRun is one evaluation of a workflow against a dataset.
+message EvalRun {
+  string id = 1;
+  string workflow_id = 2;
+  int32 workflow_version = 3;
+  // dataset is the dataset identifier, e.g. research-assistant-v1.
+  string dataset = 4;
+  EvalStatus status = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp completed_at = 7;
+  // aggregate_scores holds one ScorerScore per scorer across all cases.
+  repeated ScorerScore aggregate_scores = 8;
+}
+
+message RunEvalRequest {
+  string workflow_id = 1;
+  string dataset = 2;
+  // seeds_per_case is how many times each case is run to capture variance.
+  int32 seeds_per_case = 3;
+}
+
+message RunEvalResponse {
+  // eval_run_id identifies the started eval; poll GetEvalRun for status.
+  string eval_run_id = 1;
+}
+
+message GetEvalRunRequest {
+  string id = 1;
+}
+
+message GetEvalRunResponse {
+  EvalRun eval_run = 1;
+  repeated EvalCaseResult case_results = 2;
+}
+
+message ListEvalRunsRequest {
+  string workflow_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListEvalRunsResponse {
+  repeated EvalRun eval_runs = 1;
+  string next_page_token = 2;
+}
+
+// EvalService triggers and inspects workflow evaluations.
+service EvalService {
+  // RunEval starts an evaluation of a workflow against a dataset.
+  rpc RunEval(RunEvalRequest) returns (RunEvalResponse);
+  // GetEvalRun returns an eval run with its per-case results.
+  rpc GetEvalRun(GetEvalRunRequest) returns (GetEvalRunResponse);
+  // ListEvalRuns returns eval runs, newest first, paginated.
+  rpc ListEvalRuns(ListEvalRunsRequest) returns (ListEvalRunsResponse);
+}

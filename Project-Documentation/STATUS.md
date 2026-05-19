@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-15 (Week 1 Day 3)_
+_Last updated: 2026-05-19 (Week 1 Day 4–5)_
 
 ## DONE
 
@@ -16,21 +16,31 @@ _Last updated: 2026-05-15 (Week 1 Day 3)_
 | 2026-05-14 | Public GitHub repo created: https://github.com/rzarka1298/harnessflow | — |
 | 2026-05-14 | First commit pushed to origin/main | 92b178c |
 | 2026-05-15 | **Week 1 Day 2** — monorepo skeleton: `apps/api` (Go, Chi, slog, /healthz+/readyz), `apps/worker` (Python/uv, Temporal+Pydantic+structlog deps, config), `apps/dashboard` (Next.js 16.2.6 App Router + Tailwind). All 3 build, run, lint, type-check clean. `.golangci.yml` added. | ff022d2 |
-| 2026-05-15 | **Week 1 Day 3** — docker-compose dev stack: postgres, redis, temporal, temporal-ui, otel-collector, jaeger, prometheus, grafana, minio. Observability configs + Grafana provisioning. Makefile up/down/logs/ps/restart/nuke. Verified: all UIs 200, Temporal SERVING, Prometheus targets up, OTLP span flows to Jaeger. | _pending branch merge_ |
+| 2026-05-15 | **Week 1 Day 3** — docker-compose dev stack: postgres, redis, temporal, temporal-ui, otel-collector, jaeger, prometheus, grafana, minio. Observability configs + Grafana provisioning. Makefile up/down/logs/ps/restart/nuke. Verified: all UIs 200, Temporal SERVING, Prometheus targets up, OTLP span flows to Jaeger. | 35748c5 |
+| 2026-05-19 | **Week 1 Day 4–5** — SDK contracts: proto files for WorkflowService/RunService/EvalService; workflow YAML JSON Schema + DSL SPEC.md. `make proto` wired (buf → Go/Python/TS, datamodel-codegen → Pydantic, go-jsonschema → Go structs); verified idempotent. Generated code committed; `go.work` joins the gen Go module. | _pending branch merge_ |
 
 ## IN FLIGHT
 
-**Branch:** `feat/infra-docker-compose` — about to commit + merge to `main`.
+**Branch:** `feat/sdk-proto-schema` — about to commit + merge to `main`.
 
-**Current task:** finishing Week 1 Day 3 — commit the docker-compose stack, merge to `main`, push.
+**Current task:** finishing Week 1 Day 4–5 — commit proto/schema/codegen, merge to `main`, push. **This completes Week 1.**
 
-**Next file to touch:** `packages/sdk/proto/workflow/v1/workflow.proto` — start of Week 1 Day 4–5.
+**Next file to touch:** `apps/api/migrations/0001_init.up.sql` — start of Week 2 (Postgres schema).
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 1, Day 4–5**: Author the first proto files (`packages/sdk/proto/workflow/v1/workflow.proto`, `run/v1/run.proto`, `eval/v1/eval.proto`) and the JSON Schema for workflow YAML (`packages/sdk/schema/workflow.schema.json`). Wire `make proto` to run Buf + datamodel-codegen and commit generated outputs to `packages/sdk/gen/`.
-2. **Week 2**: Postgres schema (sqlc), YAML→Temporal compiler, Connect services. See ROADMAP.md Phase 1.
-3. **Week 3**: Python worker registers against Temporal; activity types + LLMClient.
+1. **Week 2, Postgres schema**: Author migrations (`workflows`, `workflow_versions`, `workflow_runs`, `workflow_steps`), wire `sqlc` to generate type-safe queries into `apps/api/internal/store/`.
+2. **Week 2, YAML→Temporal compiler**: `apps/api/internal/workflow/{parser,compiler}.go` — parse workflow YAML to an IR, compile to a Temporal workflow function.
+3. **Week 2, Connect services**: implement `WorkflowService` + `RunService` handlers in `apps/api/internal/server/`, backed by Postgres + Temporal client.
+
+## Dev stack quick reference
+
+- `make up` / `make down` / `make ps` / `make logs` / `make nuke` (deletes volumes).
+- `make proto` regenerates all SDK clients; idempotent (CI enforces `git diff --exit-code`).
+- UIs: Temporal `:8233`, Jaeger `:16686`, Prometheus `:9090`, Grafana `:3000`, MinIO `:9001`.
+- OTLP ingest: gRPC `localhost:4317`, HTTP `localhost:4318`. Postgres `:5432`, Redis `:6379`, Temporal gRPC `:7233`.
+- Credentials are all `harnessflow`/`harnessflow` (local dev only).
+- **Go monorepo:** two modules (`apps/api`, `packages/sdk/gen/go`) joined by the repo-root `go.work`. Build with the workspace active.
 
 ## Dev stack quick reference
 

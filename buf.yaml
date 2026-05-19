@@ -1,0 +1,12 @@
+# Buf module + lint/breaking configuration for HarnessFlow.
+# The proto files under packages/sdk/proto are the source of truth for all
+# RPC types; Go, Python, and TypeScript clients are generated from them.
+version: v2
+modules:
+  - path: packages/sdk/proto
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

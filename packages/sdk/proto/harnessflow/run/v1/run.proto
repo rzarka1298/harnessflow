@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+// Package harnessflow.run.v1 defines workflow run and step records and the RPC
+// surface for inspecting them.
+package harnessflow.run.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// RunStatus is the lifecycle state of a workflow run.
+enum RunStatus {
+  RUN_STATUS_UNSPECIFIED = 0;
+  RUN_STATUS_PENDING = 1;
+  RUN_STATUS_RUNNING = 2;
+  RUN_STATUS_COMPLETED = 3;
+  RUN_STATUS_FAILED = 4;
+  // WAITING_APPROVAL: paused on a human approval gate.
+  RUN_STATUS_WAITING_APPROVAL = 5;
+  RUN_STATUS_CANCELED = 6;
+}
+
+// StepStatus is the lifecycle state of a single workflow step.
+enum StepStatus {
+  STEP_STATUS_UNSPECIFIED = 0;
+  STEP_STATUS_PENDING = 1;
+  STEP_STATUS_RUNNING = 2;
+  STEP_STATUS_COMPLETED = 3;
+  STEP_STATUS_FAILED = 4;
+  // SKIPPED: not executed because a branch condition excluded it.
+  STEP_STATUS_SKIPPED = 5;
+}
+
+// Step is one executed node of a workflow run, mapping to a Temporal activity.
+message Step {
+  string id = 1;
+  string run_id = 2;
+  string name = 3;
+  // type mirrors the DSL step type: llm_call, retrieve, tool_call, verify.
+  string type = 4;
+  StepStatus status = 5;
+  google.protobuf.Timestamp started_at = 6;
+  google.protobuf.Timestamp ended_at = 7;
+  int64 latency_ms = 8;
+  int64 input_tokens = 9;
+  int64 output_tokens = 10;
+  // cost_usd_cents is the LLM spend for this step, in integer USD cents.
+  int64 cost_usd_cents = 11;
+  // attempt is the retry count; 1 on first execution.
+  int32 attempt = 12;
+  // error holds the failure message when status is FAILED.
+  string error = 13;
+}
+
+// Run is a single execution of a workflow.
+message Run {
+  string id = 1;
+  string workflow_id = 2;
+  int32 workflow_version = 3;
+  RunStatus status = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp ended_at = 6;
+  int64 total_cost_usd_cents = 7;
+  int64 total_tokens = 8;
+  // trace_id is the OpenTelemetry trace covering the whole run.
+  string trace_id = 9;
+}
+
+message GetRunRequest {
+  string id = 1;
+}
+
+message GetRunResponse {
+  Run run = 1;
+  repeated Step steps = 2;
+}
+
+message ListRunsRequest {
+  // workflow_id, when set, restricts results to runs of that workflow.
+  string workflow_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListRunsResponse {
+  repeated Run runs = 1;
+  string next_page_token = 2;
+}
+
+// RunService inspects workflow runs and their steps.
+service RunService {
+  // GetRun returns a run and its steps.
+  rpc GetRun(GetRunRequest) returns (GetRunResponse);
+  // ListRuns returns runs, newest first, paginated.
+  rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
+}
