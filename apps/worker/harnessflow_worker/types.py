@@ -10,7 +10,9 @@ through Temporal's data converter.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class RetryPolicy(BaseModel):
@@ -65,7 +67,12 @@ class ActivityResult(BaseModel):
 
 
 class ActivityInput(BaseModel):
-    """Mirrors apps/api/internal/workflow/types.go ActivityInput."""
+    """Mirrors apps/api/internal/workflow/types.go ActivityInput.
+
+    Go marshals a nil ``map`` as JSON ``null``, not ``{}``; the validator
+    below coerces ``null`` to an empty dict so Pydantic accepts the wire
+    shape produced by the orchestrator without any Go-side changes.
+    """
 
     model_config = ConfigDict(extra="ignore")
 
@@ -74,3 +81,8 @@ class ActivityInput(BaseModel):
     step: Step
     run_inputs: dict[str, str] = Field(default_factory=dict)
     prior_outputs: dict[str, ActivityResult] = Field(default_factory=dict)
+
+    @field_validator("run_inputs", "prior_outputs", mode="before")
+    @classmethod
+    def _none_is_empty(cls, v: Any) -> Any:
+        return {} if v is None else v

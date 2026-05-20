@@ -4,9 +4,9 @@ Bring up OTel (must be first so the Temporal interceptor sees our provider),
 then asyncpg, the LLM client, and finally the Temporal worker. Long-running:
 exits on SIGINT/SIGTERM or an exception in the worker loop.
 
-The activities that actually do work — llm_call, retrieve, tool_call, verify —
-land in Week 3 commit 3. Until then we register only ``harnessflow_health`` so
-the worker has something to anchor against.
+Registers the four DSL activities (``llm_call``, ``retrieve``, ``tool_call``,
+``verify``) under their stable names. The Go workflow dispatches by name so the
+worker that runs activities is invisible to it.
 """
 
 from __future__ import annotations
@@ -22,7 +22,11 @@ from temporalio.contrib.pydantic import pydantic_data_converter
 from temporalio.worker import Worker
 
 from harnessflow_worker import __version__
-from harnessflow_worker.activities.health import health
+from harnessflow_worker.activities._common import Deps
+from harnessflow_worker.activities.llm_call import make_llm_call
+from harnessflow_worker.activities.retrieve import make_retrieve
+from harnessflow_worker.activities.tool_call import make_tool_call
+from harnessflow_worker.activities.verify import make_verify
 from harnessflow_worker.config import WorkerConfig
 from harnessflow_worker.db import new_pool
 from harnessflow_worker.llm import build_default_client
@@ -48,10 +52,8 @@ async def _amain() -> None:
     pool = await new_pool(cfg.database_url)
     log.info("postgres connected")
 
-    # The LLMClient is constructed once; activities reach for it via closure
-    # when they land in commit 3.
-    _llm = build_default_client()
-    _ = _llm  # suppress unused-warning for now
+    llm = build_default_client()
+    deps = Deps(pool=pool, llm=llm)
 
     client = await Client.connect(
         cfg.temporal_host,
@@ -63,7 +65,12 @@ async def _amain() -> None:
     worker = Worker(
         client,
         task_queue=cfg.temporal_task_queue,
-        activities=[health],
+        activities=[
+            make_llm_call(deps),
+            make_retrieve(deps),
+            make_tool_call(deps),
+            make_verify(deps),
+        ],
         interceptors=[TracingInterceptor()],
     )
 
@@ -88,6 +95,9 @@ async def _amain() -> None:
 
     await pool.close()
     if tracer_provider:
+        # force_flush BEFORE shutdown so in-flight spans reach the collector
+        # even when the activity that produced them was the last thing to run.
+        tracer_provider.force_flush(timeout_millis=5000)
         tracer_provider.shutdown()
     log.info("worker stopped")
 

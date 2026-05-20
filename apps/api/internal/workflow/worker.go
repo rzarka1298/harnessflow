@@ -1,22 +1,20 @@
 package workflow
 
 import (
-	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
 	tworkflow "go.temporal.io/sdk/workflow"
 )
 
-// NewWorker constructs (but does not start) a Temporal worker registered with
-// the HarnessFlow workflow and Week-2 stub activities. Start it with w.Run().
+// NewWorker constructs (but does not start) a Temporal worker that registers
+// the HarnessFlow Workflow function only. Activity execution lives in the
+// Python worker process (apps/worker) — both register against the same task
+// queue and Temporal routes by task type. Start it with w.Run().
 //
 // The optional interceptors slice is forwarded to worker.Options — pass the
-// OTel tracing interceptor here so workflow/activity spans hang off the
-// inbound RPC trace.
-//
-// In Week 3 the activity registrations move to the Python worker; this
-// constructor will then register only the Workflow function.
+// OTel tracing interceptor here so workflow spans hang off the inbound RPC
+// trace.
 func NewWorker(tc client.Client, taskQueue string, interceptors []interceptor.WorkerInterceptor) worker.Worker {
 	w := worker.New(tc, taskQueue, worker.Options{
 		Interceptors: interceptors,
@@ -25,11 +23,6 @@ func NewWorker(tc client.Client, taskQueue string, interceptors []interceptor.Wo
 	w.RegisterWorkflowWithOptions(HarnessFlowWorkflow, tworkflow.RegisterOptions{
 		Name: WorkflowName,
 	})
-
-	w.RegisterActivityWithOptions(LLMCallStub, activity.RegisterOptions{Name: ActivityLLMCall})
-	w.RegisterActivityWithOptions(RetrieveStub, activity.RegisterOptions{Name: ActivityRetrieve})
-	w.RegisterActivityWithOptions(ToolCallStub, activity.RegisterOptions{Name: ActivityToolCall})
-	w.RegisterActivityWithOptions(VerifyStub, activity.RegisterOptions{Name: ActivityVerify})
 
 	return w
 }
