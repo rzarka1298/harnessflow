@@ -14,6 +14,8 @@ class WorkerConfig(BaseModel):
     temporal_namespace: str
     temporal_task_queue: str
     environment: str
+    database_url: str
+    otlp_endpoint: str
 
     @classmethod
     def load(cls) -> WorkerConfig:
@@ -23,4 +25,10 @@ class WorkerConfig(BaseModel):
             temporal_namespace=os.getenv("TEMPORAL_NAMESPACE", "default"),
             temporal_task_queue=os.getenv("TEMPORAL_TASK_QUEUE", "harnessflow-tasks"),
             environment=os.getenv("ENVIRONMENT", "development"),
+            database_url=os.getenv(
+                "DATABASE_URL",
+                "postgres://harnessflow:harnessflow@localhost:5432/harnessflow",
+            ),
+            # gRPC endpoint, no scheme. Empty disables tracing.
+            otlp_endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT_GRPC", "localhost:4317"),
         )

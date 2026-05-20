@@ -47,3 +47,9 @@ python_version = "3.12"
 strict = true
 warn_unused_ignores = true
 warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+# Third-party libraries without bundled type stubs. Narrow + documented to
+# keep the surface for future stub adoption obvious.
+module = ["asyncpg", "asyncpg.*"]
+ignore_missing_imports = true
