@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-21 (Week 4 complete — `v0.1.0-thin-slice` shipped)_
+_Last updated: 2026-05-21 (Week 5 complete — observability deepened)_
 
 ## DONE
 
@@ -26,25 +26,24 @@ _Last updated: 2026-05-21 (Week 4 complete — `v0.1.0-thin-slice` shipped)_
 | 2026-05-20 | **Week 3, commit 3/3** — Real activities (`llm_call`, `retrieve` stub, `tool_call` stub, `verify` LLM-as-judge) + idempotent step persistence (UUIDv5-keyed); Go-side stub activities removed (Workflow stays in Go). End-to-end demo: single-LLM-step YAML → Temporal COMPLETED → workflow_steps row with tokens/cost → **8-span Jaeger trace spanning BOTH `harnessflow-api` and `harnessflow-worker`** — Connect RPC → StartWorkflow → RunWorkflow → StartActivity → RunActivity (Python) → llm.mock.complete. | 19e9924 |
 | 2026-05-21 | **Week 4, commit 1/3** — Research-assistant YAML (planner→retriever→executor→verifier) + 20-doc ChromaDB corpus + real ChromaDB-backed `retrieve` activity. Fixed Go-side `LocalActivityWorkerOnly: true` so the api stops racing the python worker for activity tasks. | (branch) |
 | 2026-05-21 | **Week 4, commit 2/3** — Dashboard MVP: `/workflows`, `/workflows/[id]` (React Flow DAG via dagre), `/runs`, `/runs/[id]` (steps + tokens/cost + Jaeger deep-link). Connect-Web client over the protobuf-es v2 service descriptors; TanStack Query with 2s polling on in-progress runs. CORS middleware on the api. `make proto` syncs `packages/sdk/gen/ts` → `apps/dashboard/src/gen` (Turbopack rejects symlinks outside the project root). | (branch) |
-| 2026-05-21 | **Week 4, commit 3/3** — `scripts/demo.sh` + `make demo`. Verified: 4 steps complete with real ChromaDB retrieval (retriever ~260ms), browser-origin CORS preflight returns 204, dashboard build clean. **Tagged `v0.1.0-thin-slice`.** | _pending branch merge_ |
+| 2026-05-21 | **Week 4, commit 3/3** — `scripts/demo.sh` + `make demo`. Verified: 4 steps complete with real ChromaDB retrieval (retriever ~260ms), browser-origin CORS preflight returns 204, dashboard build clean. **Tagged `v0.1.0-thin-slice`.** | b9953da |
+| 2026-05-21 | **Week 5, commit 1/3** — Run-status completion path: `record_run_status` activity (running → completed/failed) + `update_run_status` (stamps started/ended, returns duration). Workflow brackets steps with status calls. `workflow_name` threaded into ActivityInput. Closes the Week-2 gap. Verified run row reaches `completed` with duration. | 06d19e9 |
+| 2026-05-21 | **Week 5, commit 2/3** — Worker Prometheus metrics via OTel: `harnessflow_workflow_runs_total`, `_duration_seconds`, `_llm_tokens_total`, `_llm_cost_usd_total`. Verified worker → collector → Prometheus (runs=2, tokens=1528, duration_count=2). | a5d48a2 |
+| 2026-05-21 | **Week 5, commit 3/3** — Grafana dashboard `infrastructure/grafana/dashboards/harnessflow.json` (6 panels) auto-provisioned; Prometheus datasource pinned UID. ADR-0005 marked implemented. | _pending branch merge_ |
 
 ## IN FLIGHT
 
-**Branch:** `feat/week4-thin-slice` — 3 commits, about to merge to `main` and tag `v0.1.0-thin-slice`. **Completes Week 4 — thin-slice milestone.**
+**Branch:** `feat/week5-observability` — 3 commits, about to merge to `main`. **Completes Week 5.**
 
-**Current task:** merge + tag + push.
+**Current task:** merge + push.
 
-**Next file to touch:** `apps/api/internal/server/workflowservice.go` — start of Week 5 (deepen observability: per-step trace correlation hardening, GenAI semconv audit, Prometheus metrics, Grafana dashboard JSON, dashboard live-run animation).
+**Next file to touch:** `apps/worker/harnessflow_worker/llm/client.py` — start of Week 6 (self-healing: model fallback on real provider errors, per-step retry policy → Temporal RetryPolicy, approval gates via Temporal signals, failure-analysis page).
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 5, Prometheus metrics** — `harnessflow_workflow_runs_total`, `_duration_seconds`, `_llm_tokens_total`, `_llm_cost_usd_total` from both api and worker; verify scrape targets up in Prometheus.
-2. **Week 5, Grafana dashboard JSON** at `infrastructure/grafana/dashboards/harnessflow.json` — workflow runs by status, p50/p95 duration, LLM tokens + cost by model (stacked), activity retry rate. Provisioned automatically by docker-compose.
-3. **Week 5, run-status completion path** — close out the Week-2 known gap: the workflow's terminal status (`completed`/`failed`) should be written back to `workflow_runs.status` via a final persistence activity so the dashboard shows truthful run state without polling Temporal.
-
-## Setting real LLM keys
-
-Without keys the demo runs on `MockProvider`. To swap in real models, create `.env` from `.env.example`, set `OPENAI_API_KEY` and/or `ANTHROPIC_API_KEY`, and re-run `make demo`.
+1. **Week 6, model fallback demo** — exercise the LLMClient fallback graph against a real provider error (kill the OpenAI key mid-run → finishes on Anthropic). Needs real keys to demo; mock mode can simulate via an injected error.
+2. **Week 6, approval gates** — DSL `requires_approval: true` pauses the workflow on a Temporal signal; dashboard "Approve" button sends it via a new Connect RPC. Run status `waiting_approval` already modeled.
+3. **Week 6, failure-analysis page** — dashboard view for a failed step showing last error, retry history, and the prompt/response that failed.
 
 ## Releases
 
@@ -53,6 +52,12 @@ Without keys the demo runs on `MockProvider`. To swap in real models, create `.e
 ## Setting real LLM keys
 
 Without keys the demo runs on `MockProvider` (deterministic, free). To swap in real models, create `.env` from `.env.example` and set `OPENAI_API_KEY` and/or `ANTHROPIC_API_KEY`, then re-run `make up` and the worker via `.venv/bin/python -m harnessflow_worker`.
+
+## Dev stack quick reference (observability)
+
+- Grafana `http://localhost:3000` → "HarnessFlow" dashboard (anonymous admin).
+- Prometheus `http://localhost:9090`; metric names are `harnessflow_*` (see observability/overview.md).
+- Worker metrics require the worker to be running and a few seconds to export (5s reader interval, 15s Prometheus scrape).
 
 ## Dev stack quick reference
 

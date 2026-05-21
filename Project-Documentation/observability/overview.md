@@ -4,6 +4,25 @@
 
 **Responsibility:** One trace ID spans every layer of a workflow run. Metrics roll up to Grafana dashboards. Logs are structured (slog in Go, `structlog`-style in Python) and flow through OTel.
 
+## Current state (2026-05-21) — Week 5
+
+**Traces:** a single trace spans Go API → Temporal → Python worker → LLM call (verified weeks 2–4). LLM spans carry OTel GenAI semconv attributes (`gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.{input,output}_tokens`, `gen_ai.response.finish_reasons`) plus `harnessflow.cost_usd_cents`.
+
+**Metrics (Week 5):** the Python worker exports four metric families via OTel → collector → Prometheus:
+
+| Prometheus name | Type | Labels | Emitted from |
+| --- | --- | --- | --- |
+| `harnessflow_workflow_runs_total` | counter | `workflow`, `status` | `record_run_status` activity (terminal only) |
+| `harnessflow_workflow_duration_seconds` | histogram | `workflow` | `record_run_status` activity |
+| `harnessflow_llm_tokens_total` | counter | `workflow`, `provider`, `model`, `type` | `llm_call` + `verify` activities |
+| `harnessflow_llm_cost_usd_total` | counter | `workflow`, `provider`, `model` | `llm_call` + `verify` activities |
+
+Naming note: OTel instruments omit the `_total` suffix and any `unit=` — the collector's Prometheus exporter appends `_total` to counters and would otherwise splice the unit into the name (the original `harnessflow_llm_cost_usd_USD_total` bug). Worker metric instruments are bound from the provider's own meter inside `setup_metrics`, not from the import-time global proxy.
+
+Run-level metrics live in the worker because completion is only observable there (the Go API starts runs asynchronously). Go-side HTTP metrics are a later addition.
+
+**Grafana:** `infrastructure/grafana/dashboards/harnessflow.json` is auto-provisioned (6 panels: total runs, total cost, runs-by-status, p50/p95 duration, tokens by model, cost by model). The Prometheus datasource has a fixed UID (`harnessflow-prometheus`) so the committed dashboard references it reproducibly.
+
 ## Topology
 
 ```

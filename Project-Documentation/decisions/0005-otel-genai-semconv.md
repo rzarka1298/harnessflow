@@ -1,7 +1,12 @@
 # ADR-0005: Adopt OpenTelemetry GenAI semantic conventions
 
 Date: 2026-05-14
-Status: Accepted
+Status: Accepted — implemented & verified Week 5 (2026-05-21)
+
+> Implemented in `apps/worker/harnessflow_worker/llm/client.py` (GenAI span
+> attributes) and `apps/worker/harnessflow_worker/metrics.py` (the
+> `harnessflow_*` metric families). Verified end-to-end through the collector
+> into Prometheus and the provisioned Grafana dashboard.
 
 ## Context
 
