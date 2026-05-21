@@ -51,6 +51,9 @@ tmp/
 *.log
 .docker-volumes/
 
+# ChromaDB local store (seeded by scripts/seed-chroma.py).
+data/chroma/
+
 # --- Terraform ---
 *.tfstate
 *.tfstate.*

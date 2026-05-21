@@ -1,0 +1,56 @@
+name: research-assistant
+version: 1
+description: |
+  Canonical HarnessFlow demo workflow.
+
+  Plans sub-queries, retrieves grounding documents from a small curated
+  corpus, synthesizes an answer, and verifies the answer is grounded in
+  the retrieved context. Exercises every Week-2-3 platform feature:
+  multi-step DAG with branching topology, declared LLM fallback, and an
+  LLM-as-judge verifier.
+
+steps:
+  planner:
+    type: llm_call
+    model: gpt-4o
+    fallback_on_rate_limit: claude-sonnet-4-6
+    prompt: |
+      Break the user's question into 2-3 concise retrieval sub-queries,
+      one per line. Only output the sub-queries; no preamble.
+
+      Question: {{inputs.query}}
+
+  retriever:
+    type: retrieve
+    source: vector-db
+    top_k: 6
+    after: [planner]
+
+  executor:
+    type: llm_call
+    model: gpt-4o
+    fallback_on_rate_limit: claude-sonnet-4-6
+    prompt: |
+      Answer the user's question using ONLY the retrieved context. Cite
+      sources inline as [source-name]. If the context does not contain
+      the answer, say so explicitly.
+
+      Question: {{inputs.query}}
+
+      Retrieved context:
+      {{steps.retriever.output}}
+    after: [retriever]
+
+  verifier:
+    type: verify
+    criteria: |
+      The answer is grounded in the retrieved context, cites the right
+      sources, and does not hallucinate facts outside what was retrieved.
+    retry_policy:
+      type: static
+      max_attempts: 3
+    after: [executor]
+
+deployment:
+  requires_eval_pass:
+    min_score: 0.75

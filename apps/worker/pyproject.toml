@@ -15,6 +15,7 @@ dependencies = [
     "opentelemetry-api>=1.27.0",
     "opentelemetry-sdk>=1.27.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.27.0",
+    "chromadb>=0.6.0",
 ]
 
 [project.scripts]
@@ -51,5 +52,5 @@ warn_redundant_casts = true
 [[tool.mypy.overrides]]
 # Third-party libraries without bundled type stubs. Narrow + documented to
 # keep the surface for future stub adoption obvious.
-module = ["asyncpg", "asyncpg.*"]
+module = ["asyncpg", "asyncpg.*", "chromadb", "chromadb.*"]
 ignore_missing_imports = true

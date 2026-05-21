@@ -18,6 +18,11 @@ import (
 func NewWorker(tc client.Client, taskQueue string, interceptors []interceptor.WorkerInterceptor) worker.Worker {
 	w := worker.New(tc, taskQueue, worker.Options{
 		Interceptors: interceptors,
+		// This worker registers ONLY the workflow function — activity
+		// implementations live in the Python worker. Without this flag the
+		// Go worker would still long-poll for activity tasks and reject
+		// them with ActivityNotRegisteredError, racing the Python worker.
+		LocalActivityWorkerOnly: true,
 	})
 
 	w.RegisterWorkflowWithOptions(HarnessFlowWorkflow, tworkflow.RegisterOptions{
