@@ -98,3 +98,40 @@ async def step_failed(
             latency_ms,
             error,
         )
+
+
+async def update_run_status(
+    pool: asyncpg.Pool,
+    run_id: str,
+    status: str,
+    *,
+    error: str = "",
+) -> float | None:
+    """Persist a run's lifecycle transition.
+
+    On "running", stamps started_at (idempotently). On a terminal status,
+    stamps ended_at. Returns the run's wall-clock duration in seconds once the
+    run is terminal (so the caller can emit a duration metric), else None.
+    """
+    terminal = status in ("completed", "failed", "canceled")
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            UPDATE workflow_runs
+            SET status = $2,
+                started_at = CASE WHEN $2 = 'running'
+                                  THEN COALESCE(started_at, NOW())
+                                  ELSE started_at END,
+                ended_at = CASE WHEN $3 THEN NOW() ELSE ended_at END,
+                error = $4
+            WHERE id = $1
+            RETURNING started_at, ended_at
+            """,
+            uuid.UUID(run_id),
+            status,
+            terminal,
+            error,
+        )
+    if row and terminal and row["started_at"] and row["ended_at"]:
+        return float((row["ended_at"] - row["started_at"]).total_seconds())
+    return None

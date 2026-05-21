@@ -24,6 +24,7 @@ from temporalio.worker import Worker
 from harnessflow_worker import __version__
 from harnessflow_worker.activities._common import Deps
 from harnessflow_worker.activities.llm_call import make_llm_call
+from harnessflow_worker.activities.record_run_status import make_record_run_status
 from harnessflow_worker.activities.retrieve import make_retrieve
 from harnessflow_worker.activities.tool_call import make_tool_call
 from harnessflow_worker.activities.verify import make_verify
@@ -70,6 +71,7 @@ async def _amain() -> None:
             make_retrieve(deps),
             make_tool_call(deps),
             make_verify(deps),
+            make_record_run_status(deps),
         ],
         interceptors=[TracingInterceptor()],
     )

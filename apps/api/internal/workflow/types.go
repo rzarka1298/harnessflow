@@ -49,10 +49,24 @@ type Output struct {
 // before the workflow starts (in the parser/compiler).
 type ActivityInput struct {
 	RunID        string                    `json:"run_id"`
+	WorkflowName string                    `json:"workflow_name"`
 	StepName     string                    `json:"step_name"`
 	Step         schema.Step               `json:"step"`
 	RunInputs    map[string]string         `json:"run_inputs"`
 	PriorOutputs map[string]ActivityResult `json:"prior_outputs"`
+}
+
+// RunStatusInput is the payload for the record_run_status activity, which
+// persists a run's lifecycle transitions and emits run-level metrics. It is
+// not a DSL step — the workflow calls it at start ("running") and on
+// completion/failure.
+type RunStatusInput struct {
+	RunID           string `json:"run_id"`
+	WorkflowName    string `json:"workflow_name"`
+	WorkflowVersion int32  `json:"workflow_version"`
+	// Status is one of: running, completed, failed.
+	Status string `json:"status"`
+	Error  string `json:"error"`
 }
 
 // ActivityResult is the shape every activity returns.

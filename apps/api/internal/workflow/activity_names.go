@@ -10,4 +10,7 @@ const (
 	ActivityRetrieve = "retrieve"
 	ActivityToolCall = "tool_call"
 	ActivityVerify   = "verify"
+	// ActivityRecordRunStatus persists run lifecycle transitions and emits
+	// run-level metrics. Not a DSL step type — invoked by the workflow itself.
+	ActivityRecordRunStatus = "record_run_status"
 )

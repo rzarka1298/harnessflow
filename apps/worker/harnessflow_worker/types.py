@@ -77,6 +77,7 @@ class ActivityInput(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     run_id: str
+    workflow_name: str = ""
     step_name: str
     step: Step
     run_inputs: dict[str, str] = Field(default_factory=dict)
@@ -86,3 +87,19 @@ class ActivityInput(BaseModel):
     @classmethod
     def _none_is_empty(cls, v: Any) -> Any:
         return {} if v is None else v
+
+
+class RunStatusInput(BaseModel):
+    """Mirrors apps/api/internal/workflow/types.go RunStatusInput.
+
+    Carried by the record_run_status activity, which the workflow invokes at
+    start ("running") and on terminal state ("completed"/"failed").
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    run_id: str
+    workflow_name: str = ""
+    workflow_version: int = 0
+    status: str
+    error: str = ""
