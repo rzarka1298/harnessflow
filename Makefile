@@ -63,7 +63,11 @@ proto: ## Regenerate proto + JSON-schema clients (Go, Python, TS). Idempotent.
 	@echo ">> Go structs from JSON schema"
 	go run github.com/atombender/go-jsonschema@$(GO_JSONSCHEMA_VERSION) \
 		-p schema --output $(GEN_GO)/schema/workflow.go $(SCHEMA)
-	@echo ">> codegen complete — packages/sdk/gen/ is up to date"
+	@echo ">> sync TS clients into the dashboard"
+	rm -rf apps/dashboard/src/gen
+	mkdir -p apps/dashboard/src/gen
+	cp -R packages/sdk/gen/ts/harnessflow/* apps/dashboard/src/gen/
+	@echo ">> codegen complete — packages/sdk/gen/ + apps/dashboard/src/gen/ in sync"
 
 sqlc: ## Regenerate sqlc bindings for apps/api.
 	cd apps/api && sqlc generate

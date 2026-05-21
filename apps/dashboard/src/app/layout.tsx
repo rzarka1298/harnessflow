@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +30,34 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>
+          <header className="border-b border-gray-200 dark:border-gray-800">
+            <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-4">
+              <Link href="/" className="font-semibold tracking-tight">
+                HarnessFlow
+              </Link>
+              <nav className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <Link href="/workflows" className="hover:text-gray-900 dark:hover:text-gray-100">
+                  Workflows
+                </Link>
+                <Link href="/runs" className="hover:text-gray-900 dark:hover:text-gray-100">
+                  Runs
+                </Link>
+                <a
+                  href="http://localhost:16686"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-gray-900 dark:hover:text-gray-100"
+                >
+                  Jaeger ↗
+                </a>
+              </nav>
+            </div>
+          </header>
+          <div className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</div>
+        </Providers>
+      </body>
     </html>
   );
 }

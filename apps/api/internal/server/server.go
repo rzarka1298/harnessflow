@@ -47,7 +47,29 @@ func New(log *slog.Logger, svc Services, interceptor connect.Interceptor) http.H
 	runPath, runHandler := runv1connect.NewRunServiceHandler(svc.Run, opts...)
 	mux.Handle(runPath, runHandler)
 
-	return logMiddleware(log, mux)
+	return logMiddleware(log, corsMiddleware(mux))
+}
+
+// corsMiddleware lets the browser dashboard (typically http://localhost:3000)
+// call the API at http://localhost:8080 in dev. Connect uses a small set of
+// custom headers (Connect-Protocol-Version, Connect-Timeout-Ms,
+// Content-Encoding) plus the standard Content-Type. Production deployments
+// should override this with a stricter allowlist via an env-driven config.
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set(
+			"Access-Control-Allow-Headers",
+			"Content-Type, Connect-Protocol-Version, Connect-Timeout-Ms, X-User-Agent",
+		)
+		w.Header().Set("Access-Control-Expose-Headers", "Content-Encoding, Vary")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func healthz(w http.ResponseWriter, _ *http.Request) {

@@ -1,0 +1,12 @@
+{
+  "name": "@harnessflow/sdk",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./*": "./*.ts"
+  },
+  "peerDependencies": {
+    "@bufbuild/protobuf": "^2.0.0",
+    "@connectrpc/connect": "^2.0.0"
+  }
+}
