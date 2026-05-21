@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-20 (Week 3 complete)_
+_Last updated: 2026-05-21 (Week 4 complete — `v0.1.0-thin-slice` shipped)_
 
 ## DONE
 
@@ -23,21 +23,32 @@ _Last updated: 2026-05-20 (Week 3 complete)_
 | 2026-05-19 | **Week 2, commit 3/3** — Connect handlers + OTel: WorkflowService + RunService backed by Postgres + Temporal; OTLP/gRPC tracer init; Connect + Temporal OTel interceptors. End-to-end demo verified: POST workflow → POST run → Temporal `COMPLETED` → 1+1 Postgres rows → **single 16-span Jaeger trace** spanning Connect RPC → Temporal client → workflow → each activity start+run. | d54280d |
 | 2026-05-20 | **Week 3, commit 1/3** — In-house `LLMClient` (~300 LOC with provider classes; ~120 LOC routing brain) with OpenAI / Anthropic / Mock providers, YAML-declared fallback graph, OTel GenAI semconv spans, pinned price table, build_default_client env factory. 9 unit tests cover routing, fallback walk, cost accounting, mock determinism. | (branch) |
 | 2026-05-20 | **Week 3, commit 2/3** — Python worker bootstrap: OTel SDK init (mirrors api side) + asyncpg pool + Pydantic types wire-compatible with Go ActivityInput/Result. Worker connects to Temporal with pydantic_data_converter + TracingInterceptor. | (branch) |
-| 2026-05-20 | **Week 3, commit 3/3** — Real activities (`llm_call`, `retrieve` stub, `tool_call` stub, `verify` LLM-as-judge) + idempotent step persistence (UUIDv5-keyed); Go-side stub activities removed (Workflow stays in Go). End-to-end demo: single-LLM-step YAML → Temporal COMPLETED → workflow_steps row with tokens/cost → **8-span Jaeger trace spanning BOTH `harnessflow-api` and `harnessflow-worker`** — Connect RPC → StartWorkflow → RunWorkflow → StartActivity → RunActivity (Python) → llm.mock.complete. | _pending branch merge_ |
+| 2026-05-20 | **Week 3, commit 3/3** — Real activities (`llm_call`, `retrieve` stub, `tool_call` stub, `verify` LLM-as-judge) + idempotent step persistence (UUIDv5-keyed); Go-side stub activities removed (Workflow stays in Go). End-to-end demo: single-LLM-step YAML → Temporal COMPLETED → workflow_steps row with tokens/cost → **8-span Jaeger trace spanning BOTH `harnessflow-api` and `harnessflow-worker`** — Connect RPC → StartWorkflow → RunWorkflow → StartActivity → RunActivity (Python) → llm.mock.complete. | 19e9924 |
+| 2026-05-21 | **Week 4, commit 1/3** — Research-assistant YAML (planner→retriever→executor→verifier) + 20-doc ChromaDB corpus + real ChromaDB-backed `retrieve` activity. Fixed Go-side `LocalActivityWorkerOnly: true` so the api stops racing the python worker for activity tasks. | (branch) |
+| 2026-05-21 | **Week 4, commit 2/3** — Dashboard MVP: `/workflows`, `/workflows/[id]` (React Flow DAG via dagre), `/runs`, `/runs/[id]` (steps + tokens/cost + Jaeger deep-link). Connect-Web client over the protobuf-es v2 service descriptors; TanStack Query with 2s polling on in-progress runs. CORS middleware on the api. `make proto` syncs `packages/sdk/gen/ts` → `apps/dashboard/src/gen` (Turbopack rejects symlinks outside the project root). | (branch) |
+| 2026-05-21 | **Week 4, commit 3/3** — `scripts/demo.sh` + `make demo`. Verified: 4 steps complete with real ChromaDB retrieval (retriever ~260ms), browser-origin CORS preflight returns 204, dashboard build clean. **Tagged `v0.1.0-thin-slice`.** | _pending branch merge_ |
 
 ## IN FLIGHT
 
-**Branch:** `feat/worker-llm-client` — 3 commits, about to merge to `main`. **Completes Week 3.**
+**Branch:** `feat/week4-thin-slice` — 3 commits, about to merge to `main` and tag `v0.1.0-thin-slice`. **Completes Week 4 — thin-slice milestone.**
 
-**Current task:** merge to `main`, push.
+**Current task:** merge + tag + push.
 
-**Next file to touch:** `apps/dashboard/src/app/workflows/page.tsx` — start of Week 4 (research-assistant demo workflow + dashboard MVP + thin-slice milestone `v0.1.0-thin-slice`).
+**Next file to touch:** `apps/api/internal/server/workflowservice.go` — start of Week 5 (deepen observability: per-step trace correlation hardening, GenAI semconv audit, Prometheus metrics, Grafana dashboard JSON, dashboard live-run animation).
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 4, demo workflow**: write `packages/examples/workflows/research-assistant.yaml` (planner → retriever → executor → verifier with branch + approval gate), seed `apps/worker/.../retrieval/chroma.py` with ~50 docs (Anthropic + Temporal + OTel content). Wire the real retriever activity.
-2. **Week 4, dashboard MVP**: `/workflows` (list + create from YAML), `/workflows/[id]` (YAML viewer + DAG via React Flow + run button), `/runs/[id]` (steps + token/cost/latency, Jaeger deep-link). Connect-ES generated client wired.
-3. **Week 4, milestone**: `make demo` runs research-assistant end-to-end, dashboard renders it, tag `v0.1.0-thin-slice`, record 2-minute Loom.
+1. **Week 5, Prometheus metrics** — `harnessflow_workflow_runs_total`, `_duration_seconds`, `_llm_tokens_total`, `_llm_cost_usd_total` from both api and worker; verify scrape targets up in Prometheus.
+2. **Week 5, Grafana dashboard JSON** at `infrastructure/grafana/dashboards/harnessflow.json` — workflow runs by status, p50/p95 duration, LLM tokens + cost by model (stacked), activity retry rate. Provisioned automatically by docker-compose.
+3. **Week 5, run-status completion path** — close out the Week-2 known gap: the workflow's terminal status (`completed`/`failed`) should be written back to `workflow_runs.status` via a final persistence activity so the dashboard shows truthful run state without polling Temporal.
+
+## Setting real LLM keys
+
+Without keys the demo runs on `MockProvider`. To swap in real models, create `.env` from `.env.example`, set `OPENAI_API_KEY` and/or `ANTHROPIC_API_KEY`, and re-run `make demo`.
+
+## Releases
+
+- `v0.1.0-thin-slice` — end-to-end research-assistant runs across Go API + Python worker + ChromaDB + dashboard, single OTel trace, all step rows persisted.
 
 ## Setting real LLM keys
 

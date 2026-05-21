@@ -4,13 +4,19 @@
 
 **Responsibility:** UI for inspecting workflows, runs, traces, and evals. Same Connect services as the Go backend, via Connect-ES.
 
-## Current state (2026-05-15)
+## Current state (2026-05-21) — Week 4 MVP shipped
 
-Week 1 skeleton only. `apps/dashboard` scaffolded via `create-next-app` — Next.js **16.2.6** (App Router, src dir, `@/*` import alias), TypeScript, Tailwind v4, ESLint. Single landing page at `src/app/page.tsx`. Builds, lints clean.
+Five live routes:
 
-> **Note:** create-next-app installed Next 16, newer than the "15" named in the original plan. App Router model is unchanged. `apps/dashboard/AGENTS.md` warns that Next 16 has API breaking changes vs. older training data — consult `node_modules/next/dist/docs/` before writing dashboard code in Week 4.
+- `/` — landing with CTAs into Workflows and Runs.
+- `/workflows` — list + inline "New workflow" YAML editor backed by `WorkflowService.CreateWorkflow`.
+- `/workflows/[id]` — detail page with React Flow DAG (laid out via `dagre`), YAML viewer, and a "Run workflow" form that takes a `query` input.
+- `/runs` — list of runs with 2s polling, status badges, total-cost columns.
+- `/runs/[id]` — per-run step table (latency, in/out tokens, $-cost) with a deep-link to the Jaeger trace.
 
-Pages, RPC client (Connect-ES), React Flow DAG viewer, and TanStack Query land Week 4.
+Stack: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, `@xyflow/react` + `dagre` for the DAG, `@tanstack/react-query` for data, `@connectrpc/connect-web` + protobuf-es v2 for the RPC client. The generated TS Connect descriptors are copied into `src/gen/` by `make proto` (Turbopack disallows symlinks pointing outside the project root). Browser→API cross-origin is allowed by a permissive CORS middleware in `apps/api/internal/server/server.go`.
+
+Live run-state animation on the DAG and run-replay timeline scrubbing land Week 9.
 
 ## Pages
 

@@ -2,6 +2,17 @@
 
 **Location:** `packages/examples/workflows/research-assistant.yaml`, `apps/eval-runner/harnessflow_eval/datasets/research-assistant.jsonl`, `scripts/seed-chroma.py`.
 
+## Current state (2026-05-21) — `v0.1.0-thin-slice`
+
+The research-assistant workflow runs end-to-end. `make demo` (wrapping `scripts/demo.sh`):
+1. Seeds ChromaDB (20 hand-curated chunks from Temporal/Anthropic/OTel/HarnessFlow docs) if not yet seeded.
+2. Starts the Go API and Python worker as host processes against the docker-compose stack.
+3. Creates the workflow via `WorkflowService.CreateWorkflow`.
+4. Runs the workflow with a sample query.
+5. Waits for Temporal `COMPLETED` and prints the `workflow_steps` table plus deep-links to the dashboard (`http://localhost:3000/runs/<id>`) and Jaeger (`http://localhost:16686/trace/<id>`).
+
+All four steps (`planner`, `retriever`, `executor`, `verifier`) complete; the retriever takes ~260ms doing real all-MiniLM-L6-v2 embedding + similarity search; cost/tokens are persisted per step (LLM costs are 0 in the default mock-provider mode — set `OPENAI_API_KEY`/`ANTHROPIC_API_KEY` for real billing).
+
 The "Research Assistant" is the canonical north-star demo workflow — everything (README, dashboard seed, eval suite, Loom video, blog posts) revolves around it. ONE shared example keeps the docs consistent and demoable.
 
 ## Workflow shape

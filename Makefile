@@ -83,7 +83,7 @@ migrate-status: ## Print current migration version.
 	migrate -path $(API_MIGRATIONS) -database "$(DATABASE_URL)" version
 
 demo: ## Run the canonical research-assistant demo workflow end-to-end.
-	@echo "TODO(week-4): scripts/demo.sh"
+	bash scripts/demo.sh
 
 eval: ## Run the eval suite against the current main workflow.
 	@echo "TODO(week-7): cd apps/eval-runner && uv run harnessflow_eval --suite research-assistant"
