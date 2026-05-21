@@ -4,7 +4,7 @@ Invoked by the Go workflow (not a DSL step): once with ``running`` at the
 start, then once with ``completed`` or ``failed`` at the end. Closes the gap
 where workflow_runs.status stayed ``pending`` after Temporal completion.
 
-Run-level metric emission is layered on in the Week-5 metrics commit.
+Also emits run-level metrics (count + duration) on terminal transitions.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ import structlog
 from temporalio import activity
 
 from harnessflow_worker.activities._common import Deps
+from harnessflow_worker.metrics import record_run
 from harnessflow_worker.persistence import update_run_status
 from harnessflow_worker.types import RunStatusInput
 
@@ -29,6 +30,10 @@ def make_record_run_status(deps: Deps) -> RunStatusFn:
         duration_s = await update_run_status(
             deps.pool, in_.run_id, in_.status, error=in_.error
         )
+        # Count + time only terminal transitions — counting "running" would
+        # double every run.
+        if in_.status != "running":
+            record_run(in_.workflow_name, in_.status, duration_s)
         log.info(
             "run status recorded",
             run_id=in_.run_id,

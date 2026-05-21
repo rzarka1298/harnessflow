@@ -13,6 +13,8 @@ from temporalio import activity
 
 from harnessflow_worker.activities._common import ActivityFn, Deps, with_persistence
 from harnessflow_worker.llm import LLMRequest
+from harnessflow_worker.llm.pricing import provider_for
+from harnessflow_worker.metrics import record_llm
 from harnessflow_worker.types import ActivityInput, ActivityResult
 
 
@@ -33,6 +35,14 @@ def make_llm_call(deps: Deps) -> ActivityFn:
                     fallback_on_rate_limit=step.fallback_on_rate_limit,
                     fallback_on_5xx=step.fallback_on_5xx,
                 )
+            )
+            record_llm(
+                in_.workflow_name,
+                provider_for(rsp.model_used) or "unknown",
+                rsp.model_used,
+                rsp.input_tokens,
+                rsp.output_tokens,
+                rsp.cost_usd_cents,
             )
             return ActivityResult(
                 output=rsp.text,

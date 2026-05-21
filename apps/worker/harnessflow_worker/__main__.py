@@ -31,6 +31,7 @@ from harnessflow_worker.activities.verify import make_verify
 from harnessflow_worker.config import WorkerConfig
 from harnessflow_worker.db import new_pool
 from harnessflow_worker.llm import build_default_client
+from harnessflow_worker.metrics import setup_metrics
 from harnessflow_worker.otel import setup_otel
 
 log = structlog.get_logger()
@@ -47,6 +48,7 @@ async def _amain() -> None:
     )
 
     tracer_provider = setup_otel(cfg.otlp_endpoint, "harnessflow-worker", cfg.environment)
+    meter_provider = setup_metrics(cfg.otlp_endpoint, "harnessflow-worker", cfg.environment)
     if tracer_provider:
         log.info("otel configured", endpoint=cfg.otlp_endpoint)
 
@@ -101,6 +103,11 @@ async def _amain() -> None:
         # even when the activity that produced them was the last thing to run.
         tracer_provider.force_flush(timeout_millis=5000)
         tracer_provider.shutdown()
+    if meter_provider:
+        # Same rationale for metrics: a short demo run finishes well within the
+        # 5s export interval, so flush explicitly or the data never ships.
+        meter_provider.force_flush(timeout_millis=5000)
+        meter_provider.shutdown()
     log.info("worker stopped")
 
 

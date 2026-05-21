@@ -12,6 +12,8 @@ from temporalio import activity
 
 from harnessflow_worker.activities._common import ActivityFn, Deps, with_persistence
 from harnessflow_worker.llm import LLMRequest
+from harnessflow_worker.llm.pricing import provider_for
+from harnessflow_worker.metrics import record_llm
 from harnessflow_worker.types import ActivityInput, ActivityResult
 
 _JUDGE_MODEL = "claude-sonnet-4-6"
@@ -42,6 +44,14 @@ def make_verify(deps: Deps) -> ActivityFn:
                     max_tokens=8,
                     temperature=0.0,
                 )
+            )
+            record_llm(
+                in_.workflow_name,
+                provider_for(rsp.model_used) or "unknown",
+                rsp.model_used,
+                rsp.input_tokens,
+                rsp.output_tokens,
+                rsp.cost_usd_cents,
             )
             return ActivityResult(
                 output=rsp.text.strip(),
