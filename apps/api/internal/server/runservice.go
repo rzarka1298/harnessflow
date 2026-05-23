@@ -8,16 +8,19 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/jackc/pgx/v5"
+	"go.temporal.io/sdk/client"
 
 	runv1 "github.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/run/v1"
 	"github.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/run/v1/runv1connect"
 
 	"github.com/rzarka1298/harnessflow/apps/api/internal/store"
+	"github.com/rzarka1298/harnessflow/apps/api/internal/workflow"
 )
 
 // RunService implements runv1connect.RunServiceHandler.
 type RunService struct {
-	Queries *store.Queries
+	Queries  *store.Queries
+	Temporal client.Client
 }
 
 var _ runv1connect.RunServiceHandler = (*RunService)(nil)
@@ -91,6 +94,35 @@ func (s *RunService) ListRuns(
 		resp.NextPageToken = tokenFromOffset(offset + int32(len(rows)))
 	}
 	return connect.NewResponse(resp), nil
+}
+
+// ApproveRun releases a run paused on an approval gate by sending the approve
+// signal to its Temporal workflow.
+func (s *RunService) ApproveRun(
+	ctx context.Context,
+	req *connect.Request[runv1.ApproveRunRequest],
+) (*connect.Response[runv1.ApproveRunResponse], error) {
+	pgID, err := uuidFromString(req.Msg.GetRunId())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid run_id: %w", err))
+	}
+	run, err := s.Queries.GetRun(ctx, pgID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("run not found"))
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	// SignalWorkflow with an empty run id targets the latest run of the
+	// workflow id — correct here since each HarnessFlow run is its own
+	// Temporal workflow id.
+	if err := s.Temporal.SignalWorkflow(
+		ctx, run.TemporalWorkflowID, "", workflow.SignalApprove,
+		workflow.ApprovalSignal{ApprovedBy: "dashboard"},
+	); err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("signal: %w", err))
+	}
+	return connect.NewResponse(&runv1.ApproveRunResponse{}), nil
 }
 
 // --- pagination helpers (shared with WorkflowService) ----------------------

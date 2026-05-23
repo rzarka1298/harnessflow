@@ -125,3 +125,13 @@ class ListRunsResponse(_message.Message):
     runs: _containers.RepeatedCompositeFieldContainer[Run]
     next_page_token: str
     def __init__(self, runs: _Optional[_Iterable[_Union[Run, _Mapping]]] = ..., next_page_token: _Optional[str] = ...) -> None: ...
+
+class ApproveRunRequest(_message.Message):
+    __slots__ = ("run_id",)
+    RUN_ID_FIELD_NUMBER: _ClassVar[int]
+    run_id: str
+    def __init__(self, run_id: _Optional[str] = ...) -> None: ...
+
+class ApproveRunResponse(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...

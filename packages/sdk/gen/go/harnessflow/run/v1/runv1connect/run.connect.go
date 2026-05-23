@@ -39,6 +39,8 @@ const (
 	RunServiceGetRunProcedure = "/harnessflow.run.v1.RunService/GetRun"
 	// RunServiceListRunsProcedure is the fully-qualified name of the RunService's ListRuns RPC.
 	RunServiceListRunsProcedure = "/harnessflow.run.v1.RunService/ListRuns"
+	// RunServiceApproveRunProcedure is the fully-qualified name of the RunService's ApproveRun RPC.
+	RunServiceApproveRunProcedure = "/harnessflow.run.v1.RunService/ApproveRun"
 )
 
 // RunServiceClient is a client for the harnessflow.run.v1.RunService service.
@@ -47,6 +49,9 @@ type RunServiceClient interface {
 	GetRun(context.Context, *connect.Request[v1.GetRunRequest]) (*connect.Response[v1.GetRunResponse], error)
 	// ListRuns returns runs, newest first, paginated.
 	ListRuns(context.Context, *connect.Request[v1.ListRunsRequest]) (*connect.Response[v1.ListRunsResponse], error)
+	// ApproveRun releases a run paused on an approval gate by signaling its
+	// Temporal workflow.
+	ApproveRun(context.Context, *connect.Request[v1.ApproveRunRequest]) (*connect.Response[v1.ApproveRunResponse], error)
 }
 
 // NewRunServiceClient constructs a client for the harnessflow.run.v1.RunService service. By
@@ -72,13 +77,20 @@ func NewRunServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 			connect.WithSchema(runServiceMethods.ByName("ListRuns")),
 			connect.WithClientOptions(opts...),
 		),
+		approveRun: connect.NewClient[v1.ApproveRunRequest, v1.ApproveRunResponse](
+			httpClient,
+			baseURL+RunServiceApproveRunProcedure,
+			connect.WithSchema(runServiceMethods.ByName("ApproveRun")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // runServiceClient implements RunServiceClient.
 type runServiceClient struct {
-	getRun   *connect.Client[v1.GetRunRequest, v1.GetRunResponse]
-	listRuns *connect.Client[v1.ListRunsRequest, v1.ListRunsResponse]
+	getRun     *connect.Client[v1.GetRunRequest, v1.GetRunResponse]
+	listRuns   *connect.Client[v1.ListRunsRequest, v1.ListRunsResponse]
+	approveRun *connect.Client[v1.ApproveRunRequest, v1.ApproveRunResponse]
 }
 
 // GetRun calls harnessflow.run.v1.RunService.GetRun.
@@ -91,12 +103,20 @@ func (c *runServiceClient) ListRuns(ctx context.Context, req *connect.Request[v1
 	return c.listRuns.CallUnary(ctx, req)
 }
 
+// ApproveRun calls harnessflow.run.v1.RunService.ApproveRun.
+func (c *runServiceClient) ApproveRun(ctx context.Context, req *connect.Request[v1.ApproveRunRequest]) (*connect.Response[v1.ApproveRunResponse], error) {
+	return c.approveRun.CallUnary(ctx, req)
+}
+
 // RunServiceHandler is an implementation of the harnessflow.run.v1.RunService service.
 type RunServiceHandler interface {
 	// GetRun returns a run and its steps.
 	GetRun(context.Context, *connect.Request[v1.GetRunRequest]) (*connect.Response[v1.GetRunResponse], error)
 	// ListRuns returns runs, newest first, paginated.
 	ListRuns(context.Context, *connect.Request[v1.ListRunsRequest]) (*connect.Response[v1.ListRunsResponse], error)
+	// ApproveRun releases a run paused on an approval gate by signaling its
+	// Temporal workflow.
+	ApproveRun(context.Context, *connect.Request[v1.ApproveRunRequest]) (*connect.Response[v1.ApproveRunResponse], error)
 }
 
 // NewRunServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -118,12 +138,20 @@ func NewRunServiceHandler(svc RunServiceHandler, opts ...connect.HandlerOption) 
 		connect.WithSchema(runServiceMethods.ByName("ListRuns")),
 		connect.WithHandlerOptions(opts...),
 	)
+	runServiceApproveRunHandler := connect.NewUnaryHandler(
+		RunServiceApproveRunProcedure,
+		svc.ApproveRun,
+		connect.WithSchema(runServiceMethods.ByName("ApproveRun")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/harnessflow.run.v1.RunService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case RunServiceGetRunProcedure:
 			runServiceGetRunHandler.ServeHTTP(w, r)
 		case RunServiceListRunsProcedure:
 			runServiceListRunsHandler.ServeHTTP(w, r)
+		case RunServiceApproveRunProcedure:
+			runServiceApproveRunHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -139,4 +167,8 @@ func (UnimplementedRunServiceHandler) GetRun(context.Context, *connect.Request[v
 
 func (UnimplementedRunServiceHandler) ListRuns(context.Context, *connect.Request[v1.ListRunsRequest]) (*connect.Response[v1.ListRunsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("harnessflow.run.v1.RunService.ListRuns is not implemented"))
+}
+
+func (UnimplementedRunServiceHandler) ApproveRun(context.Context, *connect.Request[v1.ApproveRunRequest]) (*connect.Response[v1.ApproveRunResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("harnessflow.run.v1.RunService.ApproveRun is not implemented"))
 }

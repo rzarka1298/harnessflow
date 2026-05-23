@@ -24,7 +24,9 @@ Layout:
 
 **SDK contracts (Week 1 Day 4–5):** proto files in `packages/sdk/proto/harnessflow/{workflow,run,eval}/v1/` define `WorkflowService`, `RunService`, `EvalService`. The workflow YAML DSL is defined by `packages/sdk/schema/workflow.schema.json` + `packages/workflow-dsl/SPEC.md`. `make proto` generates committed Go (Connect-Go), Python, and TypeScript clients into `packages/sdk/gen/`. The generated Go is its own module, joined to `apps/api` via the repo-root `go.work`.
 
-**Open for Week 3:** the stub activities live in Go and get swapped for real Python activities. The Workflow function stays in Go.
+**Approval gates (Week 6).** A step with `requires_approval: true` pauses the workflow: `runSteps` records run status `waiting_approval`, then blocks on `workflow.GetSignalChannel(ctx, "approve").Receive(...)`. The API releases it via `RunService.ApproveRun(run_id)`, which looks up the run's `temporal_workflow_id` and calls `SignalWorkflow(..., "approve", ApprovalSignal{...})`. On signal the run flips back to `running` and proceeds. Demoed by `packages/examples/workflows/approval-demo.yaml` and the dashboard's Approve button on a paused run.
+
+**Self-healing.** Model fallback is handled in the worker's `LLMClient` (declared `fallback_on_rate_limit` / `fallback_on_5xx` graph, Week 3). Per-step retries map to a Temporal `RetryPolicy` in `activityOptionsFor` (`retry_policy.max_attempts`).
 
 ## Key files (planned)
 

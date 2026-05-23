@@ -85,10 +85,20 @@ message ListRunsResponse {
   string next_page_token = 2;
 }
 
+message ApproveRunRequest {
+  // run_id of a run paused on a human approval gate (status WAITING_APPROVAL).
+  string run_id = 1;
+}
+
+message ApproveRunResponse {}
+
 // RunService inspects workflow runs and their steps.
 service RunService {
   // GetRun returns a run and its steps.
   rpc GetRun(GetRunRequest) returns (GetRunResponse);
   // ListRuns returns runs, newest first, paginated.
   rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
+  // ApproveRun releases a run paused on an approval gate by signaling its
+  // Temporal workflow.
+  rpc ApproveRun(ApproveRunRequest) returns (ApproveRunResponse);
 }

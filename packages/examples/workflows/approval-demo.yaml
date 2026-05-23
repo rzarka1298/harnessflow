@@ -1,0 +1,28 @@
+name: approval-demo
+version: 1
+description: |
+  Demonstrates a human approval gate. The workflow plans and retrieves, then
+  PAUSES before the synthesis step until a human approves it from the dashboard
+  (or via RunService.ApproveRun). On approval it resumes and completes.
+
+steps:
+  planner:
+    type: llm_call
+    model: gpt-4o
+    prompt: "Plan how to answer: {{inputs.query}}"
+
+  retriever:
+    type: retrieve
+    source: vector-db
+    top_k: 4
+    after: [planner]
+
+  synthesis:
+    type: llm_call
+    model: gpt-4o
+    # Pause here: a human must approve before the synthesis LLM call runs.
+    requires_approval: true
+    prompt: |
+      Answer using the retrieved context:
+      {{steps.retriever.output}}
+    after: [retriever]

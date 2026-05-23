@@ -612,6 +612,87 @@ func (x *ListRunsResponse) GetNextPageToken() string {
 	return ""
 }
 
+type ApproveRunRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// run_id of a run paused on a human approval gate (status WAITING_APPROVAL).
+	RunId         string `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApproveRunRequest) Reset() {
+	*x = ApproveRunRequest{}
+	mi := &file_harnessflow_run_v1_run_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApproveRunRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApproveRunRequest) ProtoMessage() {}
+
+func (x *ApproveRunRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_harnessflow_run_v1_run_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApproveRunRequest.ProtoReflect.Descriptor instead.
+func (*ApproveRunRequest) Descriptor() ([]byte, []int) {
+	return file_harnessflow_run_v1_run_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ApproveRunRequest) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+type ApproveRunResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApproveRunResponse) Reset() {
+	*x = ApproveRunResponse{}
+	mi := &file_harnessflow_run_v1_run_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApproveRunResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApproveRunResponse) ProtoMessage() {}
+
+func (x *ApproveRunResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_harnessflow_run_v1_run_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApproveRunResponse.ProtoReflect.Descriptor instead.
+func (*ApproveRunResponse) Descriptor() ([]byte, []int) {
+	return file_harnessflow_run_v1_run_proto_rawDescGZIP(), []int{7}
+}
+
 var File_harnessflow_run_v1_run_proto protoreflect.FileDescriptor
 
 const file_harnessflow_run_v1_run_proto_rawDesc = "" +
@@ -659,7 +740,10 @@ const file_harnessflow_run_v1_run_proto_rawDesc = "" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"g\n" +
 	"\x10ListRunsResponse\x12+\n" +
 	"\x04runs\x18\x01 \x03(\v2\x17.harnessflow.run.v1.RunR\x04runs\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\xc2\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"*\n" +
+	"\x11ApproveRunRequest\x12\x15\n" +
+	"\x06run_id\x18\x01 \x01(\tR\x05runId\"\x14\n" +
+	"\x12ApproveRunResponse*\xc2\x01\n" +
 	"\tRunStatus\x12\x1a\n" +
 	"\x16RUN_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12RUN_STATUS_PENDING\x10\x01\x12\x16\n" +
@@ -675,11 +759,13 @@ const file_harnessflow_run_v1_run_proto_rawDesc = "" +
 	"\x13STEP_STATUS_RUNNING\x10\x02\x12\x19\n" +
 	"\x15STEP_STATUS_COMPLETED\x10\x03\x12\x16\n" +
 	"\x12STEP_STATUS_FAILED\x10\x04\x12\x17\n" +
-	"\x13STEP_STATUS_SKIPPED\x10\x052\xb4\x01\n" +
+	"\x13STEP_STATUS_SKIPPED\x10\x052\x91\x02\n" +
 	"\n" +
 	"RunService\x12O\n" +
 	"\x06GetRun\x12!.harnessflow.run.v1.GetRunRequest\x1a\".harnessflow.run.v1.GetRunResponse\x12U\n" +
-	"\bListRuns\x12#.harnessflow.run.v1.ListRunsRequest\x1a$.harnessflow.run.v1.ListRunsResponseB\xdc\x01\n" +
+	"\bListRuns\x12#.harnessflow.run.v1.ListRunsRequest\x1a$.harnessflow.run.v1.ListRunsResponse\x12[\n" +
+	"\n" +
+	"ApproveRun\x12%.harnessflow.run.v1.ApproveRunRequest\x1a&.harnessflow.run.v1.ApproveRunResponseB\xdc\x01\n" +
 	"\x16com.harnessflow.run.v1B\bRunProtoP\x01ZNgithub.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/run/v1;runv1\xa2\x02\x03HRX\xaa\x02\x12Harnessflow.Run.V1\xca\x02\x12Harnessflow\\Run\\V1\xe2\x02\x1eHarnessflow\\Run\\V1\\GPBMetadata\xea\x02\x14Harnessflow::Run::V1b\x06proto3"
 
 var (
@@ -695,7 +781,7 @@ func file_harnessflow_run_v1_run_proto_rawDescGZIP() []byte {
 }
 
 var file_harnessflow_run_v1_run_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_harnessflow_run_v1_run_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_harnessflow_run_v1_run_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_harnessflow_run_v1_run_proto_goTypes = []any{
 	(RunStatus)(0),                // 0: harnessflow.run.v1.RunStatus
 	(StepStatus)(0),               // 1: harnessflow.run.v1.StepStatus
@@ -705,24 +791,28 @@ var file_harnessflow_run_v1_run_proto_goTypes = []any{
 	(*GetRunResponse)(nil),        // 5: harnessflow.run.v1.GetRunResponse
 	(*ListRunsRequest)(nil),       // 6: harnessflow.run.v1.ListRunsRequest
 	(*ListRunsResponse)(nil),      // 7: harnessflow.run.v1.ListRunsResponse
-	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
+	(*ApproveRunRequest)(nil),     // 8: harnessflow.run.v1.ApproveRunRequest
+	(*ApproveRunResponse)(nil),    // 9: harnessflow.run.v1.ApproveRunResponse
+	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
 }
 var file_harnessflow_run_v1_run_proto_depIdxs = []int32{
 	1,  // 0: harnessflow.run.v1.Step.status:type_name -> harnessflow.run.v1.StepStatus
-	8,  // 1: harnessflow.run.v1.Step.started_at:type_name -> google.protobuf.Timestamp
-	8,  // 2: harnessflow.run.v1.Step.ended_at:type_name -> google.protobuf.Timestamp
+	10, // 1: harnessflow.run.v1.Step.started_at:type_name -> google.protobuf.Timestamp
+	10, // 2: harnessflow.run.v1.Step.ended_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: harnessflow.run.v1.Run.status:type_name -> harnessflow.run.v1.RunStatus
-	8,  // 4: harnessflow.run.v1.Run.started_at:type_name -> google.protobuf.Timestamp
-	8,  // 5: harnessflow.run.v1.Run.ended_at:type_name -> google.protobuf.Timestamp
+	10, // 4: harnessflow.run.v1.Run.started_at:type_name -> google.protobuf.Timestamp
+	10, // 5: harnessflow.run.v1.Run.ended_at:type_name -> google.protobuf.Timestamp
 	3,  // 6: harnessflow.run.v1.GetRunResponse.run:type_name -> harnessflow.run.v1.Run
 	2,  // 7: harnessflow.run.v1.GetRunResponse.steps:type_name -> harnessflow.run.v1.Step
 	3,  // 8: harnessflow.run.v1.ListRunsResponse.runs:type_name -> harnessflow.run.v1.Run
 	4,  // 9: harnessflow.run.v1.RunService.GetRun:input_type -> harnessflow.run.v1.GetRunRequest
 	6,  // 10: harnessflow.run.v1.RunService.ListRuns:input_type -> harnessflow.run.v1.ListRunsRequest
-	5,  // 11: harnessflow.run.v1.RunService.GetRun:output_type -> harnessflow.run.v1.GetRunResponse
-	7,  // 12: harnessflow.run.v1.RunService.ListRuns:output_type -> harnessflow.run.v1.ListRunsResponse
-	11, // [11:13] is the sub-list for method output_type
-	9,  // [9:11] is the sub-list for method input_type
+	8,  // 11: harnessflow.run.v1.RunService.ApproveRun:input_type -> harnessflow.run.v1.ApproveRunRequest
+	5,  // 12: harnessflow.run.v1.RunService.GetRun:output_type -> harnessflow.run.v1.GetRunResponse
+	7,  // 13: harnessflow.run.v1.RunService.ListRuns:output_type -> harnessflow.run.v1.ListRunsResponse
+	9,  // 14: harnessflow.run.v1.RunService.ApproveRun:output_type -> harnessflow.run.v1.ApproveRunResponse
+	12, // [12:15] is the sub-list for method output_type
+	9,  // [9:12] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -739,7 +829,7 @@ func file_harnessflow_run_v1_run_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_harnessflow_run_v1_run_proto_rawDesc), len(file_harnessflow_run_v1_run_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

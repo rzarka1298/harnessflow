@@ -57,6 +57,18 @@ func runSteps(ctx workflow.Context, in Input) (Output, error) {
 	for _, name := range in.Order {
 		step := in.Workflow.Steps[name]
 
+		// Human approval gate: pause until an approve signal arrives. The run
+		// is marked waiting_approval so the dashboard can surface an Approve
+		// button; on signal we flip back to running and proceed.
+		if step.RequiresApproval {
+			recordStatus(ctx, in, "waiting_approval", "")
+			logger.Info("waiting for approval", "step", name)
+			var sig ApprovalSignal
+			workflow.GetSignalChannel(ctx, SignalApprove).Receive(ctx, &sig)
+			logger.Info("approval received", "step", name, "approved_by", sig.ApprovedBy)
+			recordStatus(ctx, in, "running", "")
+		}
+
 		ctxStep := workflow.WithActivityOptions(ctx, activityOptionsFor(step))
 		actInput := ActivityInput{
 			RunID:        in.RunID,

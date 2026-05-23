@@ -18,6 +18,16 @@ import (
 // already-running workflows in production.
 const WorkflowName = "HarnessFlowWorkflow"
 
+// SignalApprove is the Temporal signal name that releases a workflow paused on
+// an approval gate (a step with requires_approval: true). The API sends it via
+// RunService.ApproveRun.
+const SignalApprove = "approve"
+
+// ApprovalSignal is the payload of the approve signal.
+type ApprovalSignal struct {
+	ApprovedBy string `json:"approved_by"`
+}
+
 // TaskQueue is the Temporal task queue both the API-side worker and (Week 3+)
 // the Python worker register against. Sourced from config in main.go.
 const DefaultTaskQueue = "harnessflow-tasks"

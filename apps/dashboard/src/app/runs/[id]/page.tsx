@@ -2,9 +2,12 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { runClient } from "@/lib/rpc";
+
+// Mirror of runv1.RunStatus enum values.
+const STATUS_WAITING_APPROVAL = 5;
 
 export default function RunDetailPage({
   params,
@@ -12,6 +15,7 @@ export default function RunDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const qc = useQueryClient();
 
   const detail = useQuery({
     queryKey: ["run", id],
@@ -24,12 +28,19 @@ export default function RunDetailPage({
     },
   });
 
+  const approve = useMutation({
+    mutationFn: () => runClient.approveRun({ runId: id }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["run", id] }),
+  });
+
   if (detail.isLoading) return <p className="text-sm text-gray-500">Loading…</p>;
   if (detail.isError) return <p className="text-sm text-red-600">{String(detail.error)}</p>;
 
   const run = detail.data?.run;
   const steps = detail.data?.steps ?? [];
   if (!run) return <p className="text-sm text-gray-500">Not found.</p>;
+
+  const awaitingApproval = run.status === STATUS_WAITING_APPROVAL;
 
   const totalCostUsd = Number(run.totalCostUsdCents) / 100;
   const jaegerUrl = run.traceId
@@ -50,6 +61,26 @@ export default function RunDetailPage({
           </Link>
         </div>
       </header>
+
+      {awaitingApproval && (
+        <div className="flex items-center justify-between rounded-md border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950">
+          <div className="text-sm">
+            <div className="font-medium text-amber-900 dark:text-amber-200">
+              Waiting for approval
+            </div>
+            <div className="text-amber-700 dark:text-amber-300">
+              This run is paused on an approval gate.
+            </div>
+          </div>
+          <button
+            onClick={() => approve.mutate()}
+            disabled={approve.isPending}
+            className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+          >
+            {approve.isPending ? "Approving…" : "Approve"}
+          </button>
+        </div>
+      )}
 
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Stat label="Status" value={statusLabel(run.status)} />
