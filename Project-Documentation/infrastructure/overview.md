@@ -1,6 +1,6 @@
 # Infrastructure — Overview
 
-**Locations:** `docker-compose.yml`, `infrastructure/helm/`, `infrastructure/terraform/`, `infrastructure/kubernetes/`.
+**Locations:** `docker-compose.yml` + `infrastructure/{otel,prometheus,grafana,postgres}/` exist today. `infrastructure/{helm,terraform,kubernetes}/` are **planned** (Weeks 10–12) and do not exist yet.
 
 ## Current state (2026-05-15)
 

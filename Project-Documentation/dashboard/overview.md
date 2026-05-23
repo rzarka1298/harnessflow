@@ -37,18 +37,17 @@ Live run-state animation on the DAG and run-replay timeline scrubbing land Week 
 
 ## Key technical choices
 
-- **Next.js 15 App Router.** Server Components for static reads where they help; everything live is client-side via TanStack Query.
+- **Next.js 16 App Router** (16.2.6). Server Components for static reads where they help; everything live is client-side via TanStack Query.
 - **TanStack Query** with 2s polling on in-progress runs. RSC fetch-everywhere is the wrong pattern for a real-time dashboard.
-- **Connect-ES** as the RPC client — same `.proto`-generated types as the Go server. No duplicate type definitions.
-- **React Flow + dagre** for DAG visualization. Auto-layout via `dagre` (not built into React Flow). Half-day budget to get layout right.
-- **shadcn/ui + Tailwind**. Install only the components used; no bulk import.
+- **Connect-Web + protobuf-es v2** as the RPC client — same `.proto`-generated types as the Go server. No duplicate type definitions.
+- **React Flow (`@xyflow/react`) + dagre** for DAG visualization. Auto-layout via `dagre` (not built into React Flow).
+- **Tailwind v4** for styling. (No shadcn/ui yet — the surface is small enough that hand-rolled Tailwind suffices; revisit if the component count grows.)
 - **No state library beyond TanStack Query** — Zustand/Redux would be overkill.
 
 ## Layout
 
-- Sidebar nav: Workflows, Runs, Evals, Analytics, Docs (link out)
-- Top bar: project name, environment indicator, link to GitHub repo
-- Body: route-specific content
+- Top bar nav (in `src/app/layout.tsx`): HarnessFlow home, Workflows, Runs, Jaeger (link out). Evals/Analytics nav items are added when those pages land (Weeks 7/9).
+- Body: route-specific content.
 - Dark mode supported via Tailwind `dark:` and a top-bar toggle
 
 ## TODO as we go

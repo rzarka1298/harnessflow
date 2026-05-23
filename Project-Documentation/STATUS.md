@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-21 (Week 5 complete — observability deepened)_
+_Last updated: 2026-05-22 (Week 6 complete — self-healing, approval gates, failure analysis)_
 
 ## DONE
 
@@ -29,21 +29,25 @@ _Last updated: 2026-05-21 (Week 5 complete — observability deepened)_
 | 2026-05-21 | **Week 4, commit 3/3** — `scripts/demo.sh` + `make demo`. Verified: 4 steps complete with real ChromaDB retrieval (retriever ~260ms), browser-origin CORS preflight returns 204, dashboard build clean. **Tagged `v0.1.0-thin-slice`.** | b9953da |
 | 2026-05-21 | **Week 5, commit 1/3** — Run-status completion path: `record_run_status` activity (running → completed/failed) + `update_run_status` (stamps started/ended, returns duration). Workflow brackets steps with status calls. `workflow_name` threaded into ActivityInput. Closes the Week-2 gap. Verified run row reaches `completed` with duration. | 06d19e9 |
 | 2026-05-21 | **Week 5, commit 2/3** — Worker Prometheus metrics via OTel: `harnessflow_workflow_runs_total`, `_duration_seconds`, `_llm_tokens_total`, `_llm_cost_usd_total`. Verified worker → collector → Prometheus (runs=2, tokens=1528, duration_count=2). | a5d48a2 |
-| 2026-05-21 | **Week 5, commit 3/3** — Grafana dashboard `infrastructure/grafana/dashboards/harnessflow.json` (6 panels) auto-provisioned; Prometheus datasource pinned UID. ADR-0005 marked implemented. | _pending branch merge_ |
+| 2026-05-21 | **Week 5, commit 3/3** — Grafana dashboard `infrastructure/grafana/dashboards/harnessflow.json` (6 panels) auto-provisioned; Prometheus datasource pinned UID. ADR-0005 marked implemented. | 60767b0 |
+| 2026-05-22 | **Week 6, commit 1/3** — Human approval gates: `RunService.ApproveRun` RPC; workflow pauses a `requires_approval` step on the Temporal "approve" signal (run status `waiting_approval`); dashboard Approve button; `approval-demo.yaml`. Verified pause → ApproveRun 200 → resume → completed. | 1cabf04 |
+| 2026-05-22 | **Week 6, commit 2/3** — Reproducible self-healing: `MockProvider` fault injection via `HARNESSFLOW_MOCK_FAIL_MODELS`; research-assistant with `gpt-4o` "down" falls over to `claude-sonnet-4-6` and still completes. 10 worker tests pass. | 31cebf5 |
+| 2026-05-22 | **Week 6, commit 3/3** — Failure analysis: migration 0002 (`input_preview`/`output_preview`); worker persists rendered prompt + response; proto Step + dashboard expandable step detail (error/prompt/response). Verified previews returned by GetRun. | (committed) |
+| 2026-05-22 | **Week 6, commit 4/4** — Project-Documentation sweep: refreshed evals/dashboard/infrastructure/demo overviews to match reality, added `workers/llm-client.md` + `orchestration/temporal-patterns.md`, fixed stale claims found in a docs-vs-code audit. | _pending branch merge_ |
 
 ## IN FLIGHT
 
-**Branch:** `feat/week5-observability` — 3 commits, about to merge to `main`. **Completes Week 5.**
+**Branch:** `feat/week6-self-healing` — 4 commits, about to merge to `main`. **Completes Week 6.**
 
 **Current task:** merge + push.
 
-**Next file to touch:** `apps/worker/harnessflow_worker/llm/client.py` — start of Week 6 (self-healing: model fallback on real provider errors, per-step retry policy → Temporal RetryPolicy, approval gates via Temporal signals, failure-analysis page).
+**Next file to touch:** `apps/eval-runner/pyproject.toml` — start of Week 7 (eval framework: runner + scorers + dataset + comparison UI). NOTE: `apps/eval-runner/` does not exist yet; `evals/overview.md` describes the *plan*.
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 6, model fallback demo** — exercise the LLMClient fallback graph against a real provider error (kill the OpenAI key mid-run → finishes on Anthropic). Needs real keys to demo; mock mode can simulate via an injected error.
-2. **Week 6, approval gates** — DSL `requires_approval: true` pauses the workflow on a Temporal signal; dashboard "Approve" button sends it via a new Connect RPC. Run status `waiting_approval` already modeled.
-3. **Week 6, failure-analysis page** — dashboard view for a failed step showing last error, retry history, and the prompt/response that failed.
+1. **Week 7, eval runner** — scaffold `apps/eval-runner/` (uv): load a JSONL dataset, run a workflow N times via the Temporal client, score with exact_match / llm_judge / embedding_similarity / latency / cost. Implements ADR-0006.
+2. **Week 7, dataset** — author `research-assistant.jsonl` (~30 Q&A pairs with ground truth) for the demo corpus.
+3. **Week 7, comparison UI** — `/evals` dashboard page + persistence of eval results to Postgres (`eval_results` table — needs a migration). Wire the `EvalService` proto (already defined) to a handler.
 
 ## Releases
 

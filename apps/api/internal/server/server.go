@@ -1,9 +1,7 @@
-// Package server wires the HarnessFlow API HTTP surface.
-//
-// As of Week 2 the surface is:
+// Package server wires the HarnessFlow API HTTP surface:
 //   - GET  /healthz, /readyz                                (health probes)
 //   - Connect: harnessflow.workflow.v1.WorkflowService.*
-//   - Connect: harnessflow.run.v1.RunService.*
+//   - Connect: harnessflow.run.v1.RunService.*  (incl. ApproveRun)
 //
 // We use the stdlib http.ServeMux at the routing layer because Connect
 // generates handlers that own their own URL prefixes (e.g.

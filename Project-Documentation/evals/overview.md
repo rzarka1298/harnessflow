@@ -1,6 +1,13 @@
 # Evals — Overview
 
-**Location:** `apps/eval-runner/` (Python, uv). CI gate at `.github/workflows/eval-gate.yml`.
+> **Status: NOT YET IMPLEMENTED (planned for Weeks 7–8).** This document is the
+> design/plan. As of Week 6, `apps/eval-runner/`, the `eval_results` table, the
+> `research-assistant.jsonl` dataset, the `/evals` dashboard page, and
+> `.github/workflows/eval-gate.yml` do **not** exist yet. The `EvalService`
+> proto is defined (`packages/sdk/proto/harnessflow/eval/v1/eval.proto`) but has
+> no handler. See [ADR-0006](../decisions/0006-custom-eval-runner.md).
+
+**Location (planned):** `apps/eval-runner/` (Python, uv). CI gate at `.github/workflows/eval-gate.yml`.
 
 **Responsibility:** Evaluate workflow quality, persist results, gate PRs that regress quality.
 

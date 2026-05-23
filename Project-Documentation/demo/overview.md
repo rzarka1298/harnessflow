@@ -15,6 +15,20 @@ All four steps (`planner`, `retriever`, `executor`, `verifier`) complete; the re
 
 The "Research Assistant" is the canonical north-star demo workflow — everything (README, dashboard seed, eval suite, Loom video, blog posts) revolves around it. ONE shared example keeps the docs consistent and demoable.
 
+## Example workflows on disk
+
+| File | Purpose | Demoed feature |
+| --- | --- | --- |
+| `research-assistant.yaml` | The north-star demo. planner → retriever → executor → verifier. | Full pipeline, trace, metrics, retrieval. Run `make demo`. |
+| `approval-demo.yaml` | planner → retriever → (approval gate) → synthesis. | Human approval gate (Week 6) — pauses at `waiting_approval` until Approve. |
+
+**Self-healing demo (Week 6):** run `research-assistant` with the worker started as
+`HARNESSFLOW_MOCK_FAIL_MODELS=gpt-4o .venv/bin/python -m harnessflow_worker` — `gpt-4o`
+"fails" so `planner`/`executor` fall over to `claude-sonnet-4-6` and the run still
+completes (the reproducible "kill the OpenAI key" scenario). See `workers/overview.md`.
+
+A `code-review.yaml` example (DSL-shape variety, no full impl) is planned for Week 9.
+
 ## Workflow shape
 
 ```
