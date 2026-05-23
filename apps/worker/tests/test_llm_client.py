@@ -185,4 +185,22 @@ async def test_mock_provider_is_deterministic() -> None:
     assert a.text == b.text
 
 
+@pytest.mark.asyncio
+async def test_mock_fault_injection_triggers_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    # With gpt-4o fault-injected, an all-mock client must fall over to the
+    # declared rate-limit fallback — the reproducible "kill the key" demo.
+    monkeypatch.setenv("HARNESSFLOW_MOCK_FAIL_MODELS", "gpt-4o")
+    client = LLMClient({"mock": MockProvider()})
+    rsp = await client.complete(
+        LLMRequest(
+            model="gpt-4o",
+            prompt="hi",
+            fallback_on_rate_limit="claude-sonnet-4-6",
+        )
+    )
+    assert rsp.model_used == "claude-sonnet-4-6"
+    assert rsp.fallback_used is True
+    assert "claude-sonnet-4-6" in rsp.text
+
+
 _ = Provider  # asserts the Protocol is importable

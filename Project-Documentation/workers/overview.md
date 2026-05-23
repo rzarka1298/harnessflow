@@ -4,15 +4,25 @@
 
 **Responsibility:** Long-running Python processes that register against the Temporal cluster and execute activities — the actual LLM calls, retrieval, tool execution, and verification. Workers are stateless; all durability is in Temporal.
 
-## Current state (2026-05-15)
+## Current state (2026-05-22) — through Week 6
 
-Week 1 skeleton only. `apps/worker` is a uv-managed package with:
-- `pyproject.toml` — deps: `temporalio`, `pydantic`, `structlog`; dev: `ruff`, `mypy`, `pytest`
-- `harnessflow_worker/config.py` — Pydantic `WorkerConfig` from env
-- `harnessflow_worker/__main__.py` — logs a startup banner; real Temporal worker loop lands Week 3
-- `Dockerfile` — uv-based build
+`apps/worker` is a uv-managed package. `python -m harnessflow_worker` connects to Temporal (with `pydantic_data_converter` + OTel `TracingInterceptor`), opens an asyncpg pool, builds the `LLMClient`, installs the OTel tracer + meter providers, and registers five activities.
 
-LLMClient, activities, retrieval, and OTel land Week 3. `ruff` + `mypy --strict` both pass.
+Modules:
+- `__main__.py` — bootstrap + signal-driven graceful shutdown (force_flush traces & metrics before exit).
+- `config.py` — `WorkerConfig` (Temporal, DATABASE_URL, OTLP endpoint).
+- `otel.py` / `metrics.py` — OTLP tracer + the four `harnessflow_*` metric families.
+- `llm/` — the in-house `LLMClient` (OpenAI/Anthropic/Mock, declared fallback graph, GenAI semconv spans, pinned price table). See `llm-client.md`.
+- `retrieval/` — embedded ChromaDB read path + the seeded corpus.
+- `activities/` — `llm_call`, `retrieve`, `tool_call`, `verify`, `record_run_status`. `_common.with_persistence` wraps each with timing + workflow_steps persistence.
+- `persistence.py` — step + run row writes.
+- `types.py` — Pydantic activity I/O wire-compatible with the Go side.
+
+`ruff` + `mypy --strict` + `pytest` (10 tests) all pass.
+
+### Self-healing demo (Week 6)
+
+Model fallback is in the `LLMClient`: a step's `fallback_on_rate_limit` / `fallback_on_5xx` declare backup models, and the client walks them on the matching provider error. With real keys, a 429/401 on the primary triggers it naturally. Without keys, set `HARNESSFLOW_MOCK_FAIL_MODELS=gpt-4o` on the worker — `MockProvider` then raises a simulated rate limit for `gpt-4o`, so the research-assistant workflow's `planner`/`executor` visibly fall over to `claude-sonnet-4-6` and the run still completes. This is the reproducible form of the "kill the OpenAI key mid-run" demo.
 
 ## Architecture
 

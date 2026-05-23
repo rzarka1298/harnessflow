@@ -83,14 +83,29 @@ class Provider(Protocol):
     ) -> ProviderResponse: ...
 
 
+class MockRateLimitError(Exception):
+    """Raised by MockProvider for fault-injected models. The class name contains
+    'RateLimit' so LLMClient._classify routes it through the rate-limit fallback,
+    reproducing the 'kill the OpenAI key' demo without real credentials."""
+
+
 class MockProvider:
     """Deterministic stand-in used when no provider credentials are configured.
 
     The pipeline (Go API → Temporal → Python activity → LLMClient → MockProvider
     → trace) still exercises end-to-end correctly; only the model output is fake.
+
+    Fault injection: any model listed in $HARNESSFLOW_MOCK_FAIL_MODELS
+    (comma-separated) raises MockRateLimitError, so a workflow that declares
+    fallback_on_rate_limit visibly falls over to its backup model.
     """
 
     name = "mock"
+
+    @staticmethod
+    def _fail_models() -> set[str]:
+        raw = os.getenv("HARNESSFLOW_MOCK_FAIL_MODELS", "")
+        return {m.strip() for m in raw.split(",") if m.strip()}
 
     async def complete(
         self,
@@ -101,6 +116,8 @@ class MockProvider:
         temperature: float | None,
     ) -> ProviderResponse:
         del max_tokens, temperature
+        if model in self._fail_models():
+            raise MockRateLimitError(f"simulated rate limit (429) for {model}")
         text = f"[mock {model}] {prompt[:80]}"
         return ProviderResponse(
             text=text,
