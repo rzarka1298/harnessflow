@@ -1,13 +1,26 @@
 # Evals — Overview
 
-> **Status: NOT YET IMPLEMENTED (planned for Weeks 7–8).** This document is the
-> design/plan. As of Week 6, `apps/eval-runner/`, the `eval_results` table, the
-> `research-assistant.jsonl` dataset, the `/evals` dashboard page, and
-> `.github/workflows/eval-gate.yml` do **not** exist yet. The `EvalService`
-> proto is defined (`packages/sdk/proto/harnessflow/eval/v1/eval.proto`) but has
-> no handler. See [ADR-0006](../decisions/0006-custom-eval-runner.md).
+> **Status (Week 7, partial).** The eval *runner* is built: `apps/eval-runner/`
+> exists with the three quality scorers, the `research-assistant.jsonl` dataset,
+> the httpx-based runner, markdown/JSON reporters, a CLI, and unit tests.
+> **Still pending:** persisting results to an `eval_results` table, an
+> `EvalService` handler (the proto is defined but unhandled), the `/evals`
+> dashboard page, and the CI eval-gate (`.github/workflows/eval-gate.yml`,
+> Week 8). See [ADR-0006](../decisions/0006-custom-eval-runner.md).
 
-**Location (planned):** `apps/eval-runner/` (Python, uv). CI gate at `.github/workflows/eval-gate.yml`.
+**Location:** `apps/eval-runner/` (Python, uv). CI gate (planned) at `.github/workflows/eval-gate.yml`.
+
+## Current state (2026-05-22)
+
+`uv run harnessflow-eval --workflow-id <id> --dataset research-assistant` runs
+the workflow over the dataset via the Connect HTTP API (no Temporal coupling),
+scores each case, and prints a markdown (or JSON) report. Scorers:
+`exact_match`, `embedding_similarity` (all-MiniLM cosine via ChromaDB, offline),
+`llm_judge` (reuses the worker's `LLMClient` through a uv path dependency;
+neutral 0.5 in mock mode). Latency p50/p95 and total cost come from each run's
+metrics. The aggregate `overall_score` is what the deployment gate compares
+against `requires_eval_pass.min_score`. Verified end-to-end against the live
+research-assistant workflow.
 
 **Responsibility:** Evaluate workflow quality, persist results, gate PRs that regress quality.
 

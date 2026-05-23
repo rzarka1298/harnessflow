@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-22 (Week 6 complete — self-healing, approval gates, failure analysis)_
+_Last updated: 2026-05-22 (Week 7 in progress — eval runner core landed)_
 
 ## DONE
 
@@ -32,22 +32,23 @@ _Last updated: 2026-05-22 (Week 6 complete — self-healing, approval gates, fai
 | 2026-05-21 | **Week 5, commit 3/3** — Grafana dashboard `infrastructure/grafana/dashboards/harnessflow.json` (6 panels) auto-provisioned; Prometheus datasource pinned UID. ADR-0005 marked implemented. | 60767b0 |
 | 2026-05-22 | **Week 6, commit 1/3** — Human approval gates: `RunService.ApproveRun` RPC; workflow pauses a `requires_approval` step on the Temporal "approve" signal (run status `waiting_approval`); dashboard Approve button; `approval-demo.yaml`. Verified pause → ApproveRun 200 → resume → completed. | 1cabf04 |
 | 2026-05-22 | **Week 6, commit 2/3** — Reproducible self-healing: `MockProvider` fault injection via `HARNESSFLOW_MOCK_FAIL_MODELS`; research-assistant with `gpt-4o` "down" falls over to `claude-sonnet-4-6` and still completes. 10 worker tests pass. | 31cebf5 |
-| 2026-05-22 | **Week 6, commit 3/3** — Failure analysis: migration 0002 (`input_preview`/`output_preview`); worker persists rendered prompt + response; proto Step + dashboard expandable step detail (error/prompt/response). Verified previews returned by GetRun. | (committed) |
-| 2026-05-22 | **Week 6, commit 4/4** — Project-Documentation sweep: refreshed evals/dashboard/infrastructure/demo overviews to match reality, added `workers/llm-client.md` + `orchestration/temporal-patterns.md`, fixed stale claims found in a docs-vs-code audit. | _pending branch merge_ |
+| 2026-05-22 | **Week 6, commit 3/4** — Failure analysis: migration 0002 (`input_preview`/`output_preview`); worker persists rendered prompt + response; proto Step + dashboard expandable step detail (error/prompt/response). Verified previews returned by GetRun. | 7891c80 |
+| 2026-05-22 | **Week 6, commit 4/4** — Project-Documentation sweep: refreshed evals/dashboard/infrastructure/demo overviews to match reality, added `workers/llm-client.md` + `orchestration/temporal-patterns.md`, fixed stale claims found in a docs-vs-code audit. | 7891c80 |
+| 2026-05-22 | **Week 7, commit 1/?** — Eval runner core: `apps/eval-runner/` (uv) with `exact_match`/`embedding_similarity`/`llm_judge` scorers, `research-assistant.jsonl` (10 cases), httpx Connect-API runner, report aggregation + markdown/JSON reporters, CLI, 5 unit tests. Reuses worker `LLMClient` via uv path dep (+ added `py.typed` to worker). Verified live: 3 cases scored → markdown report (overall 0.188 in mock mode). | _pending branch merge_ |
 
 ## IN FLIGHT
 
-**Branch:** `feat/week6-self-healing` — 4 commits, about to merge to `main`. **Completes Week 6.**
+**Branch:** `feat/week7-eval-runner` — 1 commit so far. Week 7 in progress.
 
-**Current task:** merge + push.
+**Current task:** merge commit 1; then build eval persistence + `/evals` page (commit 2) and the CI eval-gate (Week 8).
 
-**Next file to touch:** `apps/eval-runner/pyproject.toml` — start of Week 7 (eval framework: runner + scorers + dataset + comparison UI). NOTE: `apps/eval-runner/` does not exist yet; `evals/overview.md` describes the *plan*.
+**Next file to touch:** `apps/api/migrations/0003_eval_results.up.sql` — eval results persistence.
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 7, eval runner** — scaffold `apps/eval-runner/` (uv): load a JSONL dataset, run a workflow N times via the Temporal client, score with exact_match / llm_judge / embedding_similarity / latency / cost. Implements ADR-0006.
-2. **Week 7, dataset** — author `research-assistant.jsonl` (~30 Q&A pairs with ground truth) for the demo corpus.
-3. **Week 7, comparison UI** — `/evals` dashboard page + persistence of eval results to Postgres (`eval_results` table — needs a migration). Wire the `EvalService` proto (already defined) to a handler.
+1. **Week 7, eval persistence + EvalService** — `eval_results` (+ `eval_result_cases`) migration; implement the `EvalService` handler (RunEval/GetEvalRun/ListEvalRuns) so eval runs are stored and queryable; have the eval-runner POST results (or the API drive eval runs).
+2. **Week 7, `/evals` dashboard page** — list eval runs + a two-run comparison table.
+3. **Week 8, CI eval-gate** — `.github/workflows/eval-gate.yml`: on a PR that changes `packages/examples/workflows/*.yaml`, run the suite vs main, post the markdown comparison, block on regression. The `render_markdown(report, baseline)` diff path already exists.
 
 ## Releases
 

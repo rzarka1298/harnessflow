@@ -1,0 +1,52 @@
+[project]
+name = "harnessflow-eval"
+version = "0.1.0"
+description = "HarnessFlow evaluation framework — scores workflow quality and gates regressions."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "httpx>=0.27.0",
+    "pydantic>=2.10.0",
+    "structlog>=24.4.0",
+    "chromadb>=0.6.0",
+    "harnessflow-worker",
+]
+
+[project.scripts]
+harnessflow-eval = "harnessflow_eval.__main__:main"
+
+[tool.uv.sources]
+# Reuse the worker's in-house LLMClient for the llm_judge scorer instead of
+# duplicating provider plumbing.
+harnessflow-worker = { path = "../worker" }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["harnessflow_eval"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["chromadb", "chromadb.*"]
+ignore_missing_imports = true
