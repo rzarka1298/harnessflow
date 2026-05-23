@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1charnessflow/run/v1/run.proto\x12\x12harnessflow.run.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbc\x03\n\x04Step\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x12\n\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n\x04type\x18\x04 \x01(\tR\x04type\x12\x36\n\x06status\x18\x05 \x01(\x0e\x32\x1e.harnessflow.run.v1.StepStatusR\x06status\x12\x39\n\nstarted_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tstartedAt\x12\x35\n\x08\x65nded_at\x18\x07 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x07\x65ndedAt\x12\x1d\n\nlatency_ms\x18\x08 \x01(\x03R\tlatencyMs\x12!\n\x0cinput_tokens\x18\t \x01(\x03R\x0binputTokens\x12#\n\routput_tokens\x18\n \x01(\x03R\x0coutputTokens\x12$\n\x0e\x63ost_usd_cents\x18\x0b \x01(\x03R\x0c\x63ostUsdCents\x12\x18\n\x07\x61ttempt\x18\x0c \x01(\x05R\x07\x61ttempt\x12\x14\n\x05\x65rror\x18\r \x01(\tR\x05\x65rror\"\xf9\x02\n\x03Run\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n\x0bworkflow_id\x18\x02 \x01(\tR\nworkflowId\x12)\n\x10workflow_version\x18\x03 \x01(\x05R\x0fworkflowVersion\x12\x35\n\x06status\x18\x04 \x01(\x0e\x32\x1d.harnessflow.run.v1.RunStatusR\x06status\x12\x39\n\nstarted_at\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tstartedAt\x12\x35\n\x08\x65nded_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x07\x65ndedAt\x12/\n\x14total_cost_usd_cents\x18\x07 \x01(\x03R\x11totalCostUsdCents\x12!\n\x0ctotal_tokens\x18\x08 \x01(\x03R\x0btotalTokens\x12\x19\n\x08trace_id\x18\t \x01(\tR\x07traceId\"\x1f\n\rGetRunRequest\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\"k\n\x0eGetRunResponse\x12)\n\x03run\x18\x01 \x01(\x0b\x32\x17.harnessflow.run.v1.RunR\x03run\x12.\n\x05steps\x18\x02 \x03(\x0b\x32\x18.harnessflow.run.v1.StepR\x05steps\"n\n\x0fListRunsRequest\x12\x1f\n\x0bworkflow_id\x18\x01 \x01(\tR\nworkflowId\x12\x1b\n\tpage_size\x18\x02 \x01(\x05R\x08pageSize\x12\x1d\n\npage_token\x18\x03 \x01(\tR\tpageToken\"g\n\x10ListRunsResponse\x12+\n\x04runs\x18\x01 \x03(\x0b\x32\x17.harnessflow.run.v1.RunR\x04runs\x12&\n\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"*\n\x11\x41pproveRunRequest\x12\x15\n\x06run_id\x18\x01 \x01(\tR\x05runId\"\x14\n\x12\x41pproveRunResponse*\xc2\x01\n\tRunStatus\x12\x1a\n\x16RUN_STATUS_UNSPECIFIED\x10\x00\x12\x16\n\x12RUN_STATUS_PENDING\x10\x01\x12\x16\n\x12RUN_STATUS_RUNNING\x10\x02\x12\x18\n\x14RUN_STATUS_COMPLETED\x10\x03\x12\x15\n\x11RUN_STATUS_FAILED\x10\x04\x12\x1f\n\x1bRUN_STATUS_WAITING_APPROVAL\x10\x05\x12\x17\n\x13RUN_STATUS_CANCELED\x10\x06*\xa7\x01\n\nStepStatus\x12\x1b\n\x17STEP_STATUS_UNSPECIFIED\x10\x00\x12\x17\n\x13STEP_STATUS_PENDING\x10\x01\x12\x17\n\x13STEP_STATUS_RUNNING\x10\x02\x12\x19\n\x15STEP_STATUS_COMPLETED\x10\x03\x12\x16\n\x12STEP_STATUS_FAILED\x10\x04\x12\x17\n\x13STEP_STATUS_SKIPPED\x10\x05\x32\x91\x02\n\nRunService\x12O\n\x06GetRun\x12!.harnessflow.run.v1.GetRunRequest\x1a\".harnessflow.run.v1.GetRunResponse\x12U\n\x08ListRuns\x12#.harnessflow.run.v1.ListRunsRequest\x1a$.harnessflow.run.v1.ListRunsResponse\x12[\n\nApproveRun\x12%.harnessflow.run.v1.ApproveRunRequest\x1a&.harnessflow.run.v1.ApproveRunResponseB\xdc\x01\n\x16\x63om.harnessflow.run.v1B\x08RunProtoP\x01ZNgithub.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/run/v1;runv1\xa2\x02\x03HRX\xaa\x02\x12Harnessflow.Run.V1\xca\x02\x12Harnessflow\\Run\\V1\xe2\x02\x1eHarnessflow\\Run\\V1\\GPBMetadata\xea\x02\x14Harnessflow::Run::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1charnessflow/run/v1/run.proto\x12\x12harnessflow.run.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x88\x04\n\x04Step\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x12\n\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n\x04type\x18\x04 \x01(\tR\x04type\x12\x36\n\x06status\x18\x05 \x01(\x0e\x32\x1e.harnessflow.run.v1.StepStatusR\x06status\x12\x39\n\nstarted_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tstartedAt\x12\x35\n\x08\x65nded_at\x18\x07 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x07\x65ndedAt\x12\x1d\n\nlatency_ms\x18\x08 \x01(\x03R\tlatencyMs\x12!\n\x0cinput_tokens\x18\t \x01(\x03R\x0binputTokens\x12#\n\routput_tokens\x18\n \x01(\x03R\x0coutputTokens\x12$\n\x0e\x63ost_usd_cents\x18\x0b \x01(\x03R\x0c\x63ostUsdCents\x12\x18\n\x07\x61ttempt\x18\x0c \x01(\x05R\x07\x61ttempt\x12\x14\n\x05\x65rror\x18\r \x01(\tR\x05\x65rror\x12#\n\rinput_preview\x18\x0e \x01(\tR\x0cinputPreview\x12%\n\x0eoutput_preview\x18\x0f \x01(\tR\routputPreview\"\xf9\x02\n\x03Run\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n\x0bworkflow_id\x18\x02 \x01(\tR\nworkflowId\x12)\n\x10workflow_version\x18\x03 \x01(\x05R\x0fworkflowVersion\x12\x35\n\x06status\x18\x04 \x01(\x0e\x32\x1d.harnessflow.run.v1.RunStatusR\x06status\x12\x39\n\nstarted_at\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tstartedAt\x12\x35\n\x08\x65nded_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x07\x65ndedAt\x12/\n\x14total_cost_usd_cents\x18\x07 \x01(\x03R\x11totalCostUsdCents\x12!\n\x0ctotal_tokens\x18\x08 \x01(\x03R\x0btotalTokens\x12\x19\n\x08trace_id\x18\t \x01(\tR\x07traceId\"\x1f\n\rGetRunRequest\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\"k\n\x0eGetRunResponse\x12)\n\x03run\x18\x01 \x01(\x0b\x32\x17.harnessflow.run.v1.RunR\x03run\x12.\n\x05steps\x18\x02 \x03(\x0b\x32\x18.harnessflow.run.v1.StepR\x05steps\"n\n\x0fListRunsRequest\x12\x1f\n\x0bworkflow_id\x18\x01 \x01(\tR\nworkflowId\x12\x1b\n\tpage_size\x18\x02 \x01(\x05R\x08pageSize\x12\x1d\n\npage_token\x18\x03 \x01(\tR\tpageToken\"g\n\x10ListRunsResponse\x12+\n\x04runs\x18\x01 \x03(\x0b\x32\x17.harnessflow.run.v1.RunR\x04runs\x12&\n\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"*\n\x11\x41pproveRunRequest\x12\x15\n\x06run_id\x18\x01 \x01(\tR\x05runId\"\x14\n\x12\x41pproveRunResponse*\xc2\x01\n\tRunStatus\x12\x1a\n\x16RUN_STATUS_UNSPECIFIED\x10\x00\x12\x16\n\x12RUN_STATUS_PENDING\x10\x01\x12\x16\n\x12RUN_STATUS_RUNNING\x10\x02\x12\x18\n\x14RUN_STATUS_COMPLETED\x10\x03\x12\x15\n\x11RUN_STATUS_FAILED\x10\x04\x12\x1f\n\x1bRUN_STATUS_WAITING_APPROVAL\x10\x05\x12\x17\n\x13RUN_STATUS_CANCELED\x10\x06*\xa7\x01\n\nStepStatus\x12\x1b\n\x17STEP_STATUS_UNSPECIFIED\x10\x00\x12\x17\n\x13STEP_STATUS_PENDING\x10\x01\x12\x17\n\x13STEP_STATUS_RUNNING\x10\x02\x12\x19\n\x15STEP_STATUS_COMPLETED\x10\x03\x12\x16\n\x12STEP_STATUS_FAILED\x10\x04\x12\x17\n\x13STEP_STATUS_SKIPPED\x10\x05\x32\x91\x02\n\nRunService\x12O\n\x06GetRun\x12!.harnessflow.run.v1.GetRunRequest\x1a\".harnessflow.run.v1.GetRunResponse\x12U\n\x08ListRuns\x12#.harnessflow.run.v1.ListRunsRequest\x1a$.harnessflow.run.v1.ListRunsResponse\x12[\n\nApproveRun\x12%.harnessflow.run.v1.ApproveRunRequest\x1a&.harnessflow.run.v1.ApproveRunResponseB\xdc\x01\n\x16\x63om.harnessflow.run.v1B\x08RunProtoP\x01ZNgithub.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/run/v1;runv1\xa2\x02\x03HRX\xaa\x02\x12Harnessflow.Run.V1\xca\x02\x12Harnessflow\\Run\\V1\xe2\x02\x1eHarnessflow\\Run\\V1\\GPBMetadata\xea\x02\x14Harnessflow::Run::V1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,26 +33,26 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'harnessflow.run.v1.run_pb2'
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\026com.harnessflow.run.v1B\010RunProtoP\001ZNgithub.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/run/v1;runv1\242\002\003HRX\252\002\022Harnessflow.Run.V1\312\002\022Harnessflow\\Run\\V1\342\002\036Harnessflow\\Run\\V1\\GPBMetadata\352\002\024Harnessflow::Run::V1'
-  _globals['_RUNSTATUS']._serialized_start=1338
-  _globals['_RUNSTATUS']._serialized_end=1532
-  _globals['_STEPSTATUS']._serialized_start=1535
-  _globals['_STEPSTATUS']._serialized_end=1702
+  _globals['_RUNSTATUS']._serialized_start=1414
+  _globals['_RUNSTATUS']._serialized_end=1608
+  _globals['_STEPSTATUS']._serialized_start=1611
+  _globals['_STEPSTATUS']._serialized_end=1778
   _globals['_STEP']._serialized_start=86
-  _globals['_STEP']._serialized_end=530
-  _globals['_RUN']._serialized_start=533
-  _globals['_RUN']._serialized_end=910
-  _globals['_GETRUNREQUEST']._serialized_start=912
-  _globals['_GETRUNREQUEST']._serialized_end=943
-  _globals['_GETRUNRESPONSE']._serialized_start=945
-  _globals['_GETRUNRESPONSE']._serialized_end=1052
-  _globals['_LISTRUNSREQUEST']._serialized_start=1054
-  _globals['_LISTRUNSREQUEST']._serialized_end=1164
-  _globals['_LISTRUNSRESPONSE']._serialized_start=1166
-  _globals['_LISTRUNSRESPONSE']._serialized_end=1269
-  _globals['_APPROVERUNREQUEST']._serialized_start=1271
-  _globals['_APPROVERUNREQUEST']._serialized_end=1313
-  _globals['_APPROVERUNRESPONSE']._serialized_start=1315
-  _globals['_APPROVERUNRESPONSE']._serialized_end=1335
-  _globals['_RUNSERVICE']._serialized_start=1705
-  _globals['_RUNSERVICE']._serialized_end=1978
+  _globals['_STEP']._serialized_end=606
+  _globals['_RUN']._serialized_start=609
+  _globals['_RUN']._serialized_end=986
+  _globals['_GETRUNREQUEST']._serialized_start=988
+  _globals['_GETRUNREQUEST']._serialized_end=1019
+  _globals['_GETRUNRESPONSE']._serialized_start=1021
+  _globals['_GETRUNRESPONSE']._serialized_end=1128
+  _globals['_LISTRUNSREQUEST']._serialized_start=1130
+  _globals['_LISTRUNSREQUEST']._serialized_end=1240
+  _globals['_LISTRUNSRESPONSE']._serialized_start=1242
+  _globals['_LISTRUNSRESPONSE']._serialized_end=1345
+  _globals['_APPROVERUNREQUEST']._serialized_start=1347
+  _globals['_APPROVERUNREQUEST']._serialized_end=1389
+  _globals['_APPROVERUNRESPONSE']._serialized_start=1391
+  _globals['_APPROVERUNRESPONSE']._serialized_end=1411
+  _globals['_RUNSERVICE']._serialized_start=1781
+  _globals['_RUNSERVICE']._serialized_end=2054
 # @@protoc_insertion_point(module_scope)

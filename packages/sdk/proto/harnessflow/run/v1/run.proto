@@ -48,6 +48,11 @@ message Step {
   int32 attempt = 12;
   // error holds the failure message when status is FAILED.
   string error = 13;
+  // input_preview is a truncated view of what the step was given (e.g. the
+  // rendered LLM prompt) — for failure analysis in the dashboard.
+  string input_preview = 14;
+  // output_preview is a truncated view of the step's result.
+  string output_preview = 15;
 }
 
 // Run is a single execution of a workflow.

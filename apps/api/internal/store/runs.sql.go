@@ -53,7 +53,7 @@ func (q *Queries) CreateRun(ctx context.Context, arg CreateRunParams) (WorkflowR
 const createStep = `-- name: CreateStep :one
 INSERT INTO workflow_steps (id, run_id, name, type, status)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, run_id, name, type, status, started_at, ended_at, latency_ms, input_tokens, output_tokens, cost_usd_cents, attempt, error, created_at
+RETURNING id, run_id, name, type, status, started_at, ended_at, latency_ms, input_tokens, output_tokens, cost_usd_cents, attempt, error, created_at, input_preview, output_preview
 `
 
 type CreateStepParams struct {
@@ -88,6 +88,8 @@ func (q *Queries) CreateStep(ctx context.Context, arg CreateStepParams) (Workflo
 		&i.Attempt,
 		&i.Error,
 		&i.CreatedAt,
+		&i.InputPreview,
+		&i.OutputPreview,
 	)
 	return i, err
 }
@@ -204,7 +206,7 @@ func (q *Queries) ListRunsByWorkflow(ctx context.Context, arg ListRunsByWorkflow
 }
 
 const listStepsByRun = `-- name: ListStepsByRun :many
-SELECT id, run_id, name, type, status, started_at, ended_at, latency_ms, input_tokens, output_tokens, cost_usd_cents, attempt, error, created_at FROM workflow_steps
+SELECT id, run_id, name, type, status, started_at, ended_at, latency_ms, input_tokens, output_tokens, cost_usd_cents, attempt, error, created_at, input_preview, output_preview FROM workflow_steps
 WHERE run_id = $1
 ORDER BY created_at ASC, id ASC
 `
@@ -233,6 +235,8 @@ func (q *Queries) ListStepsByRun(ctx context.Context, runID pgtype.UUID) ([]Work
 			&i.Attempt,
 			&i.Error,
 			&i.CreatedAt,
+			&i.InputPreview,
+			&i.OutputPreview,
 		); err != nil {
 			return nil, err
 		}

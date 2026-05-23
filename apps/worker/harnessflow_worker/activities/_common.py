@@ -31,22 +31,36 @@ class Deps:
     llm: LLMClient
 
 
+# Truncation cap for persisted prompt/response previews — enough for failure
+# analysis without bloating rows.
+_PREVIEW_MAX = 4000
+
+
+def _truncate(text: str) -> str:
+    return text if len(text) <= _PREVIEW_MAX else text[:_PREVIEW_MAX] + "…[truncated]"
+
+
 async def with_persistence(
     deps: Deps,
     activity_input: ActivityInput,
     body: Callable[[], Awaitable[ActivityResult]],
+    *,
+    input_preview: str = "",
 ) -> ActivityResult:
     """Wrap an activity body with start/complete/failed persistence + timing.
 
     The body returns an ActivityResult; we time it, persist the row, and
     re-raise on exception (after marking the row failed) so Temporal's retry
-    policy still observes failure correctly.
+    policy still observes failure correctly. ``input_preview`` (e.g. the
+    rendered LLM prompt) and the result's output are stored truncated for the
+    dashboard's failure-analysis view.
     """
     step_id = await step_started(
         deps.pool,
         activity_input.run_id,
         activity_input.step_name,
         activity_input.step.type,
+        _truncate(input_preview),
     )
     start = time.monotonic()
     try:
@@ -70,6 +84,7 @@ async def with_persistence(
         input_tokens=result.input_tokens,
         output_tokens=result.output_tokens,
         cost_usd_cents=result.cost_usd_cents,
+        output_preview=_truncate(result.output),
     )
     log.info(
         "step ok",

@@ -7,9 +7,9 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/rzarka1298/harnessflow/apps/api/internal/store"
 	runv1 "github.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/run/v1"
 	workflowv1 "github.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/workflow/v1"
-	"github.com/rzarka1298/harnessflow/apps/api/internal/store"
 )
 
 func uuidToString(u pgtype.UUID) string {
@@ -111,18 +111,20 @@ func toProtoRun(r store.WorkflowRun) *runv1.Run {
 
 func toProtoStep(s store.WorkflowStep) *runv1.Step {
 	return &runv1.Step{
-		Id:           uuidToString(s.ID),
-		RunId:        uuidToString(s.RunID),
-		Name:         s.Name,
-		Type:         s.Type,
-		Status:       stepStatusToProto(s.Status),
-		StartedAt:    tsToProto(s.StartedAt),
-		EndedAt:      tsToProto(s.EndedAt),
-		LatencyMs:    s.LatencyMs,
-		InputTokens:  s.InputTokens,
-		OutputTokens: s.OutputTokens,
-		CostUsdCents: s.CostUsdCents,
-		Attempt:      s.Attempt,
-		Error:        s.Error,
+		Id:            uuidToString(s.ID),
+		RunId:         uuidToString(s.RunID),
+		Name:          s.Name,
+		Type:          s.Type,
+		Status:        stepStatusToProto(s.Status),
+		StartedAt:     tsToProto(s.StartedAt),
+		EndedAt:       tsToProto(s.EndedAt),
+		LatencyMs:     s.LatencyMs,
+		InputTokens:   s.InputTokens,
+		OutputTokens:  s.OutputTokens,
+		CostUsdCents:  s.CostUsdCents,
+		Attempt:       s.Attempt,
+		Error:         s.Error,
+		InputPreview:  s.InputPreview,
+		OutputPreview: s.OutputPreview,
 	}
 }

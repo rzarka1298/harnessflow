@@ -32,15 +32,17 @@ Reply with exactly one word: PASS or FAIL. No other text."""
 def make_verify(deps: Deps) -> ActivityFn:
     @activity.defn(name="verify")
     async def verify(in_: ActivityInput) -> ActivityResult:
+        criteria = in_.step.criteria or "The output is non-empty and on-topic."
+        concatenated = "\n\n---\n\n".join(
+            r.output for r in in_.prior_outputs.values() if r.output
+        ) or "(no prior outputs)"
+        judge_prompt = _JUDGE_PROMPT.format(criteria=criteria, output=concatenated)
+
         async def body() -> ActivityResult:
-            criteria = in_.step.criteria or "The output is non-empty and on-topic."
-            concatenated = "\n\n---\n\n".join(
-                r.output for r in in_.prior_outputs.values() if r.output
-            ) or "(no prior outputs)"
             rsp = await deps.llm.complete(
                 LLMRequest(
                     model=_JUDGE_MODEL,
-                    prompt=_JUDGE_PROMPT.format(criteria=criteria, output=concatenated),
+                    prompt=judge_prompt,
                     max_tokens=8,
                     temperature=0.0,
                 )
@@ -60,6 +62,6 @@ def make_verify(deps: Deps) -> ActivityFn:
                 cost_usd_cents=rsp.cost_usd_cents,
             )
 
-        return await with_persistence(deps, in_, body)
+        return await with_persistence(deps, in_, body, input_preview=judge_prompt)
 
     return verify

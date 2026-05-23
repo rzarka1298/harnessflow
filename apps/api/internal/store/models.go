@@ -34,18 +34,20 @@ type WorkflowRun struct {
 }
 
 type WorkflowStep struct {
-	ID           pgtype.UUID        `db:"id" json:"id"`
-	RunID        pgtype.UUID        `db:"run_id" json:"run_id"`
-	Name         string             `db:"name" json:"name"`
-	Type         string             `db:"type" json:"type"`
-	Status       string             `db:"status" json:"status"`
-	StartedAt    pgtype.Timestamptz `db:"started_at" json:"started_at"`
-	EndedAt      pgtype.Timestamptz `db:"ended_at" json:"ended_at"`
-	LatencyMs    int64              `db:"latency_ms" json:"latency_ms"`
-	InputTokens  int64              `db:"input_tokens" json:"input_tokens"`
-	OutputTokens int64              `db:"output_tokens" json:"output_tokens"`
-	CostUsdCents int64              `db:"cost_usd_cents" json:"cost_usd_cents"`
-	Attempt      int32              `db:"attempt" json:"attempt"`
-	Error        string             `db:"error" json:"error"`
-	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	ID            pgtype.UUID        `db:"id" json:"id"`
+	RunID         pgtype.UUID        `db:"run_id" json:"run_id"`
+	Name          string             `db:"name" json:"name"`
+	Type          string             `db:"type" json:"type"`
+	Status        string             `db:"status" json:"status"`
+	StartedAt     pgtype.Timestamptz `db:"started_at" json:"started_at"`
+	EndedAt       pgtype.Timestamptz `db:"ended_at" json:"ended_at"`
+	LatencyMs     int64              `db:"latency_ms" json:"latency_ms"`
+	InputTokens   int64              `db:"input_tokens" json:"input_tokens"`
+	OutputTokens  int64              `db:"output_tokens" json:"output_tokens"`
+	CostUsdCents  int64              `db:"cost_usd_cents" json:"cost_usd_cents"`
+	Attempt       int32              `db:"attempt" json:"attempt"`
+	Error         string             `db:"error" json:"error"`
+	CreatedAt     pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	InputPreview  string             `db:"input_preview" json:"input_preview"`
+	OutputPreview string             `db:"output_preview" json:"output_preview"`
 }

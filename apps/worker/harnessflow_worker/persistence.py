@@ -26,24 +26,28 @@ async def step_started(
     run_id: str,
     step_name: str,
     step_type: str,
+    input_preview: str = "",
 ) -> uuid.UUID:
     """Mark step as running. Inserts on first call, resets on retry."""
     step_id = step_uuid(run_id, step_name)
     async with pool.acquire() as conn:
         await conn.execute(
             """
-            INSERT INTO workflow_steps (id, run_id, name, type, status, started_at)
-            VALUES ($1, $2, $3, $4, 'running', NOW())
+            INSERT INTO workflow_steps
+                (id, run_id, name, type, status, started_at, input_preview)
+            VALUES ($1, $2, $3, $4, 'running', NOW(), $5)
             ON CONFLICT (id) DO UPDATE
                 SET status = 'running',
                     started_at = EXCLUDED.started_at,
                     ended_at = NULL,
-                    error = ''
+                    error = '',
+                    input_preview = EXCLUDED.input_preview
             """,
             step_id,
             uuid.UUID(run_id),
             step_name,
             step_type,
+            input_preview,
         )
     return step_id
 
@@ -56,6 +60,7 @@ async def step_completed(
     input_tokens: int,
     output_tokens: int,
     cost_usd_cents: int,
+    output_preview: str = "",
 ) -> None:
     async with pool.acquire() as conn:
         await conn.execute(
@@ -66,7 +71,8 @@ async def step_completed(
                 latency_ms = $2,
                 input_tokens = $3,
                 output_tokens = $4,
-                cost_usd_cents = $5
+                cost_usd_cents = $5,
+                output_preview = $6
             WHERE id = $1
             """,
             step_id,
@@ -74,6 +80,7 @@ async def step_completed(
             input_tokens,
             output_tokens,
             cost_usd_cents,
+            output_preview,
         )
 
 

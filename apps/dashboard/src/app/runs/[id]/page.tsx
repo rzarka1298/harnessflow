@@ -102,41 +102,65 @@ export default function RunDetailPage({
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Steps</h2>
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500 dark:border-gray-800">
-              <th className="py-2">Step</th>
-              <th className="py-2">Type</th>
-              <th className="py-2">Status</th>
-              <th className="py-2 text-right">Latency</th>
-              <th className="py-2 text-right">Tokens (in/out)</th>
-              <th className="py-2 text-right">Cost</th>
-            </tr>
-          </thead>
-          <tbody>
-            {steps.map((s) => (
-              <tr key={s.id} className="border-b border-gray-100 dark:border-gray-900">
-                <td className="py-2 font-medium">{s.name}</td>
-                <td className="py-2 text-gray-500">{s.type}</td>
-                <td className="py-2">{stepStatusLabel(s.status)}</td>
-                <td className="py-2 text-right">{Number(s.latencyMs)} ms</td>
-                <td className="py-2 text-right text-gray-500">
-                  {Number(s.inputTokens)} / {Number(s.outputTokens)}
-                </td>
-                <td className="py-2 text-right">${(Number(s.costUsdCents) / 100).toFixed(4)}</td>
-              </tr>
-            ))}
-            {steps.length === 0 && (
-              <tr>
-                <td colSpan={6} className="py-3 text-sm text-gray-500">
-                  No steps yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <p className="text-xs text-gray-500">Click a step to inspect its prompt, response, and any error.</p>
+        <div className="divide-y divide-gray-100 rounded-md border border-gray-200 dark:divide-gray-900 dark:border-gray-800">
+          {steps.map((s) => (
+            <details key={s.id} className="group">
+              <summary className="flex cursor-pointer items-center gap-4 px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-900">
+                <span className="font-medium">{s.name}</span>
+                <span className="text-gray-500">{s.type}</span>
+                <span>{stepStatusLabel(s.status)}</span>
+                <span className="ml-auto text-xs text-gray-500">
+                  {Number(s.latencyMs)} ms · {Number(s.inputTokens)}/{Number(s.outputTokens)} tok · $
+                  {(Number(s.costUsdCents) / 100).toFixed(4)}
+                </span>
+              </summary>
+              <div className="space-y-3 px-4 pb-4 text-sm">
+                {s.error && (
+                  <Field label="Error" tone="error" value={s.error} />
+                )}
+                <Field label="Input (prompt)" value={s.inputPreview || "—"} />
+                <Field label="Output (response)" value={s.outputPreview || "—"} />
+              </div>
+            </details>
+          ))}
+          {steps.length === 0 && (
+            <p className="px-4 py-3 text-sm text-gray-500">No steps yet.</p>
+          )}
+        </div>
       </section>
     </main>
+  );
+}
+
+function Field({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "error";
+}) {
+  return (
+    <div>
+      <div
+        className={`mb-1 text-xs font-semibold uppercase tracking-wide ${
+          tone === "error" ? "text-red-600" : "text-gray-500"
+        }`}
+      >
+        {label}
+      </div>
+      <pre
+        className={`max-h-64 overflow-auto whitespace-pre-wrap rounded border p-3 font-mono text-xs ${
+          tone === "error"
+            ? "border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+            : "border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
+        }`}
+      >
+        {value}
+      </pre>
+    </div>
   );
 }
 

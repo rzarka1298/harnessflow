@@ -167,7 +167,12 @@ type Step struct {
 	// attempt is the retry count; 1 on first execution.
 	Attempt int32 `protobuf:"varint,12,opt,name=attempt,proto3" json:"attempt,omitempty"`
 	// error holds the failure message when status is FAILED.
-	Error         string `protobuf:"bytes,13,opt,name=error,proto3" json:"error,omitempty"`
+	Error string `protobuf:"bytes,13,opt,name=error,proto3" json:"error,omitempty"`
+	// input_preview is a truncated view of what the step was given (e.g. the
+	// rendered LLM prompt) — for failure analysis in the dashboard.
+	InputPreview string `protobuf:"bytes,14,opt,name=input_preview,json=inputPreview,proto3" json:"input_preview,omitempty"`
+	// output_preview is a truncated view of the step's result.
+	OutputPreview string `protobuf:"bytes,15,opt,name=output_preview,json=outputPreview,proto3" json:"output_preview,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -289,6 +294,20 @@ func (x *Step) GetAttempt() int32 {
 func (x *Step) GetError() string {
 	if x != nil {
 		return x.Error
+	}
+	return ""
+}
+
+func (x *Step) GetInputPreview() string {
+	if x != nil {
+		return x.InputPreview
+	}
+	return ""
+}
+
+func (x *Step) GetOutputPreview() string {
+	if x != nil {
+		return x.OutputPreview
 	}
 	return ""
 }
@@ -697,7 +716,7 @@ var File_harnessflow_run_v1_run_proto protoreflect.FileDescriptor
 
 const file_harnessflow_run_v1_run_proto_rawDesc = "" +
 	"\n" +
-	"\x1charnessflow/run/v1/run.proto\x12\x12harnessflow.run.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbc\x03\n" +
+	"\x1charnessflow/run/v1/run.proto\x12\x12harnessflow.run.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x88\x04\n" +
 	"\x04Step\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
 	"\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x12\n" +
@@ -714,7 +733,9 @@ const file_harnessflow_run_v1_run_proto_rawDesc = "" +
 	" \x01(\x03R\foutputTokens\x12$\n" +
 	"\x0ecost_usd_cents\x18\v \x01(\x03R\fcostUsdCents\x12\x18\n" +
 	"\aattempt\x18\f \x01(\x05R\aattempt\x12\x14\n" +
-	"\x05error\x18\r \x01(\tR\x05error\"\xf9\x02\n" +
+	"\x05error\x18\r \x01(\tR\x05error\x12#\n" +
+	"\rinput_preview\x18\x0e \x01(\tR\finputPreview\x12%\n" +
+	"\x0eoutput_preview\x18\x0f \x01(\tR\routputPreview\"\xf9\x02\n" +
 	"\x03Run\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vworkflow_id\x18\x02 \x01(\tR\n" +

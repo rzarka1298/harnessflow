@@ -16,6 +16,10 @@ Five live routes:
 
 Stack: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, `@xyflow/react` + `dagre` for the DAG, `@tanstack/react-query` for data, `@connectrpc/connect-web` + protobuf-es v2 for the RPC client. The generated TS Connect descriptors are copied into `src/gen/` by `make proto` (Turbopack disallows symlinks pointing outside the project root). Browser→API cross-origin is allowed by a permissive CORS middleware in `apps/api/internal/server/server.go`.
 
+**Week 6 additions:**
+- `/runs/[id]` shows an amber "Waiting for approval" banner + **Approve** button when a run is paused on an approval gate (calls `RunService.ApproveRun`).
+- Step rows are expandable (`<details>`) into a **failure-analysis** view showing the step's error (if any), input preview (the rendered LLM prompt, with retrieved context), and output preview. Backed by the `input_preview`/`output_preview` columns added in migration 0002 and persisted by the worker's `with_persistence` wrapper.
+
 Live run-state animation on the DAG and run-replay timeline scrubbing land Week 9.
 
 ## Pages

@@ -43,7 +43,7 @@ STEP_STATUS_FAILED: StepStatus
 STEP_STATUS_SKIPPED: StepStatus
 
 class Step(_message.Message):
-    __slots__ = ("id", "run_id", "name", "type", "status", "started_at", "ended_at", "latency_ms", "input_tokens", "output_tokens", "cost_usd_cents", "attempt", "error")
+    __slots__ = ("id", "run_id", "name", "type", "status", "started_at", "ended_at", "latency_ms", "input_tokens", "output_tokens", "cost_usd_cents", "attempt", "error", "input_preview", "output_preview")
     ID_FIELD_NUMBER: _ClassVar[int]
     RUN_ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
@@ -57,6 +57,8 @@ class Step(_message.Message):
     COST_USD_CENTS_FIELD_NUMBER: _ClassVar[int]
     ATTEMPT_FIELD_NUMBER: _ClassVar[int]
     ERROR_FIELD_NUMBER: _ClassVar[int]
+    INPUT_PREVIEW_FIELD_NUMBER: _ClassVar[int]
+    OUTPUT_PREVIEW_FIELD_NUMBER: _ClassVar[int]
     id: str
     run_id: str
     name: str
@@ -70,7 +72,9 @@ class Step(_message.Message):
     cost_usd_cents: int
     attempt: int
     error: str
-    def __init__(self, id: _Optional[str] = ..., run_id: _Optional[str] = ..., name: _Optional[str] = ..., type: _Optional[str] = ..., status: _Optional[_Union[StepStatus, str]] = ..., started_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., ended_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., latency_ms: _Optional[int] = ..., input_tokens: _Optional[int] = ..., output_tokens: _Optional[int] = ..., cost_usd_cents: _Optional[int] = ..., attempt: _Optional[int] = ..., error: _Optional[str] = ...) -> None: ...
+    input_preview: str
+    output_preview: str
+    def __init__(self, id: _Optional[str] = ..., run_id: _Optional[str] = ..., name: _Optional[str] = ..., type: _Optional[str] = ..., status: _Optional[_Union[StepStatus, str]] = ..., started_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., ended_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., latency_ms: _Optional[int] = ..., input_tokens: _Optional[int] = ..., output_tokens: _Optional[int] = ..., cost_usd_cents: _Optional[int] = ..., attempt: _Optional[int] = ..., error: _Optional[str] = ..., input_preview: _Optional[str] = ..., output_preview: _Optional[str] = ...) -> None: ...
 
 class Run(_message.Message):
     __slots__ = ("id", "workflow_id", "workflow_version", "status", "started_at", "ended_at", "total_cost_usd_cents", "total_tokens", "trace_id")

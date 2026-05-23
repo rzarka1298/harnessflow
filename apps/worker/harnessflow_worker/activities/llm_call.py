@@ -21,14 +21,19 @@ from harnessflow_worker.types import ActivityInput, ActivityResult
 def make_llm_call(deps: Deps) -> ActivityFn:
     @activity.defn(name="llm_call")
     async def llm_call(in_: ActivityInput) -> ActivityResult:
+        step = in_.step
+        if not step.model or not step.prompt:
+            raise ValueError("llm_call: 'model' and 'prompt' are required")
+        # Bind to non-None locals so the type narrows inside the closure, and
+        # render the prompt up front so it persists as the step's input preview
+        # even if the LLM call fails.
+        model = step.model
+        prompt = _render_prompt(step.prompt, in_.run_inputs, in_.prior_outputs)
+
         async def body() -> ActivityResult:
-            step = in_.step
-            if not step.model or not step.prompt:
-                raise ValueError("llm_call: 'model' and 'prompt' are required")
-            prompt = _render_prompt(step.prompt, in_.run_inputs, in_.prior_outputs)
             rsp = await deps.llm.complete(
                 LLMRequest(
-                    model=step.model,
+                    model=model,
                     prompt=prompt,
                     max_tokens=step.max_tokens,
                     temperature=step.temperature,
@@ -51,7 +56,7 @@ def make_llm_call(deps: Deps) -> ActivityFn:
                 cost_usd_cents=rsp.cost_usd_cents,
             )
 
-        return await with_persistence(deps, in_, body)
+        return await with_persistence(deps, in_, body, input_preview=prompt)
 
     return llm_call
 
