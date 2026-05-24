@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/eval/v1/evalv1connect"
 	"github.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/run/v1/runv1connect"
 	"github.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/workflow/v1/workflowv1connect"
 )
@@ -24,6 +25,7 @@ import (
 type Services struct {
 	Workflow workflowv1connect.WorkflowServiceHandler
 	Run      runv1connect.RunServiceHandler
+	Eval     evalv1connect.EvalServiceHandler
 }
 
 // New builds the API HTTP handler.
@@ -44,6 +46,8 @@ func New(log *slog.Logger, svc Services, interceptor connect.Interceptor) http.H
 	mux.Handle(wfPath, wfHandler)
 	runPath, runHandler := runv1connect.NewRunServiceHandler(svc.Run, opts...)
 	mux.Handle(runPath, runHandler)
+	evalPath, evalHandler := evalv1connect.NewEvalServiceHandler(svc.Eval, opts...)
+	mux.Handle(evalPath, evalHandler)
 
 	return logMiddleware(log, corsMiddleware(mux))
 }

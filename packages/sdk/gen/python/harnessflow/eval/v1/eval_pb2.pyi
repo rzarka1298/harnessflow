@@ -34,17 +34,23 @@ class ScorerScore(_message.Message):
     def __init__(self, scorer: _Optional[str] = ..., score: _Optional[float] = ..., passed: _Optional[bool] = ...) -> None: ...
 
 class EvalCaseResult(_message.Message):
-    __slots__ = ("case_id", "run_id", "scores")
+    __slots__ = ("case_id", "run_id", "scores", "output_preview", "latency_ms", "cost_usd_cents")
     CASE_ID_FIELD_NUMBER: _ClassVar[int]
     RUN_ID_FIELD_NUMBER: _ClassVar[int]
     SCORES_FIELD_NUMBER: _ClassVar[int]
+    OUTPUT_PREVIEW_FIELD_NUMBER: _ClassVar[int]
+    LATENCY_MS_FIELD_NUMBER: _ClassVar[int]
+    COST_USD_CENTS_FIELD_NUMBER: _ClassVar[int]
     case_id: str
     run_id: str
     scores: _containers.RepeatedCompositeFieldContainer[ScorerScore]
-    def __init__(self, case_id: _Optional[str] = ..., run_id: _Optional[str] = ..., scores: _Optional[_Iterable[_Union[ScorerScore, _Mapping]]] = ...) -> None: ...
+    output_preview: str
+    latency_ms: int
+    cost_usd_cents: int
+    def __init__(self, case_id: _Optional[str] = ..., run_id: _Optional[str] = ..., scores: _Optional[_Iterable[_Union[ScorerScore, _Mapping]]] = ..., output_preview: _Optional[str] = ..., latency_ms: _Optional[int] = ..., cost_usd_cents: _Optional[int] = ...) -> None: ...
 
 class EvalRun(_message.Message):
-    __slots__ = ("id", "workflow_id", "workflow_version", "dataset", "status", "created_at", "completed_at", "aggregate_scores")
+    __slots__ = ("id", "workflow_id", "workflow_version", "dataset", "status", "created_at", "completed_at", "aggregate_scores", "overall_score", "seeds_per_case", "latency_p50_ms", "latency_p95_ms", "cost_total_usd_cents")
     ID_FIELD_NUMBER: _ClassVar[int]
     WORKFLOW_ID_FIELD_NUMBER: _ClassVar[int]
     WORKFLOW_VERSION_FIELD_NUMBER: _ClassVar[int]
@@ -53,6 +59,11 @@ class EvalRun(_message.Message):
     CREATED_AT_FIELD_NUMBER: _ClassVar[int]
     COMPLETED_AT_FIELD_NUMBER: _ClassVar[int]
     AGGREGATE_SCORES_FIELD_NUMBER: _ClassVar[int]
+    OVERALL_SCORE_FIELD_NUMBER: _ClassVar[int]
+    SEEDS_PER_CASE_FIELD_NUMBER: _ClassVar[int]
+    LATENCY_P50_MS_FIELD_NUMBER: _ClassVar[int]
+    LATENCY_P95_MS_FIELD_NUMBER: _ClassVar[int]
+    COST_TOTAL_USD_CENTS_FIELD_NUMBER: _ClassVar[int]
     id: str
     workflow_id: str
     workflow_version: int
@@ -61,7 +72,12 @@ class EvalRun(_message.Message):
     created_at: _timestamp_pb2.Timestamp
     completed_at: _timestamp_pb2.Timestamp
     aggregate_scores: _containers.RepeatedCompositeFieldContainer[ScorerScore]
-    def __init__(self, id: _Optional[str] = ..., workflow_id: _Optional[str] = ..., workflow_version: _Optional[int] = ..., dataset: _Optional[str] = ..., status: _Optional[_Union[EvalStatus, str]] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., completed_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., aggregate_scores: _Optional[_Iterable[_Union[ScorerScore, _Mapping]]] = ...) -> None: ...
+    overall_score: float
+    seeds_per_case: int
+    latency_p50_ms: int
+    latency_p95_ms: int
+    cost_total_usd_cents: int
+    def __init__(self, id: _Optional[str] = ..., workflow_id: _Optional[str] = ..., workflow_version: _Optional[int] = ..., dataset: _Optional[str] = ..., status: _Optional[_Union[EvalStatus, str]] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., completed_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., aggregate_scores: _Optional[_Iterable[_Union[ScorerScore, _Mapping]]] = ..., overall_score: _Optional[float] = ..., seeds_per_case: _Optional[int] = ..., latency_p50_ms: _Optional[int] = ..., latency_p95_ms: _Optional[int] = ..., cost_total_usd_cents: _Optional[int] = ...) -> None: ...
 
 class RunEvalRequest(_message.Message):
     __slots__ = ("workflow_id", "dataset", "seeds_per_case")

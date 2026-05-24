@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1eharnessflow/eval/v1/eval.proto\x12\x13harnessflow.eval.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"S\n\x0bScorerScore\x12\x16\n\x06scorer\x18\x01 \x01(\tR\x06scorer\x12\x14\n\x05score\x18\x02 \x01(\x01R\x05score\x12\x16\n\x06passed\x18\x03 \x01(\x08R\x06passed\"z\n\x0e\x45valCaseResult\x12\x17\n\x07\x63\x61se_id\x18\x01 \x01(\tR\x06\x63\x61seId\x12\x15\n\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x38\n\x06scores\x18\x03 \x03(\x0b\x32 .harnessflow.eval.v1.ScorerScoreR\x06scores\"\xff\x02\n\x07\x45valRun\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n\x0bworkflow_id\x18\x02 \x01(\tR\nworkflowId\x12)\n\x10workflow_version\x18\x03 \x01(\x05R\x0fworkflowVersion\x12\x18\n\x07\x64\x61taset\x18\x04 \x01(\tR\x07\x64\x61taset\x12\x37\n\x06status\x18\x05 \x01(\x0e\x32\x1f.harnessflow.eval.v1.EvalStatusR\x06status\x12\x39\n\ncreated_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt\x12=\n\x0c\x63ompleted_at\x18\x07 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x0b\x63ompletedAt\x12K\n\x10\x61ggregate_scores\x18\x08 \x03(\x0b\x32 .harnessflow.eval.v1.ScorerScoreR\x0f\x61ggregateScores\"q\n\x0eRunEvalRequest\x12\x1f\n\x0bworkflow_id\x18\x01 \x01(\tR\nworkflowId\x12\x18\n\x07\x64\x61taset\x18\x02 \x01(\tR\x07\x64\x61taset\x12$\n\x0eseeds_per_case\x18\x03 \x01(\x05R\x0cseedsPerCase\"1\n\x0fRunEvalResponse\x12\x1e\n\x0b\x65val_run_id\x18\x01 \x01(\tR\tevalRunId\"#\n\x11GetEvalRunRequest\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\"\x95\x01\n\x12GetEvalRunResponse\x12\x37\n\x08\x65val_run\x18\x01 \x01(\x0b\x32\x1c.harnessflow.eval.v1.EvalRunR\x07\x65valRun\x12\x46\n\x0c\x63\x61se_results\x18\x02 \x03(\x0b\x32#.harnessflow.eval.v1.EvalCaseResultR\x0b\x63\x61seResults\"r\n\x13ListEvalRunsRequest\x12\x1f\n\x0bworkflow_id\x18\x01 \x01(\tR\nworkflowId\x12\x1b\n\tpage_size\x18\x02 \x01(\x05R\x08pageSize\x12\x1d\n\npage_token\x18\x03 \x01(\tR\tpageToken\"y\n\x14ListEvalRunsResponse\x12\x39\n\teval_runs\x18\x01 \x03(\x0b\x32\x1c.harnessflow.eval.v1.EvalRunR\x08\x65valRuns\x12&\n\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\x8e\x01\n\nEvalStatus\x12\x1b\n\x17\x45VAL_STATUS_UNSPECIFIED\x10\x00\x12\x17\n\x13\x45VAL_STATUS_PENDING\x10\x01\x12\x17\n\x13\x45VAL_STATUS_RUNNING\x10\x02\x12\x19\n\x15\x45VAL_STATUS_COMPLETED\x10\x03\x12\x16\n\x12\x45VAL_STATUS_FAILED\x10\x04\x32\xa7\x02\n\x0b\x45valService\x12T\n\x07RunEval\x12#.harnessflow.eval.v1.RunEvalRequest\x1a$.harnessflow.eval.v1.RunEvalResponse\x12]\n\nGetEvalRun\x12&.harnessflow.eval.v1.GetEvalRunRequest\x1a\'.harnessflow.eval.v1.GetEvalRunResponse\x12\x63\n\x0cListEvalRuns\x12(.harnessflow.eval.v1.ListEvalRunsRequest\x1a).harnessflow.eval.v1.ListEvalRunsResponseB\xe6\x01\n\x17\x63om.harnessflow.eval.v1B\tEvalProtoP\x01ZPgithub.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/eval/v1;evalv1\xa2\x02\x03HEX\xaa\x02\x13Harnessflow.Eval.V1\xca\x02\x14Harnessflow\\Eval_\\V1\xe2\x02 Harnessflow\\Eval_\\V1\\GPBMetadata\xea\x02\x15Harnessflow::Eval::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1eharnessflow/eval/v1/eval.proto\x12\x13harnessflow.eval.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"S\n\x0bScorerScore\x12\x16\n\x06scorer\x18\x01 \x01(\tR\x06scorer\x12\x14\n\x05score\x18\x02 \x01(\x01R\x05score\x12\x16\n\x06passed\x18\x03 \x01(\x08R\x06passed\"\xe6\x01\n\x0e\x45valCaseResult\x12\x17\n\x07\x63\x61se_id\x18\x01 \x01(\tR\x06\x63\x61seId\x12\x15\n\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x38\n\x06scores\x18\x03 \x03(\x0b\x32 .harnessflow.eval.v1.ScorerScoreR\x06scores\x12%\n\x0eoutput_preview\x18\x04 \x01(\tR\routputPreview\x12\x1d\n\nlatency_ms\x18\x05 \x01(\x03R\tlatencyMs\x12$\n\x0e\x63ost_usd_cents\x18\x06 \x01(\x03R\x0c\x63ostUsdCents\"\xc7\x04\n\x07\x45valRun\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n\x0bworkflow_id\x18\x02 \x01(\tR\nworkflowId\x12)\n\x10workflow_version\x18\x03 \x01(\x05R\x0fworkflowVersion\x12\x18\n\x07\x64\x61taset\x18\x04 \x01(\tR\x07\x64\x61taset\x12\x37\n\x06status\x18\x05 \x01(\x0e\x32\x1f.harnessflow.eval.v1.EvalStatusR\x06status\x12\x39\n\ncreated_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\tcreatedAt\x12=\n\x0c\x63ompleted_at\x18\x07 \x01(\x0b\x32\x1a.google.protobuf.TimestampR\x0b\x63ompletedAt\x12K\n\x10\x61ggregate_scores\x18\x08 \x03(\x0b\x32 .harnessflow.eval.v1.ScorerScoreR\x0f\x61ggregateScores\x12#\n\roverall_score\x18\t \x01(\x01R\x0coverallScore\x12$\n\x0eseeds_per_case\x18\n \x01(\x05R\x0cseedsPerCase\x12$\n\x0elatency_p50_ms\x18\x0b \x01(\x03R\x0clatencyP50Ms\x12$\n\x0elatency_p95_ms\x18\x0c \x01(\x03R\x0clatencyP95Ms\x12/\n\x14\x63ost_total_usd_cents\x18\r \x01(\x03R\x11\x63ostTotalUsdCents\"q\n\x0eRunEvalRequest\x12\x1f\n\x0bworkflow_id\x18\x01 \x01(\tR\nworkflowId\x12\x18\n\x07\x64\x61taset\x18\x02 \x01(\tR\x07\x64\x61taset\x12$\n\x0eseeds_per_case\x18\x03 \x01(\x05R\x0cseedsPerCase\"1\n\x0fRunEvalResponse\x12\x1e\n\x0b\x65val_run_id\x18\x01 \x01(\tR\tevalRunId\"#\n\x11GetEvalRunRequest\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\"\x95\x01\n\x12GetEvalRunResponse\x12\x37\n\x08\x65val_run\x18\x01 \x01(\x0b\x32\x1c.harnessflow.eval.v1.EvalRunR\x07\x65valRun\x12\x46\n\x0c\x63\x61se_results\x18\x02 \x03(\x0b\x32#.harnessflow.eval.v1.EvalCaseResultR\x0b\x63\x61seResults\"r\n\x13ListEvalRunsRequest\x12\x1f\n\x0bworkflow_id\x18\x01 \x01(\tR\nworkflowId\x12\x1b\n\tpage_size\x18\x02 \x01(\x05R\x08pageSize\x12\x1d\n\npage_token\x18\x03 \x01(\tR\tpageToken\"y\n\x14ListEvalRunsResponse\x12\x39\n\teval_runs\x18\x01 \x03(\x0b\x32\x1c.harnessflow.eval.v1.EvalRunR\x08\x65valRuns\x12&\n\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\x8e\x01\n\nEvalStatus\x12\x1b\n\x17\x45VAL_STATUS_UNSPECIFIED\x10\x00\x12\x17\n\x13\x45VAL_STATUS_PENDING\x10\x01\x12\x17\n\x13\x45VAL_STATUS_RUNNING\x10\x02\x12\x19\n\x15\x45VAL_STATUS_COMPLETED\x10\x03\x12\x16\n\x12\x45VAL_STATUS_FAILED\x10\x04\x32\xa7\x02\n\x0b\x45valService\x12T\n\x07RunEval\x12#.harnessflow.eval.v1.RunEvalRequest\x1a$.harnessflow.eval.v1.RunEvalResponse\x12]\n\nGetEvalRun\x12&.harnessflow.eval.v1.GetEvalRunRequest\x1a\'.harnessflow.eval.v1.GetEvalRunResponse\x12\x63\n\x0cListEvalRuns\x12(.harnessflow.eval.v1.ListEvalRunsRequest\x1a).harnessflow.eval.v1.ListEvalRunsResponseB\xe6\x01\n\x17\x63om.harnessflow.eval.v1B\tEvalProtoP\x01ZPgithub.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/eval/v1;evalv1\xa2\x02\x03HEX\xaa\x02\x13Harnessflow.Eval.V1\xca\x02\x14Harnessflow\\Eval_\\V1\xe2\x02 Harnessflow\\Eval_\\V1\\GPBMetadata\xea\x02\x15Harnessflow::Eval::V1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,26 +33,26 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'harnessflow.eval.v1.eval_pb
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\027com.harnessflow.eval.v1B\tEvalProtoP\001ZPgithub.com/rzarka1298/harnessflow/packages/sdk/gen/go/harnessflow/eval/v1;evalv1\242\002\003HEX\252\002\023Harnessflow.Eval.V1\312\002\024Harnessflow\\Eval_\\V1\342\002 Harnessflow\\Eval_\\V1\\GPBMetadata\352\002\025Harnessflow::Eval::V1'
-  _globals['_EVALSTATUS']._serialized_start=1278
-  _globals['_EVALSTATUS']._serialized_end=1420
+  _globals['_EVALSTATUS']._serialized_start=1587
+  _globals['_EVALSTATUS']._serialized_end=1729
   _globals['_SCORERSCORE']._serialized_start=88
   _globals['_SCORERSCORE']._serialized_end=171
-  _globals['_EVALCASERESULT']._serialized_start=173
-  _globals['_EVALCASERESULT']._serialized_end=295
-  _globals['_EVALRUN']._serialized_start=298
-  _globals['_EVALRUN']._serialized_end=681
-  _globals['_RUNEVALREQUEST']._serialized_start=683
-  _globals['_RUNEVALREQUEST']._serialized_end=796
-  _globals['_RUNEVALRESPONSE']._serialized_start=798
-  _globals['_RUNEVALRESPONSE']._serialized_end=847
-  _globals['_GETEVALRUNREQUEST']._serialized_start=849
-  _globals['_GETEVALRUNREQUEST']._serialized_end=884
-  _globals['_GETEVALRUNRESPONSE']._serialized_start=887
-  _globals['_GETEVALRUNRESPONSE']._serialized_end=1036
-  _globals['_LISTEVALRUNSREQUEST']._serialized_start=1038
-  _globals['_LISTEVALRUNSREQUEST']._serialized_end=1152
-  _globals['_LISTEVALRUNSRESPONSE']._serialized_start=1154
-  _globals['_LISTEVALRUNSRESPONSE']._serialized_end=1275
-  _globals['_EVALSERVICE']._serialized_start=1423
-  _globals['_EVALSERVICE']._serialized_end=1718
+  _globals['_EVALCASERESULT']._serialized_start=174
+  _globals['_EVALCASERESULT']._serialized_end=404
+  _globals['_EVALRUN']._serialized_start=407
+  _globals['_EVALRUN']._serialized_end=990
+  _globals['_RUNEVALREQUEST']._serialized_start=992
+  _globals['_RUNEVALREQUEST']._serialized_end=1105
+  _globals['_RUNEVALRESPONSE']._serialized_start=1107
+  _globals['_RUNEVALRESPONSE']._serialized_end=1156
+  _globals['_GETEVALRUNREQUEST']._serialized_start=1158
+  _globals['_GETEVALRUNREQUEST']._serialized_end=1193
+  _globals['_GETEVALRUNRESPONSE']._serialized_start=1196
+  _globals['_GETEVALRUNRESPONSE']._serialized_end=1345
+  _globals['_LISTEVALRUNSREQUEST']._serialized_start=1347
+  _globals['_LISTEVALRUNSREQUEST']._serialized_end=1461
+  _globals['_LISTEVALRUNSRESPONSE']._serialized_start=1463
+  _globals['_LISTEVALRUNSRESPONSE']._serialized_end=1584
+  _globals['_EVALSERVICE']._serialized_start=1732
+  _globals['_EVALSERVICE']._serialized_end=2027
 # @@protoc_insertion_point(module_scope)

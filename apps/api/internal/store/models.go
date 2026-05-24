@@ -8,6 +8,31 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type EvalResultCase struct {
+	ID            pgtype.UUID `db:"id" json:"id"`
+	EvalRunID     pgtype.UUID `db:"eval_run_id" json:"eval_run_id"`
+	CaseID        string      `db:"case_id" json:"case_id"`
+	Scores        []byte      `db:"scores" json:"scores"`
+	OutputPreview string      `db:"output_preview" json:"output_preview"`
+	LatencyMs     int64       `db:"latency_ms" json:"latency_ms"`
+	CostUsdCents  int64       `db:"cost_usd_cents" json:"cost_usd_cents"`
+}
+
+type EvalRun struct {
+	ID                pgtype.UUID        `db:"id" json:"id"`
+	WorkflowID        pgtype.UUID        `db:"workflow_id" json:"workflow_id"`
+	Dataset           string             `db:"dataset" json:"dataset"`
+	Status            string             `db:"status" json:"status"`
+	SeedsPerCase      int32              `db:"seeds_per_case" json:"seeds_per_case"`
+	OverallScore      float64            `db:"overall_score" json:"overall_score"`
+	AggregateScores   []byte             `db:"aggregate_scores" json:"aggregate_scores"`
+	LatencyP50Ms      int64              `db:"latency_p50_ms" json:"latency_p50_ms"`
+	LatencyP95Ms      int64              `db:"latency_p95_ms" json:"latency_p95_ms"`
+	CostTotalUsdCents int64              `db:"cost_total_usd_cents" json:"cost_total_usd_cents"`
+	CreatedAt         pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	CompletedAt       pgtype.Timestamptz `db:"completed_at" json:"completed_at"`
+}
+
 type Workflow struct {
 	ID          pgtype.UUID        `db:"id" json:"id"`
 	Name        string             `db:"name" json:"name"`

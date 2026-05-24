@@ -31,6 +31,9 @@ message EvalCaseResult {
   string case_id = 1;
   string run_id = 2;
   repeated ScorerScore scores = 3;
+  string output_preview = 4;
+  int64 latency_ms = 5;
+  int64 cost_usd_cents = 6;
 }
 
 // EvalRun is one evaluation of a workflow against a dataset.
@@ -45,6 +48,13 @@ message EvalRun {
   google.protobuf.Timestamp completed_at = 7;
   // aggregate_scores holds one ScorerScore per scorer across all cases.
   repeated ScorerScore aggregate_scores = 8;
+  // overall_score is the unweighted mean of the aggregate scores — what the
+  // deployment gate compares against requires_eval_pass.min_score.
+  double overall_score = 9;
+  int32 seeds_per_case = 10;
+  int64 latency_p50_ms = 11;
+  int64 latency_p95_ms = 12;
+  int64 cost_total_usd_cents = 13;
 }
 
 message RunEvalRequest {

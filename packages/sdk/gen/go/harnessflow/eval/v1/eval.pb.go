@@ -152,6 +152,9 @@ type EvalCaseResult struct {
 	CaseId        string                 `protobuf:"bytes,1,opt,name=case_id,json=caseId,proto3" json:"case_id,omitempty"`
 	RunId         string                 `protobuf:"bytes,2,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
 	Scores        []*ScorerScore         `protobuf:"bytes,3,rep,name=scores,proto3" json:"scores,omitempty"`
+	OutputPreview string                 `protobuf:"bytes,4,opt,name=output_preview,json=outputPreview,proto3" json:"output_preview,omitempty"`
+	LatencyMs     int64                  `protobuf:"varint,5,opt,name=latency_ms,json=latencyMs,proto3" json:"latency_ms,omitempty"`
+	CostUsdCents  int64                  `protobuf:"varint,6,opt,name=cost_usd_cents,json=costUsdCents,proto3" json:"cost_usd_cents,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -207,6 +210,27 @@ func (x *EvalCaseResult) GetScores() []*ScorerScore {
 	return nil
 }
 
+func (x *EvalCaseResult) GetOutputPreview() string {
+	if x != nil {
+		return x.OutputPreview
+	}
+	return ""
+}
+
+func (x *EvalCaseResult) GetLatencyMs() int64 {
+	if x != nil {
+		return x.LatencyMs
+	}
+	return 0
+}
+
+func (x *EvalCaseResult) GetCostUsdCents() int64 {
+	if x != nil {
+		return x.CostUsdCents
+	}
+	return 0
+}
+
 // EvalRun is one evaluation of a workflow against a dataset.
 type EvalRun struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
@@ -220,8 +244,15 @@ type EvalRun struct {
 	CompletedAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
 	// aggregate_scores holds one ScorerScore per scorer across all cases.
 	AggregateScores []*ScorerScore `protobuf:"bytes,8,rep,name=aggregate_scores,json=aggregateScores,proto3" json:"aggregate_scores,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// overall_score is the unweighted mean of the aggregate scores — what the
+	// deployment gate compares against requires_eval_pass.min_score.
+	OverallScore      float64 `protobuf:"fixed64,9,opt,name=overall_score,json=overallScore,proto3" json:"overall_score,omitempty"`
+	SeedsPerCase      int32   `protobuf:"varint,10,opt,name=seeds_per_case,json=seedsPerCase,proto3" json:"seeds_per_case,omitempty"`
+	LatencyP50Ms      int64   `protobuf:"varint,11,opt,name=latency_p50_ms,json=latencyP50Ms,proto3" json:"latency_p50_ms,omitempty"`
+	LatencyP95Ms      int64   `protobuf:"varint,12,opt,name=latency_p95_ms,json=latencyP95Ms,proto3" json:"latency_p95_ms,omitempty"`
+	CostTotalUsdCents int64   `protobuf:"varint,13,opt,name=cost_total_usd_cents,json=costTotalUsdCents,proto3" json:"cost_total_usd_cents,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *EvalRun) Reset() {
@@ -308,6 +339,41 @@ func (x *EvalRun) GetAggregateScores() []*ScorerScore {
 		return x.AggregateScores
 	}
 	return nil
+}
+
+func (x *EvalRun) GetOverallScore() float64 {
+	if x != nil {
+		return x.OverallScore
+	}
+	return 0
+}
+
+func (x *EvalRun) GetSeedsPerCase() int32 {
+	if x != nil {
+		return x.SeedsPerCase
+	}
+	return 0
+}
+
+func (x *EvalRun) GetLatencyP50Ms() int64 {
+	if x != nil {
+		return x.LatencyP50Ms
+	}
+	return 0
+}
+
+func (x *EvalRun) GetLatencyP95Ms() int64 {
+	if x != nil {
+		return x.LatencyP95Ms
+	}
+	return 0
+}
+
+func (x *EvalRun) GetCostTotalUsdCents() int64 {
+	if x != nil {
+		return x.CostTotalUsdCents
+	}
+	return 0
 }
 
 type RunEvalRequest struct {
@@ -632,11 +698,15 @@ const file_harnessflow_eval_v1_eval_proto_rawDesc = "" +
 	"\vScorerScore\x12\x16\n" +
 	"\x06scorer\x18\x01 \x01(\tR\x06scorer\x12\x14\n" +
 	"\x05score\x18\x02 \x01(\x01R\x05score\x12\x16\n" +
-	"\x06passed\x18\x03 \x01(\bR\x06passed\"z\n" +
+	"\x06passed\x18\x03 \x01(\bR\x06passed\"\xe6\x01\n" +
 	"\x0eEvalCaseResult\x12\x17\n" +
 	"\acase_id\x18\x01 \x01(\tR\x06caseId\x12\x15\n" +
 	"\x06run_id\x18\x02 \x01(\tR\x05runId\x128\n" +
-	"\x06scores\x18\x03 \x03(\v2 .harnessflow.eval.v1.ScorerScoreR\x06scores\"\xff\x02\n" +
+	"\x06scores\x18\x03 \x03(\v2 .harnessflow.eval.v1.ScorerScoreR\x06scores\x12%\n" +
+	"\x0eoutput_preview\x18\x04 \x01(\tR\routputPreview\x12\x1d\n" +
+	"\n" +
+	"latency_ms\x18\x05 \x01(\x03R\tlatencyMs\x12$\n" +
+	"\x0ecost_usd_cents\x18\x06 \x01(\x03R\fcostUsdCents\"\xc7\x04\n" +
 	"\aEvalRun\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vworkflow_id\x18\x02 \x01(\tR\n" +
@@ -647,7 +717,13 @@ const file_harnessflow_eval_v1_eval_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12=\n" +
 	"\fcompleted_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\x12K\n" +
-	"\x10aggregate_scores\x18\b \x03(\v2 .harnessflow.eval.v1.ScorerScoreR\x0faggregateScores\"q\n" +
+	"\x10aggregate_scores\x18\b \x03(\v2 .harnessflow.eval.v1.ScorerScoreR\x0faggregateScores\x12#\n" +
+	"\roverall_score\x18\t \x01(\x01R\foverallScore\x12$\n" +
+	"\x0eseeds_per_case\x18\n" +
+	" \x01(\x05R\fseedsPerCase\x12$\n" +
+	"\x0elatency_p50_ms\x18\v \x01(\x03R\flatencyP50Ms\x12$\n" +
+	"\x0elatency_p95_ms\x18\f \x01(\x03R\flatencyP95Ms\x12/\n" +
+	"\x14cost_total_usd_cents\x18\r \x01(\x03R\x11costTotalUsdCents\"q\n" +
 	"\x0eRunEvalRequest\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x12\x18\n" +

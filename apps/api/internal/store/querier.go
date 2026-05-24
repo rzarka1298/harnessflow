@@ -12,12 +12,18 @@ import (
 
 type Querier interface {
 	CountWorkflows(ctx context.Context) (int64, error)
+	CreateEvalCase(ctx context.Context, arg CreateEvalCaseParams) (EvalResultCase, error)
+	CreateEvalRun(ctx context.Context, arg CreateEvalRunParams) (EvalRun, error)
 	CreateRun(ctx context.Context, arg CreateRunParams) (WorkflowRun, error)
 	CreateStep(ctx context.Context, arg CreateStepParams) (WorkflowStep, error)
 	CreateWorkflow(ctx context.Context, arg CreateWorkflowParams) (Workflow, error)
+	GetEvalRun(ctx context.Context, id pgtype.UUID) (EvalRun, error)
 	GetLatestWorkflowVersion(ctx context.Context, name string) (Workflow, error)
 	GetRun(ctx context.Context, id pgtype.UUID) (WorkflowRun, error)
 	GetWorkflow(ctx context.Context, id pgtype.UUID) (Workflow, error)
+	ListCasesByEvalRun(ctx context.Context, evalRunID pgtype.UUID) ([]EvalResultCase, error)
+	ListEvalRuns(ctx context.Context, arg ListEvalRunsParams) ([]EvalRun, error)
+	ListEvalRunsByWorkflow(ctx context.Context, arg ListEvalRunsByWorkflowParams) ([]EvalRun, error)
 	ListRuns(ctx context.Context, arg ListRunsParams) ([]WorkflowRun, error)
 	ListRunsByWorkflow(ctx context.Context, arg ListRunsByWorkflowParams) ([]WorkflowRun, error)
 	ListStepsByRun(ctx context.Context, runID pgtype.UUID) ([]WorkflowStep, error)

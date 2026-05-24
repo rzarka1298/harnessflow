@@ -109,7 +109,8 @@ func run() error {
 			TaskQueue: cfg.TemporalTaskQueue,
 			Log:       log,
 		},
-		Run: &server.RunService{Queries: queries, Temporal: tc},
+		Run:  &server.RunService{Queries: queries, Temporal: tc},
+		Eval: &server.EvalService{Queries: queries},
 	}
 
 	srv := &http.Server{
