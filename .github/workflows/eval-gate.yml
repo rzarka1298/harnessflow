@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout (full history for baseline diff)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # ci-eval-gate.py reads `git show origin/<base>:<path>` to get the
           # baseline version of each changed YAML, so we need the base ref's
@@ -55,18 +55,20 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: apps/api/go.mod
           cache-dependency-path: apps/api/go.sum
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        # v6 — bumped from v4 because the v4 post-job hook intermittently
+        # exits 2 when the GHA cache service returns a 400 on restore.
+        uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
