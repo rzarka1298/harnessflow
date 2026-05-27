@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-27 (Week 8 — CI eval-gate live; ready to tag `v0.5.0-cicd`)_
+_Last updated: 2026-05-27 (Week 8 — CI eval-gate live and proven on a real PR; tagged `v0.5.0-cicd`; Week 9 next)_
 
 ## DONE
 
@@ -39,20 +39,23 @@ _Last updated: 2026-05-27 (Week 8 — CI eval-gate live; ready to tag `v0.5.0-ci
 | 2026-05-27 | Handoff docs refresh: STATUS + README updated for the next session. | d569be5 |
 | 2026-05-27 | **Week 7, commit 3** — `/evals` dashboard pages: list view (`/evals`) with overall score, per-scorer chips tinted by quality, p50/p95 latency, total cost; detail view (`/evals/[id]`) with stat strip + aggregate scorer chips + expandable per-case table. New `evalClient` in `src/lib/rpc.ts`; `/evals` nav link added. Verified live: `ListEvalRuns` + `GetEvalRun` 200 against the existing persisted eval, both pages SSR clean and CSR data fetch lands. | 9a1b297 |
 | 2026-05-27 | **Week 8, CI eval-gate** — `.github/workflows/eval-gate.yml` + `scripts/ci-eval-gate.py`: PRs that touch `packages/examples/workflows/*.yaml` boot the dev stack, register baseline (from `origin/<base>`) + PR YAMLs, run the eval-runner against each, post a Δ-vs-baseline markdown table via `gh pr comment`, and fail the check on any per-scorer regression beyond `--gate-max-regression` (default 0.05). Eval-runner CLI grew `--baseline-json`, `--out-json`, `--out-md`, `--gate-max-regression`; new `gate.py` module with 5 unit tests (10/10 pass). Helper bypasses the `(name, version)` UNIQUE constraint by suffixing the YAML name with a per-role short hex. Verified locally end-to-end: gate passes on identical YAMLs (Δ=0), fails (exit 1) on an inflated-baseline regression test. `make eval-gate` runs the same helper locally. | 4ba1e27 |
+| 2026-05-27 | **Week 8, smoke test + CI fixes** — PR #1 (`chore/eval-gate-smoke`) put the gate against a real PR. Substantive gate output was correct on the first run, but the `astral-sh/setup-uv@v4` post-job hook failed: first on a cache-service 400, then (after bumping to v6 + checkout/setup-go/setup-python to non-deprecated majors) on a 5-min `uv cache prune --ci` lock-timeout because the worker we start with `nohup` was still holding the uv cache lock. Added an `if: always()` "Stop background processes" step. Third run (26522036783) green; PR rebase-merged. | 416aed8 |
+| 2026-05-27 | **Tagged `v0.5.0-cicd`** — end-of-Week-8 milestone. | 416aed8 |
 
 ## IN FLIGHT
 
-**Branch:** none. `main` is at `4ba1e27` (fast-forwarded from `feat/ci-eval-gate`). Clean checkpoint. **The CI gate has not yet run against a real PR** — the first PR that touches a workflow YAML doubles as the gate's smoke test.
+**Branch:** none. `main` is at `416aed8`, tagged `v0.5.0-cicd`. Clean checkpoint.
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Tag `v0.5.0-cicd`** once the gate has run green against a real PR. The first PR that touches a workflow YAML doubles as the gate's own smoke test; if it passes, tag and push.
-2. **Week 9, run-replay + analytics** — `/runs/[id]/replay` timeline scrubber, `/analytics` cost/score trends. Pulls from existing tables; no schema changes expected.
+1. **Week 9, run-replay timeline scrubber** — `/runs/[id]/replay` page that scrubs through the run's step events in order, showing each step's transition timestamps and inputs/outputs. Backed by `workflow_steps` (already persisted); no schema changes expected.
+2. **Week 9, analytics dashboard** — `/analytics` page with cost trends and per-workflow score-over-time, backed by `workflow_runs` + `eval_runs`. Read-only aggregation queries; may add one materialized view if Postgres' on-the-fly group-bys get slow.
 3. **Week 9 polish, optional `/evals?compare=<a>&<b>`** — dashboard-side rendering of the same markdown diff the CI gate posts. Cheap follow-up; defer until somebody asks for it.
 
 ## Releases
 
 - `v0.1.0-thin-slice` — end-to-end research-assistant runs across Go API + Python worker + ChromaDB + dashboard, single OTel trace, all step rows persisted.
+- `v0.5.0-cicd` — eval framework (runner + persistence + dashboard pages) and the CI eval-gate: PRs that touch a workflow YAML get a Δ-vs-baseline markdown comment and a regression gate. Proven on PR #1.
 
 ## Setting real LLM keys
 
