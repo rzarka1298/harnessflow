@@ -60,32 +60,24 @@ _Last updated: 2026-05-27 (Week 7 — eval runner core + persistence done; `/eva
 
 Without keys the demo runs on `MockProvider` (deterministic, free). To swap in real models, create `.env` from `.env.example` and set `OPENAI_API_KEY` and/or `ANTHROPIC_API_KEY`, then re-run `make up` and the worker via `.venv/bin/python -m harnessflow_worker`.
 
-## Dev stack quick reference (observability)
-
-- Grafana `http://localhost:3000` → "HarnessFlow" dashboard (anonymous admin).
-- Prometheus `http://localhost:9090`; metric names are `harnessflow_*` (see observability/overview.md).
-- Worker metrics require the worker to be running and a few seconds to export (5s reader interval, 15s Prometheus scrape).
-
 ## Dev stack quick reference
 
 - `make up` / `make down` / `make ps` / `make logs` / `make nuke` (deletes volumes).
+- `make migrate-up` to apply DB migrations (currently through 0003_eval_results).
 - `make proto` regenerates all SDK clients; idempotent (CI enforces `git diff --exit-code`).
+- `make demo` runs the research-assistant workflow end-to-end (seeds ChromaDB, starts api+worker as host processes).
+- Run apps directly:
+  - API: `cd apps/api && go run ./cmd/api`
+  - Worker: `cd apps/worker && .venv/bin/python -m harnessflow_worker` (use `HARNESSFLOW_MOCK_FAIL_MODELS=gpt-4o` for the self-healing demo)
+  - Dashboard: `cd apps/dashboard && pnpm dev` (port 3000; conflicts with Grafana — `make down` Grafana or use 3001)
+  - Eval CLI: `uv run --directory apps/eval-runner harnessflow-eval --workflow-id <id> --dataset research-assistant`
 - UIs: Temporal `:8233`, Jaeger `:16686`, Prometheus `:9090`, Grafana `:3000`, MinIO `:9001`.
 - OTLP ingest: gRPC `localhost:4317`, HTTP `localhost:4318`. Postgres `:5432`, Redis `:6379`, Temporal gRPC `:7233`.
-- Credentials are all `harnessflow`/`harnessflow` (local dev only).
-- **Go monorepo:** two modules (`apps/api`, `packages/sdk/gen/go`) joined by the repo-root `go.work`. Build with the workspace active.
+- Credentials are `harnessflow`/`harnessflow` (local dev only).
 
-## Dev stack quick reference
+## Environment notes
 
-- `make up` / `make down` / `make ps` / `make logs` / `make nuke` (deletes volumes).
-- UIs: Temporal `:8233`, Jaeger `:16686`, Prometheus `:9090`, Grafana `:3000`, MinIO `:9001`.
-- OTLP ingest: gRPC `localhost:4317`, HTTP `localhost:4318`. Postgres `:5432`, Redis `:6379`, Temporal gRPC `:7233`.
-- Credentials are all `harnessflow`/`harnessflow` (local dev only).
-
-## Notes for next session
-
-- Resume protocol: (1) `gh auth status`, (2) `export PATH="/opt/homebrew/bin:$PATH"` then confirm `go version` / `uv --version` / `pnpm --version`, (3) read `decisions/INDEX.md`, (4) begin Day 3.
-- **Important env note:** Homebrew tools (go, terraform, helm, buf, sqlc, migrate, golangci-lint, gitleaks) live in `/opt/homebrew/bin` which is NOT on the default PATH in this shell — prefix commands with `export PATH="/opt/homebrew/bin:$PATH"`. `uv` is at `/opt/anaconda3/bin/uv`. `node`/`pnpm`/`npx` are on PATH via nvm.
-- Run apps locally: API `cd apps/api && go run ./cmd/api`; worker `cd apps/worker && uv run harnessflow-worker`; dashboard `cd apps/dashboard && pnpm dev`.
-- The `Makefile` targets are still stubs printing `TODO(week-N): ...` except `tools-check` (functional). They get filled in as code lands — `up`/`down`/`logs` next, in Day 3.
-- Dashboard is Next.js **16.2.6** (newer than the "15" named in early docs). create-next-app added `apps/dashboard/AGENTS.md` warning that Next 16 has breaking changes vs training data — heed it when writing dashboard code in Week 4.
+- **PATH:** Homebrew tools (`go`, `terraform`, `helm`, `buf`, `sqlc`, `migrate`, `golangci-lint`, `gitleaks`) live in `/opt/homebrew/bin` which is NOT on the default PATH in this shell — prefix commands with `export PATH="/opt/homebrew/bin:$PATH"`. `uv` is at `/opt/anaconda3/bin/uv`. `node`/`pnpm`/`npx` are on PATH via nvm.
+- **Go monorepo:** two modules (`apps/api`, `packages/sdk/gen/go`) joined by the repo-root `go.work`.
+- **LLM keys:** without `OPENAI_API_KEY`/`ANTHROPIC_API_KEY`, everything runs on `MockProvider` (deterministic, free). Set keys in `.env` to use real models.
+- **Next.js 16:** `apps/dashboard/AGENTS.md` warns that Next 16 has breaking changes vs older training data — consult `node_modules/next/dist/docs/` before writing dashboard code.
