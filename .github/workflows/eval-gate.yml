@@ -184,3 +184,16 @@ jobs:
         run: |
           echo "--- api log ---"; tail -200 /tmp/api.log || true
           echo "--- worker log ---"; tail -200 /tmp/worker.log || true
+
+      - name: Stop background processes
+        # The worker holds a uv lock on /home/runner/work/_temp/setup-uv-cache
+        # for its lifetime; if we leave it running, the setup-uv post-job
+        # `uv cache prune --ci` step times out at 5 min on that lock and the
+        # whole job fails after the substantive gate already passed.
+        if: always()
+        run: |
+          if [ -f /tmp/worker.pid ]; then kill "$(cat /tmp/worker.pid)" 2>/dev/null || true; fi
+          if [ -f /tmp/api.pid ]; then kill "$(cat /tmp/api.pid)" 2>/dev/null || true; fi
+          pkill -f harnessflow_worker 2>/dev/null || true
+          # Give uv a moment to release its lock before the post hooks fire.
+          sleep 2
