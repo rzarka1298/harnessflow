@@ -37,11 +37,11 @@ _Last updated: 2026-05-27 (Week 7 — `/evals` + `/evals/[id]` dashboard pages l
 | 2026-05-22 | **Week 7, commit 1** — Eval runner core: `apps/eval-runner/` (uv) with `exact_match`/`embedding_similarity`/`llm_judge` scorers, `research-assistant.jsonl` (10 cases), httpx Connect-API runner, report aggregation + markdown/JSON reporters, CLI, 5 unit tests. Reuses worker `LLMClient` via uv path dep (+ added `py.typed` to worker). Verified live. | 81d86dd |
 | 2026-05-24 | **Week 7, commit 2** — Eval persistence: migration 0003 (`eval_runs` + `eval_result_cases`, JSONB scores); eval-runner writes results to Postgres; extended `EvalRun` proto (overall_score, seeds, latency p50/p95, cost); Go `EvalService` (GetEvalRun/ListEvalRuns read; RunEval → Unimplemented). Verified: eval persisted → API serves it (overall, p50, scorers, per-case). | 26f3d18 |
 | 2026-05-27 | Handoff docs refresh: STATUS + README updated for the next session. | d569be5 |
-| 2026-05-27 | **Week 7, commit 3** — `/evals` dashboard pages: list view (`/evals`) with overall score, per-scorer chips tinted by quality, p50/p95 latency, total cost; detail view (`/evals/[id]`) with stat strip + aggregate scorer chips + expandable per-case table. New `evalClient` in `src/lib/rpc.ts`; `/evals` nav link added. Verified live: `ListEvalRuns` + `GetEvalRun` 200 against the existing persisted eval, both pages SSR clean and CSR data fetch lands. | _pending_ |
+| 2026-05-27 | **Week 7, commit 3** — `/evals` dashboard pages: list view (`/evals`) with overall score, per-scorer chips tinted by quality, p50/p95 latency, total cost; detail view (`/evals/[id]`) with stat strip + aggregate scorer chips + expandable per-case table. New `evalClient` in `src/lib/rpc.ts`; `/evals` nav link added. Verified live: `ListEvalRuns` + `GetEvalRun` 200 against the existing persisted eval, both pages SSR clean and CSR data fetch lands. | 9a1b297 |
 
 ## IN FLIGHT
 
-**Branch:** `feat/dashboard-evals-page` (commit pending). No further work in flight after that.
+**Branch:** none. `main` is at `9a1b297` (fast-forwarded from `feat/dashboard-evals-page`, branch retained on origin). Clean checkpoint.
 
 ## NEXT (top 3 from ROADMAP)
 
