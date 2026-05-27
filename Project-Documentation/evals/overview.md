@@ -1,12 +1,15 @@
 # Evals — Overview
 
-> **Status (Week 7, partial).** The eval *runner* is built: `apps/eval-runner/`
-> exists with the three quality scorers, the `research-assistant.jsonl` dataset,
-> the httpx-based runner, markdown/JSON reporters, a CLI, and unit tests.
-> **Still pending:** persisting results to an `eval_results` table, an
-> `EvalService` handler (the proto is defined but unhandled), the `/evals`
-> dashboard page, and the CI eval-gate (`.github/workflows/eval-gate.yml`,
-> Week 8). See [ADR-0006](../decisions/0006-custom-eval-runner.md).
+> **Status (Week 7, near complete).** The eval *runner* is built: `apps/eval-runner/`
+> with three quality scorers, the `research-assistant.jsonl` dataset, the
+> httpx-based runner, markdown/JSON reporters, a CLI, and unit tests. Results
+> are persisted to Postgres (`eval_runs` + `eval_result_cases`, migration 0003)
+> and served read-only by Go `EvalService` (`RunEval` is intentionally
+> `Unimplemented` — execution stays in the eval-runner / CI gate). The
+> dashboard `/evals` and `/evals/[id]` pages are live. **Still pending:** the
+> optional two-run comparison view (`/evals?compare=<a>&<b>`) and the CI
+> eval-gate (`.github/workflows/eval-gate.yml`, Week 8). See
+> [ADR-0006](../decisions/0006-custom-eval-runner.md).
 
 **Location:** `apps/eval-runner/` (Python, uv). CI gate (planned) at `.github/workflows/eval-gate.yml`.
 
