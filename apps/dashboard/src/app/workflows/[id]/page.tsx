@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { DagViewer } from "@/components/DagViewer";
+import {
+  EmptyState,
+  ErrorState,
+  InlineError,
+  LoadingState,
+} from "@/components/StateMessage";
 import { workflowClient } from "@/lib/rpc";
 import { parseWorkflowGraph } from "@/lib/yaml-graph";
 
@@ -35,11 +41,24 @@ export default function WorkflowDetailPage({
     },
   });
 
-  if (wf.isLoading) return <p className="text-sm text-gray-500">Loading…</p>;
-  if (wf.isError) return <p className="text-sm text-red-600">{String(wf.error)}</p>;
+  if (wf.isLoading) return <LoadingState label="Loading workflow…" />;
+  if (wf.isError)
+    return (
+      <ErrorState
+        title="Failed to load workflow."
+        error={wf.error}
+        retry={() => void wf.refetch()}
+      />
+    );
 
   const workflow = wf.data?.workflow;
-  if (!workflow) return <p className="text-sm text-gray-500">Not found.</p>;
+  if (!workflow)
+    return (
+      <EmptyState
+        title="Workflow not found."
+        body="It may have been deleted, or the URL might be wrong."
+      />
+    );
 
   const steps = parseWorkflowGraph(workflow.yamlSource);
 
@@ -80,9 +99,7 @@ export default function WorkflowDetailPage({
             >
               {run.isPending ? "Starting…" : "Run workflow"}
             </button>
-            {run.isError && (
-              <span className="text-sm text-red-600">{String(run.error)}</span>
-            )}
+            {run.isError && <InlineError error={run.error} />}
           </div>
         </div>
       </section>

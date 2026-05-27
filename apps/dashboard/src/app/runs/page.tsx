@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
+import { EmptyState, ErrorState, LoadingState } from "@/components/StateMessage";
 import { runClient } from "@/lib/rpc";
 
 export default function RunsPage() {
@@ -15,10 +16,20 @@ export default function RunsPage() {
   return (
     <main className="space-y-4">
       <h1 className="text-2xl font-semibold">Runs</h1>
-      {list.isLoading && <p className="text-sm text-gray-500">Loading…</p>}
-      {list.isError && <p className="text-sm text-red-600">{String(list.error)}</p>}
+      {list.isLoading && <LoadingState label="Loading runs…" />}
+      {list.isError && (
+        <ErrorState error={list.error} retry={() => void list.refetch()} />
+      )}
       {list.data?.runs?.length === 0 && (
-        <p className="text-sm text-gray-500">No runs yet.</p>
+        <EmptyState
+          title="No runs yet."
+          body={
+            <>
+              Open a workflow and click <strong>Run workflow</strong>, or{" "}
+              <code>make demo</code> from the repo root.
+            </>
+          }
+        />
       )}
       <ul className="divide-y divide-gray-200 dark:divide-gray-800">
         {list.data?.runs?.map((r) => (

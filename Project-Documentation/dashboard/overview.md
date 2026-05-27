@@ -51,6 +51,19 @@ Stack: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, `@xyflow/react` + `da
   use the broader `wf.data` reference and lean on `staleTime` to keep
   refetches cheap.
 
+- Polish pass: shared `StateMessage` component (`LoadingState`,
+  `EmptyState`, `ErrorState`, `InlineError`) under `src/components/`,
+  used by every page that has a fetch. Each variant is a dashed-border
+  panel with a Unicode glyph + title + body + optional CTA — kept
+  hand-rolled rather than pulling in shadcn since the dashboard is
+  already consistent with itself. Error states surface a `Retry` button
+  that calls the failing query's `refetch()`. Empty states explain how
+  to get data (e.g., `/evals` tells you to run `harnessflow-eval` or
+  open a PR; `/runs` points at the in-app "Run workflow" button +
+  `make demo`).
+- Sticky top nav (`layout.tsx`): the header is now `sticky top-0 z-20`
+  with `bg-white/85 backdrop-blur` so it stays visible on long pages
+  (notably `/runs/[id]` with its DAG + steps + replay link).
 - `/analytics` — cost / run-volume / eval-score trends. Three panels:
   daily LLM cost (USD bar chart), daily run volume by status (stacked
   bar: completed/failed/other), and eval overall_score over time (one
@@ -63,10 +76,9 @@ Stack: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, `@xyflow/react` + `da
   ~150KB for two charts). `/analytics` nav link added.
 - Layout: nav now reads Workflows · Runs · Evals · Analytics · Jaeger ↗.
 
-Still pending in Week 9: shadcn/ui polish for empty/error/dark-mode
-states. The new analytics page is currently the least-polished of the
-set — empty-state messages are bare and the day-label tick density
-could improve.
+Week 9 complete. Dark mode follows the OS preference (Tailwind `dark:`
+classes are everywhere); a user-facing toggle was explicitly scoped out
+for this milestone.
 
 ## Pages
 

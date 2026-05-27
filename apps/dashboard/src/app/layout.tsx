@@ -32,7 +32,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Providers>
-          <header className="border-b border-gray-200 dark:border-gray-800">
+          <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:border-gray-800 dark:bg-gray-950/85 dark:supports-[backdrop-filter]:bg-gray-950/70">
             <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-4">
               <Link href="/" className="font-semibold tracking-tight">
                 HarnessFlow

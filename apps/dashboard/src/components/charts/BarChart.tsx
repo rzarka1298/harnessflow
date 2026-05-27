@@ -293,13 +293,25 @@ export function ChartLegend({ items }: { items: { name: string; color: string }[
 }
 
 function EmptyState({ height, message }: { height: number; message: string }) {
+  // Local lightweight empty-state — the chart slot has a fixed pixel height
+  // (set by the page) so we don't want to swap in the global EmptyState
+  // panel; that one is designed for full-page placement. Same vocabulary
+  // though: dashed border, muted icon over a short message.
   const style: CSSProperties = { height };
   return (
     <div
       style={style}
-      className="flex items-center justify-center rounded border border-dashed border-gray-200 text-xs text-gray-500 dark:border-gray-800"
+      className="flex flex-col items-center justify-center gap-1.5 rounded border border-dashed border-gray-200 text-center dark:border-gray-800"
     >
-      {message}
+      <span
+        aria-hidden
+        className="text-base text-gray-400 dark:text-gray-500"
+      >
+        📊
+      </span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">
+        {message}
+      </span>
     </div>
   );
 }

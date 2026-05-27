@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import {
+  EmptyState,
+  ErrorState,
+  InlineError,
+  LoadingState,
+} from "@/components/StateMessage";
 import { workflowClient } from "@/lib/rpc";
 
 const SAMPLE_YAML = `name: research-assistant
@@ -74,23 +80,31 @@ export default function WorkflowsPage() {
               >
                 {create.isPending ? "Creating…" : "Create"}
               </button>
-              {create.isError && (
-                <span className="text-sm text-red-600">{String(create.error)}</span>
-              )}
+              {create.isError && <InlineError error={create.error} />}
             </div>
           </div>
         )}
       </section>
 
-      <section>
-        {list.isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+      <section className="space-y-3">
+        {list.isLoading && <LoadingState label="Loading workflows…" />}
         {list.isError && (
-          <p className="text-sm text-red-600">Failed to load: {String(list.error)}</p>
+          <ErrorState
+            title="Failed to load workflows."
+            error={list.error}
+            retry={() => void list.refetch()}
+          />
         )}
         {list.data?.workflows?.length === 0 && (
-          <p className="text-sm text-gray-500">
-            No workflows yet. Click <strong>New workflow</strong> above to create one.
-          </p>
+          <EmptyState
+            title="No workflows yet."
+            body={
+              <>
+                Click <strong>New workflow</strong> above to paste a YAML
+                definition and register it.
+              </>
+            }
+          />
         )}
         <ul className="divide-y divide-gray-200 dark:divide-gray-800">
           {list.data?.workflows?.map((wf) => (

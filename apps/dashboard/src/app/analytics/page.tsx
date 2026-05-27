@@ -27,6 +27,7 @@ import {
   type BarSeries,
   type LineSeries,
 } from "@/components/charts/BarChart";
+import { ErrorState, LoadingState } from "@/components/StateMessage";
 import { evalClient, runClient } from "@/lib/rpc";
 
 // Mirrors of RunStatus / EvalStatus enum values; protobuf-es decodes wire
@@ -223,8 +224,17 @@ export default function AnalyticsPage() {
         </p>
       </header>
 
-      {loading && <p className="text-sm text-gray-500">Loading…</p>}
-      {err && <p className="text-sm text-red-600">{String(err)}</p>}
+      {loading && <LoadingState label="Loading analytics…" />}
+      {err && (
+        <ErrorState
+          title="Failed to load analytics."
+          error={err}
+          retry={() => {
+            void runs.refetch();
+            void evals.refetch();
+          }}
+        />
+      )}
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Runs" value={String(summary.totalRuns)} />

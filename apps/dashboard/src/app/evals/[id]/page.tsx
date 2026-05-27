@@ -10,6 +10,11 @@ import { use } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "@/components/StateMessage";
 import { evalClient } from "@/lib/rpc";
 import type { EvalCaseResult, ScorerScore } from "@/gen/eval/v1/eval_pb";
 
@@ -30,14 +35,25 @@ export default function EvalDetailPage({
     },
   });
 
-  if (detail.isLoading)
-    return <p className="text-sm text-gray-500">Loading…</p>;
+  if (detail.isLoading) return <LoadingState label="Loading eval…" />;
   if (detail.isError)
-    return <p className="text-sm text-red-600">{String(detail.error)}</p>;
+    return (
+      <ErrorState
+        title="Failed to load eval."
+        error={detail.error}
+        retry={() => void detail.refetch()}
+      />
+    );
 
   const run = detail.data?.evalRun;
   const cases = detail.data?.caseResults ?? [];
-  if (!run) return <p className="text-sm text-gray-500">Not found.</p>;
+  if (!run)
+    return (
+      <EmptyState
+        title="Eval not found."
+        body="The URL may be wrong, or the eval was deleted."
+      />
+    );
 
   const totalCostUsd = Number(run.costTotalUsdCents) / 100;
 
@@ -105,9 +121,13 @@ export default function EvalDetailPage({
             <CaseRow key={`${c.caseId}-${c.runId}`} c={c} />
           ))}
           {cases.length === 0 && (
-            <p className="px-4 py-3 text-sm text-gray-500">
-              No case results yet.
-            </p>
+            <div className="p-4">
+              <EmptyState
+                compact
+                title="No case results yet."
+                body="If this eval is still running, results will appear as cases complete."
+              />
+            </div>
           )}
         </div>
       </section>

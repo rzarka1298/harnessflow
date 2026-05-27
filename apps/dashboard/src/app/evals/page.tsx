@@ -10,6 +10,11 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "@/components/StateMessage";
 import { evalClient } from "@/lib/rpc";
 import type { EvalRun, ScorerScore } from "@/gen/eval/v1/eval_pb";
 
@@ -34,19 +39,26 @@ export default function EvalsPage() {
           against the workflow YAML&apos;s <code>requires_eval_pass.min_score</code>.
         </p>
       </header>
-      {list.isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+      {list.isLoading && <LoadingState label="Loading eval runs…" />}
       {list.isError && (
-        <p className="text-sm text-red-600">{String(list.error)}</p>
+        <ErrorState error={list.error} retry={() => void list.refetch()} />
       )}
       {list.data?.evalRuns?.length === 0 && (
-        <p className="text-sm text-gray-500">
-          No eval runs yet. Run one with{" "}
-          <code>
-            uv run --directory apps/eval-runner harnessflow-eval --workflow-id
-            &lt;id&gt; --dataset research-assistant
-          </code>
-          .
-        </p>
+        <EmptyState
+          title="No eval runs yet."
+          icon="🧪"
+          body={
+            <>
+              Trigger one with{" "}
+              <code className="font-mono text-[11px]">
+                uv run --directory apps/eval-runner harnessflow-eval
+                --workflow-id &lt;id&gt; --dataset research-assistant
+              </code>
+              , or open a PR that modifies a workflow YAML — the CI eval-gate
+              will run one automatically.
+            </>
+          }
+        />
       )}
       <ul className="divide-y divide-gray-200 dark:divide-gray-800">
         {list.data?.evalRuns?.map((r) => (

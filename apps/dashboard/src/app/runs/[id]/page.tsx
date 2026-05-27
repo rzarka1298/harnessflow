@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { DagViewer } from "@/components/DagViewer";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "@/components/StateMessage";
 import { runClient, workflowClient } from "@/lib/rpc";
 import { parseWorkflowGraph } from "@/lib/yaml-graph";
 
@@ -62,12 +67,25 @@ export default function RunDetailPage({
     return m;
   }, [detail.data?.steps]);
 
-  if (detail.isLoading) return <p className="text-sm text-gray-500">Loading…</p>;
-  if (detail.isError) return <p className="text-sm text-red-600">{String(detail.error)}</p>;
+  if (detail.isLoading) return <LoadingState label="Loading run…" />;
+  if (detail.isError)
+    return (
+      <ErrorState
+        title="Failed to load run."
+        error={detail.error}
+        retry={() => void detail.refetch()}
+      />
+    );
 
   const run = detail.data?.run;
   const steps = detail.data?.steps ?? [];
-  if (!run) return <p className="text-sm text-gray-500">Not found.</p>;
+  if (!run)
+    return (
+      <EmptyState
+        title="Run not found."
+        body="The URL may be wrong, or the run was deleted."
+      />
+    );
 
   const awaitingApproval = run.status === STATUS_WAITING_APPROVAL;
 
@@ -171,7 +189,13 @@ export default function RunDetailPage({
             </details>
           ))}
           {steps.length === 0 && (
-            <p className="px-4 py-3 text-sm text-gray-500">No steps yet.</p>
+            <div className="p-4">
+              <EmptyState
+                compact
+                title="No steps yet."
+                body="The worker hasn't recorded any step events. If this is an in-progress run, it'll fill in as Temporal advances."
+              />
+            </div>
           )}
         </div>
       </section>

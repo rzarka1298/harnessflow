@@ -15,6 +15,11 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "@/components/StateMessage";
 import { runClient } from "@/lib/rpc";
 import type { Step } from "@/gen/run/v1/run_pb";
 
@@ -126,11 +131,22 @@ export default function RunReplayPage({
     return before[before.length - 1] ?? windows[0];
   }, [windows, cursorMs]);
 
-  if (detail.isLoading)
-    return <p className="text-sm text-gray-500">Loading…</p>;
+  if (detail.isLoading) return <LoadingState label="Loading run…" />;
   if (detail.isError)
-    return <p className="text-sm text-red-600">{String(detail.error)}</p>;
-  if (!run) return <p className="text-sm text-gray-500">Not found.</p>;
+    return (
+      <ErrorState
+        title="Failed to load run."
+        error={detail.error}
+        retry={() => void detail.refetch()}
+      />
+    );
+  if (!run)
+    return (
+      <EmptyState
+        title="Run not found."
+        body="The URL may be wrong, or the run was deleted."
+      />
+    );
 
   // Format helpers — keep numbers short so the timeline doesn't overflow.
   const fmtElapsed = (ms: number) => {
@@ -175,9 +191,12 @@ export default function RunReplayPage({
             overlaid across all rows. */}
         <div className="relative space-y-1.5 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-900">
           {windows.length === 0 && (
-            <p className="text-sm text-gray-500">
-              No step events recorded for this run.
-            </p>
+            <EmptyState
+              compact
+              icon="⏱"
+              title="No step events recorded."
+              body="The worker hasn't persisted any started/ended timestamps yet. If this run is in-flight, bars will appear as steps fire."
+            />
           )}
           {windows.map((w) => {
             const stateNow = stepStateAt(w, cursorMs);
