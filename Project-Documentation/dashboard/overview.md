@@ -51,8 +51,22 @@ Stack: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, `@xyflow/react` + `da
   use the broader `wf.data` reference and lean on `staleTime` to keep
   refetches cheap.
 
-Still pending in Week 9: a cost/score analytics page, and shadcn/ui
-polish for empty/error states.
+- `/analytics` — cost / run-volume / eval-score trends. Three panels:
+  daily LLM cost (USD bar chart), daily run volume by status (stacked
+  bar: completed/failed/other), and eval overall_score over time (one
+  line per workflow). Aggregation runs client-side off
+  `RunService.ListRuns({pageSize: 500})` + `EvalService.ListEvalRuns({pageSize: 200})`
+  — same pattern as `/runs`/`/evals`; at portfolio scale (~10–100 runs)
+  this is fast and avoids adding an `AnalyticsService` RPC. The chart
+  primitives are tiny hand-rolled inline-SVG components in
+  `src/components/charts/` (kept the deps lean; recharts would have been
+  ~150KB for two charts). `/analytics` nav link added.
+- Layout: nav now reads Workflows · Runs · Evals · Analytics · Jaeger ↗.
+
+Still pending in Week 9: shadcn/ui polish for empty/error/dark-mode
+states. The new analytics page is currently the least-polished of the
+set — empty-state messages are bare and the day-label tick density
+could improve.
 
 ## Pages
 
@@ -66,6 +80,7 @@ polish for empty/error states.
 | `/runs/[id]/replay` | Run replay timeline: Gantt rows + scrubber + focused-step inspector | Week 9 |
 | `/evals` | Eval-run list with overall score, scorer chips, latency/cost | Week 7 |
 | `/evals/[id]` | Per-eval detail: stat strip + aggregate scores + per-case table | Week 7 |
+| `/analytics` | Cost / run-volume / eval-score trends; client-side aggregation off `ListRuns` + `ListEvalRuns` | Week 9 |
 | `/analytics` | Cost trends, workflow scores over time | Week 9 |
 
 ## Key technical choices
@@ -79,7 +94,7 @@ polish for empty/error states.
 
 ## Layout
 
-- Top bar nav (in `src/app/layout.tsx`): HarnessFlow home, Workflows, Runs, Evals, Jaeger (link out). The Analytics nav item lands in Week 9.
+- Top bar nav (in `src/app/layout.tsx`): HarnessFlow home, Workflows, Runs, Evals, Analytics, Jaeger (link out).
 - Body: route-specific content.
 - Dark mode supported via Tailwind `dark:` and a top-bar toggle
 

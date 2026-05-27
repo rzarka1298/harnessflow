@@ -47,6 +47,9 @@ export default function RootLayout({
                 <Link href="/evals" className="hover:text-gray-900 dark:hover:text-gray-100">
                   Evals
                 </Link>
+                <Link href="/analytics" className="hover:text-gray-900 dark:hover:text-gray-100">
+                  Analytics
+                </Link>
                 <a
                   href="http://localhost:16686"
                   target="_blank"

@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-27 (Week 9 in flight — run-replay + animated DAG done; analytics page + shadcn polish remain)_
+_Last updated: 2026-05-27 (Week 9 in flight — run-replay + animated DAG + analytics done; only shadcn polish remains)_
 
 ## DONE
 
@@ -43,16 +43,17 @@ _Last updated: 2026-05-27 (Week 9 in flight — run-replay + animated DAG done; 
 | 2026-05-27 | **Tagged `v0.5.0-cicd`** — end-of-Week-8 milestone. | 416aed8 |
 | 2026-05-27 | **Week 9, commit 1** — `/runs/[id]/replay`: Gantt-style timeline (each step is a colored bar positioned by `started_at`/`ended_at`) with a scrubber + ▶ Replay button that animates the cursor across the run. A red cursor line crosses all rows; bars are tinted by status (green/red/gray, with pulse while the cursor is inside a step's window). The "focused step" panel under the timeline shows whichever step the cursor is currently in, with prompt/response previews. Pure client-side from `RunService.GetRun(id)` — no API or schema changes (step timestamps were already on the Step proto). Tripwire: `react-hooks/purity` bans `Date.now()` during render, so the page uses TanStack Query's `dataUpdatedAt` as its "now" reference. Verified live: 200 from dashboard, lint + tsc + next build clean. | d3647e6 |
 | 2026-05-27 | **Week 9, commit 2** — Animated DAG on `/runs/[id]`. Extended `DagViewer` with an optional `stepStatuses` map (name → numeric StepStatus); when present, nodes are colored by status (running pulses via Tailwind `animate-pulse`, completed go green with a step-type left-stripe accent, failed red, pending dashed/faded) and edges from a completed source to a running target use xyflow's animated dashed flow. `/runs/[id]` now also fetches the workflow YAML (separate `useQuery` with 5-min staleTime) to know the graph shape, parses it via the existing `parseWorkflowGraph`, and passes the live step statuses derived from `RunService.GetRun(id)`. The 2s polling that already drove the step table now also drives the DAG. Tripwire: React Compiler's inferred-deps check rejects fine-grained `useMemo` deps like `wf.data?.workflow?.yamlSource` — use the broader `wf.data` instead. Verified live: 200 from dashboard, lint + tsc clean. | 172a7ec |
+| 2026-05-27 | **Week 9, commit 3** — `/analytics` page: cost / run-volume / eval-score trends. Daily LLM cost bar chart (USD), daily run volume stacked bar (completed/failed/other), eval overall_score line chart (one line per workflow). Aggregation runs **client-side** off `RunService.ListRuns({pageSize: 500})` + `EvalService.ListEvalRuns({pageSize: 200})` — same pattern as `/runs`/`/evals`; at ~10–100 runs this is fast and avoids adding a server-side `AnalyticsService` RPC. Chart primitives are tiny hand-rolled inline-SVG components in `src/components/charts/` (avoided pulling in recharts, ~150KB for two charts). `/analytics` nav link added. Verified live: 200 from dashboard, lint + tsc clean. | _pending_ |
 
 ## IN FLIGHT
 
-**Branch:** none. `main` is at `172a7ec` (Week 9 — 2 of 4 done). Clean checkpoint.
+**Branch:** `feat/dashboard-analytics` (commit pending). Week 9 — 3 of 4 done.
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 9, analytics dashboard** — `/analytics` page with cost trends and per-workflow score-over-time, backed by `workflow_runs` + `eval_runs`. Read-only aggregation queries; may add one materialized view if Postgres' on-the-fly group-bys get slow. Needs either a new `AnalyticsService` RPC or per-page direct SQL via a thin Connect handler — decide before building.
-2. **Week 9 polish, shadcn/ui** — dark mode toggle, empty states, error states across all pages. Last in the Week-9 list; do after the analytics page lands.
-3. **Week 10, Helm chart** — first item of Phase 4 (production infra). Helm chart with upstream subcharts for Postgres/Temporal/Redis/Jaeger/Prom/Grafana plus custom Deployments for api/worker/dashboard/eval-runner; HPA keyed on Temporal task-queue depth; test on local kind.
+1. **Week 9 polish, shadcn/ui** — dark mode toggle, empty states, error states across all pages. The `/analytics` page is currently the least-polished; its empty-state messages are bare. Decide first whether to actually pull in shadcn or just hand-roll a few presentation components — given the surface area (5 pages) hand-rolling stays consistent with the rest of the codebase.
+2. **Week 10, Helm chart** — first item of Phase 4 (production infra). Helm chart with upstream subcharts for Postgres/Temporal/Redis/Jaeger/Prom/Grafana plus custom Deployments for api/worker/dashboard/eval-runner; HPA keyed on Temporal task-queue depth; test on local kind.
+3. **Week 11, Terraform + Redpanda** — VPC, EKS, RDS Postgres, ElastiCache Redis, IAM/IRSA, S3 via `terraform-aws-modules/eks` + `vpc`. `terraform plan` only; no apply yet. Redpanda event firehose: workflow lifecycle events → Kafka topic → Python consumer → Parquet on S3. ADR-0004 gets finalized here.
 
 ## Releases
 
