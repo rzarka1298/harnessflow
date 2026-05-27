@@ -7,7 +7,8 @@ description: |
   corpus, synthesizes an answer, and verifies the answer is grounded in
   the retrieved context. Exercises every Week-2-3 platform feature:
   multi-step DAG with branching topology, declared LLM fallback, and an
-  LLM-as-judge verifier.
+  LLM-as-judge verifier. Also serves as the dataset target for the
+  Week-8 CI eval-gate (see .github/workflows/eval-gate.yml).
 
 steps:
   planner:
