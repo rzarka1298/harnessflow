@@ -1,0 +1,57 @@
+{{- if .Values.worker.enabled -}}
+{{- $component := "worker" -}}
+{{- $secretName := include "harnessflow.llmKeysSecretName" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "harnessflow.componentName" (dict "ctx" . "component" $component) }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+spec:
+  # HPA owns this when autoscaling.enabled — keep an initial floor so the
+  # adapter has something to scale, but the HPA reconciler will adjust.
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 8 }}
+      {{- with .Values.worker.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.images.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: worker
+          image: {{ include "harnessflow.image" (dict "ctx" . "svc" .Values.worker) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "harnessflow.fullname" . }}-config
+            {{- if $secretName }}
+            - secretRef:
+                name: {{ $secretName }}
+            {{- end }}
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "harnessflow.postgresSecretName" . }}
+                  key: {{ if .Values.postgresql.enabled }}password{{ else }}postgres-password{{ end }}
+            - name: DATABASE_URL
+              value: "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable"
+            - name: TEMPORAL_HOST_PORT
+              value: "$(TEMPORAL_HOST):$(TEMPORAL_PORT)"
+            # Forces MockProvider when no LLM keys are wired; the worker
+            # already detects empty keys, this is just belt-and-braces.
+            - name: HARNESSFLOW_FORCE_MOCK
+              value: {{ if $secretName }}"false"{{ else }}"true"{{ end }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+{{- end -}}

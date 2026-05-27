@@ -1,0 +1,19 @@
+{{/* Shared connection-config ConfigMap consumed by both api and worker.
+     Keeps DATABASE_URL, TEMPORAL_HOST_PORT, OTLP endpoint in one place so a
+     dependency switch (bundled vs external) updates everything together. */}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "harnessflow.fullname" . }}-config
+  labels:
+    {{- include "harnessflow.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.env.environment | quote }}
+  POSTGRES_HOST: {{ include "harnessflow.postgresHost" . | quote }}
+  POSTGRES_PORT: {{ include "harnessflow.postgresPort" . | quote }}
+  POSTGRES_DB: {{ include "harnessflow.postgresDatabase" . | quote }}
+  POSTGRES_USER: {{ include "harnessflow.postgresUser" . | quote }}
+  TEMPORAL_HOST: {{ include "harnessflow.temporalHost" . | quote }}
+  TEMPORAL_PORT: {{ include "harnessflow.temporalPort" . | quote }}
+  TEMPORAL_NAMESPACE: {{ default "default" .Values.externalTemporal.namespace | quote }}
+  OTLP_ENDPOINT: {{ .Values.api.otlpEndpoint | quote }}

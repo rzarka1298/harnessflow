@@ -70,6 +70,11 @@ override.tf.json
 *.tar.gz
 *.zip
 
+# --- Helm ---
+# Subchart tarballs are re-fetched on demand via `helm dependency build`
+# (or `update`); Chart.lock is committed so the digests stay reproducible.
+infrastructure/helm/*/charts/*.tgz
+
 # --- Generated code (committed snapshot exception handled per-dir via .gitkeep) ---
 # Buf-generated code lives under packages/sdk/gen/ — we DO commit it for clone-and-run UX.
 # See ADR-0009 (to be written) if behavior changes.

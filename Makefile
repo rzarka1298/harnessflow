@@ -1,7 +1,7 @@
 # HarnessFlow developer Makefile
 # Targets are scaffolded; bodies will be implemented as the corresponding code lands.
 
-.PHONY: help up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval eval-gate demo-bandit test lint fmt clean tools-check
+.PHONY: help up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval eval-gate demo-bandit test lint fmt clean tools-check helm-deps helm-lint helm-template kind-up kind-down kind-load
 
 COMPOSE := docker compose
 
@@ -93,6 +93,34 @@ eval-gate: ## Run the CI eval-gate against locally changed workflow YAMLs (api+w
 	uv run --directory apps/eval-runner python $(CURDIR)/scripts/ci-eval-gate.py \
 		--changed-files $$(git diff --name-only origin/main...HEAD -- 'packages/examples/workflows/*.yaml') \
 		--out-md /tmp/eval-gate-comment.md
+
+# --- Helm / kind --------------------------------------------------------
+helm-deps: ## Fetch upstream subchart tarballs (postgres/redis/temporal) into charts/.
+	helm repo add bitnami  https://charts.bitnami.com/bitnami  --force-update
+	helm repo add temporal https://go.temporal.io/helm-charts --force-update
+	helm dependency build infrastructure/helm/harnessflow
+
+helm-lint: ## helm lint the harnessflow chart.
+	helm lint infrastructure/helm/harnessflow
+
+helm-template: ## Render chart with subcharts disabled — quick local diff.
+	helm template hf infrastructure/helm/harnessflow \
+		--set postgresql.enabled=false --set redis.enabled=false --set temporal.enabled=false \
+		--set externalPostgres.host=postgres.example --set externalPostgres.existingSecret=pg-creds \
+		--set externalTemporal.host=temporal.example --set externalRedis.host=redis.example
+
+kind-up: ## Create the local kind cluster from infrastructure/kind/cluster.yaml.
+	kind create cluster --name harnessflow --config infrastructure/kind/cluster.yaml
+
+kind-down: ## Tear down the local kind cluster.
+	kind delete cluster --name harnessflow
+
+kind-load: ## Build the three first-party images and load them into kind.
+	docker build -t harnessflow/api:dev       apps/api
+	docker build -t harnessflow/worker:dev    apps/worker
+	docker build -t harnessflow/dashboard:dev apps/dashboard
+	kind load docker-image --name harnessflow \
+		harnessflow/api:dev harnessflow/worker:dev harnessflow/dashboard:dev
 
 demo-bandit: ## (Week 13) A/B compare learned-retry vs static-retry policies.
 	@echo "TODO(week-13): scripts/demo-bandit.sh"

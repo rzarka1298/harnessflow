@@ -1,0 +1,66 @@
+{{- if and .Values.worker.enabled .Values.worker.autoscaling.enabled -}}
+{{/* Worker HPA.
+
+     The "right" scaling signal for a Temporal-worker fleet is
+     task-queue backlog, not CPU — a worker can be IO-bound on
+     LLM calls and still be the bottleneck while CPU sits near
+     idle. We expose that signal via Prometheus Adapter, mapping
+     Temporal SDK's `temporal_workflow_task_queue_backlog_count`
+     (sampled by the OTel collector) to a custom metric the HPA
+     consumes per Pod.
+
+     Until the adapter is wired up (see
+     `infrastructure/helm/harnessflow/README.md`), we leave that
+     metric block off and HPA scales on CPU only. Flip
+     worker.autoscaling.queueDepth.enabled=true to opt in. */}}
+{{- $component := "worker" -}}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "harnessflow.componentName" (dict "ctx" . "component" $component) }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "harnessflow.componentName" (dict "ctx" . "component" $component) }}
+  minReplicas: {{ .Values.worker.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.worker.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.worker.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if .Values.worker.autoscaling.queueDepth.enabled }}
+    - type: Pods
+      pods:
+        metric:
+          # This metric must be exposed by Prometheus Adapter — see the
+          # adapter rule in the chart README's "HPA on queue depth"
+          # section. The "Pods" metric type divides the upstream value
+          # by the current replica count, so targetAverageValue reads
+          # naturally as "backlog tasks per worker pod".
+          name: temporal_workflow_task_queue_backlog
+        target:
+          type: AverageValue
+          averageValue: {{ .Values.worker.autoscaling.queueDepth.targetAverageValue | quote }}
+    {{- end }}
+  behavior:
+    # Scale up fast (Temporal backlog spikes are real load) but cool
+    # down gently so we don't thrash on transient bursts.
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 4
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+{{- end -}}

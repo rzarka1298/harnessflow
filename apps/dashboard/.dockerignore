@@ -1,0 +1,13 @@
+Dockerfile
+.dockerignore
+.next
+node_modules
+.git
+.gitignore
+.env*
+README.md
+AGENTS.md
+CLAUDE.md
+*.log
+tsconfig.tsbuildinfo
+.turbo

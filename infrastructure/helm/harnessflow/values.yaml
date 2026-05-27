@@ -1,0 +1,173 @@
+# Default values for the harnessflow chart.
+#
+# All three first-party services share the same image-registry pattern
+# under `images:` so a single override on install (e.g. `--set
+# images.tag=v0.6.0`) bumps everything together. Per-service overrides
+# remain available under e.g. `api.image.repository`.
+
+# ---------------------------------------------------------------------
+# Global
+# ---------------------------------------------------------------------
+
+# nameOverride lets users distinguish multiple installs in the same
+# namespace; defaults to the chart name via the _helpers.tpl helper.
+nameOverride: ""
+fullnameOverride: ""
+
+# Image-pull config shared by all first-party services. Pin tags here so
+# every Deployment moves together unless explicitly overridden.
+images:
+  registry: ghcr.io/rzarka1298/harnessflow
+  tag: "0.5.0"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+# Environment + LLM keys consumed by api and worker. In production these
+# come from a sealed-secret or external secret manager; locally `make
+# helm-install` can pass them on the command line.
+env:
+  environment: development
+  # Setting `keys.create: true` creates a kubernetes Secret with the
+  # LLM keys; `keys.existing` instead references an out-of-band Secret.
+  # If neither is set the worker falls back to MockProvider.
+  keys:
+    create: false
+    existing: ""
+    openaiApiKey: ""
+    anthropicApiKey: ""
+
+# ---------------------------------------------------------------------
+# api (Go orchestrator — Connect HTTP + Temporal client)
+# ---------------------------------------------------------------------
+api:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: api
+    tag: ""             # falls back to images.tag
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  podAnnotations: {}
+  # OTel collector endpoint. The dev-stack collector lives in the same
+  # namespace by default; override for shared observability backends.
+  otlpEndpoint: "otel-collector:4317"
+
+# ---------------------------------------------------------------------
+# worker (Python — Temporal activities)
+# ---------------------------------------------------------------------
+worker:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: worker
+    tag: ""
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  podAnnotations: {}
+  # HPA for the worker. The custom-metric path scales on Temporal task-
+  # queue depth via Prometheus Adapter (see templates/hpa-worker.yaml
+  # for the exact metric name + the README for the adapter rule).
+  # CPU-based scaling is the safe fallback while the adapter is wired up.
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    # Set to true once the Prometheus Adapter is installed and exposing
+    # `temporal_workflow_task_queue_backlog`. The HPA falls back to CPU
+    # when this is false.
+    queueDepth:
+      enabled: false
+      targetAverageValue: "10"  # backlog tasks per worker pod
+
+# ---------------------------------------------------------------------
+# dashboard (Next.js)
+# ---------------------------------------------------------------------
+dashboard:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: dashboard
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 3000
+  ingress:
+    enabled: false
+    className: ""
+    host: "harnessflow.local"
+    annotations: {}
+    tls: []
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  podAnnotations: {}
+  # The dashboard talks to api over service DNS by default; override for
+  # ingress / NodePort installs.
+  apiBaseUrl: ""
+
+# ---------------------------------------------------------------------
+# Upstream subcharts. Toggle off any of these and point the chart at an
+# external instance via the matching `external` block.
+# ---------------------------------------------------------------------
+
+postgresql:
+  enabled: true
+  auth:
+    username: harnessflow
+    password: harnessflow
+    database: harnessflow
+  # Single-replica, default storage for kind. Production overrides go
+  # via the upstream chart's full values surface.
+  primary:
+    persistence:
+      size: 8Gi
+
+# External-postgres overrides used when postgresql.enabled=false.
+externalPostgres:
+  host: ""
+  port: 5432
+  database: harnessflow
+  user: harnessflow
+  existingSecret: ""    # k8s Secret with key `postgres-password`
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  architecture: standalone
+
+externalRedis:
+  host: ""
+  port: 6379
+
+temporal:
+  enabled: true
+  # Temporal's chart is large; we don't override its values here.
+  # Install with `--set temporal.server.replicaCount=1` for kind.
+  server:
+    replicaCount: 1
+  elasticsearch:
+    enabled: false      # ES is heavy; use the SQL visibility store
+
+externalTemporal:
+  host: ""
+  port: 7233
+  namespace: default

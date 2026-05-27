@@ -1,0 +1,26 @@
+{{- /* Helm prints these notes after install/upgrade. */ -}}
+HarnessFlow {{ .Chart.AppVersion }} installed in namespace {{ .Release.Namespace }}.
+
+First-party services:
+  - api       (Connect HTTP, port {{ .Values.api.service.port }})
+  - worker    (Temporal worker, {{ .Values.worker.replicaCount }} replicas{{ if .Values.worker.autoscaling.enabled }}, HPA {{ .Values.worker.autoscaling.minReplicas }}–{{ .Values.worker.autoscaling.maxReplicas }}{{ end }})
+  - dashboard (Next.js, port {{ .Values.dashboard.service.port }})
+
+Bundled subcharts (toggle via values):
+  - postgresql: {{ if .Values.postgresql.enabled }}enabled{{ else }}external ({{ .Values.externalPostgres.host }}){{ end }}
+  - redis:      {{ if .Values.redis.enabled }}enabled{{ else }}external ({{ .Values.externalRedis.host }}){{ end }}
+  - temporal:   {{ if .Values.temporal.enabled }}enabled{{ else }}external ({{ .Values.externalTemporal.host }}){{ end }}
+
+Reach the dashboard locally:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "harnessflow.componentName" (dict "ctx" . "component" "dashboard") }} 3000:{{ .Values.dashboard.service.port }}
+
+Reach the API:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "harnessflow.componentName" (dict "ctx" . "component" "api") }} 8080:{{ .Values.api.service.port }}
+
+{{- if not (or .Values.env.keys.existing .Values.env.keys.create) }}
+
+NOTE: No LLM keys are wired — the worker will run on MockProvider
+(deterministic, free). Set `env.keys.create=true` plus `env.keys.openaiApiKey`
+or `env.keys.anthropicApiKey`, or point at an out-of-band Secret via
+`env.keys.existing`, to enable live LLM calls.
+{{- end }}

@@ -1,0 +1,98 @@
+{{- if .Values.dashboard.enabled -}}
+{{- $component := "dashboard" -}}
+{{- $apiSvc := include "harnessflow.componentName" (dict "ctx" . "component" "api") -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "harnessflow.componentName" (dict "ctx" . "component" $component) }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+spec:
+  replicas: {{ .Values.dashboard.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 8 }}
+      {{- with .Values.dashboard.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.images.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: dashboard
+          image: {{ include "harnessflow.image" (dict "ctx" . "svc" .Values.dashboard) }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.dashboard.service.port }}
+          env:
+            # NEXT_PUBLIC_ vars are baked at build time, so this only
+            # works for server-rendered/SSR paths. For client fetches,
+            # set the same variable at build via the image build args
+            # (or rely on relative URLs via an ingress rewrite).
+            - name: NEXT_PUBLIC_API_BASE_URL
+              value: {{ default (printf "http://%s:%d" $apiSvc (int .Values.api.service.port)) .Values.dashboard.apiBaseUrl | quote }}
+            - name: PORT
+              value: {{ .Values.dashboard.service.port | quote }}
+          readinessProbe:
+            httpGet: { path: /, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.dashboard.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "harnessflow.componentName" (dict "ctx" . "component" $component) }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+spec:
+  type: {{ .Values.dashboard.service.type }}
+  ports:
+    - port: {{ .Values.dashboard.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+{{- if .Values.dashboard.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "harnessflow.componentName" (dict "ctx" . "component" $component) }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+  {{- with .Values.dashboard.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.dashboard.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.dashboard.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "harnessflow.componentName" (dict "ctx" . "component" $component) }}
+                port:
+                  number: {{ .Values.dashboard.service.port }}
+  {{- with .Values.dashboard.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end -}}

@@ -1,0 +1,35 @@
+# Local kind cluster config for the Week-10 Helm-chart smoke test.
+#
+# One control-plane node (kind can't share a node between control-plane
+# and workload in single-node mode without taints) plus one worker. The
+# port mappings make the dashboard and api reachable on localhost
+# without needing port-forwarding for a quick demo:
+#   - 30080 -> dashboard NodePort (set ingress + service.type=NodePort
+#     in values.yaml, or use ingress-nginx)
+#   - 30081 -> api NodePort
+#
+# To use:
+#   kind create cluster --name harnessflow --config infrastructure/kind/cluster.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: harnessflow
+
+nodes:
+  - role: control-plane
+    # Mount the repo so kind nodes can `docker pull` from a local
+    # registry tarball — disabled by default; uncomment if iterating
+    # without pushing to a remote registry.
+    # extraMounts:
+    #   - hostPath: ./infrastructure/kind/images
+    #     containerPath: /var/lib/local-images
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 30080
+        protocol: TCP
+      - containerPort: 30081
+        hostPort: 30081
+        protocol: TCP
+  - role: worker
+
+# Default kubeadm config — keep it simple. Pin the k8s minor when we move
+# past prototyping so behavior matches production EKS in Week 12.
