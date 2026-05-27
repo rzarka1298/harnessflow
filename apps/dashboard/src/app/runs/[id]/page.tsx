@@ -1,10 +1,12 @@
 "use client";
 
-import { use } from "react";
+import { use, useMemo } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { runClient } from "@/lib/rpc";
+import { DagViewer } from "@/components/DagViewer";
+import { runClient, workflowClient } from "@/lib/rpc";
+import { parseWorkflowGraph } from "@/lib/yaml-graph";
 
 // Mirror of runv1.RunStatus enum values.
 const STATUS_WAITING_APPROVAL = 5;
@@ -32,6 +34,33 @@ export default function RunDetailPage({
     mutationFn: () => runClient.approveRun({ runId: id }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["run", id] }),
   });
+
+  // The DAG needs the workflow YAML to know the graph shape; the run only
+  // carries `workflow_id`. The query stays disabled until we know which
+  // workflow to ask for.
+  const workflowId = detail.data?.run?.workflowId;
+  const wf = useQuery({
+    queryKey: ["workflow", workflowId],
+    queryFn: () => workflowClient.getWorkflow({ id: workflowId! }),
+    enabled: Boolean(workflowId),
+    staleTime: 5 * 60_000, // YAML doesn't change mid-run
+  });
+
+  // Use the broader `wf.data` reference so React Compiler's inferred deps
+  // line up with what we declare; YAML doesn't change mid-run and the
+  // useQuery has a 5-min staleTime, so the extra invalidations are rare.
+  const dagSteps = useMemo(
+    () =>
+      wf.data?.workflow?.yamlSource
+        ? parseWorkflowGraph(wf.data.workflow.yamlSource)
+        : [],
+    [wf.data],
+  );
+  const stepStatuses = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const s of detail.data?.steps ?? []) m[s.name] = s.status;
+    return m;
+  }, [detail.data?.steps]);
 
   if (detail.isLoading) return <p className="text-sm text-gray-500">Loading…</p>;
   if (detail.isError) return <p className="text-sm text-red-600">{String(detail.error)}</p>;
@@ -88,6 +117,15 @@ export default function RunDetailPage({
             {approve.isPending ? "Approving…" : "Approve"}
           </button>
         </div>
+      )}
+
+      {dagSteps.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            DAG
+          </h2>
+          <DagViewer steps={dagSteps} stepStatuses={stepStatuses} />
+        </section>
       )}
 
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">

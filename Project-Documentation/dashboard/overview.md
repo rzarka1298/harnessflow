@@ -33,15 +33,26 @@ Stack: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, `@xyflow/react` + `da
   prompt/response previews and any error. Pure client-side computation
   from `RunService.GetRun(id)` — no API or schema changes were needed
   (step timestamps were already exposed on the Step proto).
-- The `/runs/[id]` page now links into the replay view from a "▶ Replay
-  timeline" link in its header.
+- `/runs/[id]` now renders the workflow's DAG above the step table, with
+  nodes colored by `StepStatus`: running pulses (Tailwind `animate-pulse`)
+  with a blue tint, completed go solid green (left-stripe accent in the
+  step-type color so you still see what kind of step it was), failed red,
+  pending faded/dashed. Edges from a completed source to a running target
+  use xyflow's `animated: true` dashed-flow style; edges from completed
+  sources go solid green. The 2s polling that already drove the step
+  table now also drives the DAG, so in-progress runs visibly tick.
+- The page also picks up a "▶ Replay timeline" link in its header.
 - Notable React-hooks tripwire: the lint rule (`react-hooks/purity`) bans
   `Date.now()` during render, so the replay page uses TanStack Query's
   `dataUpdatedAt` as its "now" reference instead. Stable per render and
   refreshes with the 2s poll on in-progress runs.
+- Second tripwire: React Compiler's inferred-deps check rejects
+  fine-grained `useMemo` deps like `wf.data?.workflow?.yamlSource` —
+  use the broader `wf.data` reference and lean on `staleTime` to keep
+  refetches cheap.
 
-Still pending in Week 9: animated DAG transitions during in-progress runs,
-a cost/score analytics page, and shadcn/ui polish for empty/error states.
+Still pending in Week 9: a cost/score analytics page, and shadcn/ui
+polish for empty/error states.
 
 ## Pages
 
