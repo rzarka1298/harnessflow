@@ -50,7 +50,15 @@ export default function RunDetailPage({
   return (
     <main className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Run</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold">Run</h1>
+          <Link
+            href={`/runs/${id}/replay`}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            ▶ Replay timeline
+          </Link>
+        </div>
         <div className="font-mono text-xs text-gray-500">{run.id}</div>
         <div className="text-sm">
           <Link

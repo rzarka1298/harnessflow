@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-27 (Week 8 — CI eval-gate live and proven on a real PR; tagged `v0.5.0-cicd`; Week 9 next)_
+_Last updated: 2026-05-27 (Week 9 in flight — run-replay timeline done; animated DAG + analytics page + shadcn polish remain)_
 
 ## DONE
 
@@ -41,16 +41,17 @@ _Last updated: 2026-05-27 (Week 8 — CI eval-gate live and proven on a real PR;
 | 2026-05-27 | **Week 8, CI eval-gate** — `.github/workflows/eval-gate.yml` + `scripts/ci-eval-gate.py`: PRs that touch `packages/examples/workflows/*.yaml` boot the dev stack, register baseline (from `origin/<base>`) + PR YAMLs, run the eval-runner against each, post a Δ-vs-baseline markdown table via `gh pr comment`, and fail the check on any per-scorer regression beyond `--gate-max-regression` (default 0.05). Eval-runner CLI grew `--baseline-json`, `--out-json`, `--out-md`, `--gate-max-regression`; new `gate.py` module with 5 unit tests (10/10 pass). Helper bypasses the `(name, version)` UNIQUE constraint by suffixing the YAML name with a per-role short hex. Verified locally end-to-end: gate passes on identical YAMLs (Δ=0), fails (exit 1) on an inflated-baseline regression test. `make eval-gate` runs the same helper locally. | 4ba1e27 |
 | 2026-05-27 | **Week 8, smoke test + CI fixes** — PR #1 (`chore/eval-gate-smoke`) put the gate against a real PR. Substantive gate output was correct on the first run, but the `astral-sh/setup-uv@v4` post-job hook failed: first on a cache-service 400, then (after bumping to v6 + checkout/setup-go/setup-python to non-deprecated majors) on a 5-min `uv cache prune --ci` lock-timeout because the worker we start with `nohup` was still holding the uv cache lock. Added an `if: always()` "Stop background processes" step. Third run (26522036783) green; PR rebase-merged. | 416aed8 |
 | 2026-05-27 | **Tagged `v0.5.0-cicd`** — end-of-Week-8 milestone. | 416aed8 |
+| 2026-05-27 | **Week 9, commit 1** — `/runs/[id]/replay`: Gantt-style timeline (each step is a colored bar positioned by `started_at`/`ended_at`) with a scrubber + ▶ Replay button that animates the cursor across the run. A red cursor line crosses all rows; bars are tinted by status (green/red/gray, with pulse while the cursor is inside a step's window). The "focused step" panel under the timeline shows whichever step the cursor is currently in, with prompt/response previews. Pure client-side from `RunService.GetRun(id)` — no API or schema changes (step timestamps were already on the Step proto). Tripwire: `react-hooks/purity` bans `Date.now()` during render, so the page uses TanStack Query's `dataUpdatedAt` as its "now" reference. Verified live: 200 from dashboard, lint + tsc + next build clean. | _pending_ |
 
 ## IN FLIGHT
 
-**Branch:** none. `main` is at `416aed8`, tagged `v0.5.0-cicd`. Clean checkpoint.
+**Branch:** `feat/dashboard-run-replay` (commit pending). Week 9 in progress — one of four items done.
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 9, run-replay timeline scrubber** — `/runs/[id]/replay` page that scrubs through the run's step events in order, showing each step's transition timestamps and inputs/outputs. Backed by `workflow_steps` (already persisted); no schema changes expected.
+1. **Week 9, animated DAG during in-progress runs** — `/runs/[id]` page's React-Flow DAG should pulse the in-progress step, green-check completed, red-x failed. Polling already runs every 2s; just needs the visual layer.
 2. **Week 9, analytics dashboard** — `/analytics` page with cost trends and per-workflow score-over-time, backed by `workflow_runs` + `eval_runs`. Read-only aggregation queries; may add one materialized view if Postgres' on-the-fly group-bys get slow.
-3. **Week 9 polish, optional `/evals?compare=<a>&<b>`** — dashboard-side rendering of the same markdown diff the CI gate posts. Cheap follow-up; defer until somebody asks for it.
+3. **Week 9 polish, shadcn/ui** — dark mode toggle, empty states, error states across all pages. Last in the Week-9 list; do after the substantive features land.
 
 ## Releases
 

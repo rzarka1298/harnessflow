@@ -25,7 +25,23 @@ Stack: Next.js 16.2.6 App Router, TypeScript, Tailwind v4, `@xyflow/react` + `da
 **Week 7 additions:**
 - `/evals` and `/evals/[id]` (see above) wired through a new `evalClient` in `src/lib/rpc.ts`. Same Connect-Web + protobuf-es v2 transport as `runClient`/`workflowClient`; enum/int64 wire-format handled the same way as `/runs` (numeric enum comparisons, `Number(bigint)` for int64 millisecond and cent fields). The optional two-run comparison view (`/evals?compare=<a>&<b>`) is still pending — the backend already produces it via `render_markdown(report, baseline)` in `apps/eval-runner`.
 
-Live run-state animation on the DAG and run-replay timeline scrubbing land Week 9.
+**Week 9 additions:**
+- `/runs/[id]/replay` — Gantt-style step timeline (each step is a bar
+  positioned by its `started_at`/`ended_at`) with a scrubber + play button
+  that time-travels through the run. The "focused step" panel below the
+  timeline shows whichever step the cursor is currently inside, with its
+  prompt/response previews and any error. Pure client-side computation
+  from `RunService.GetRun(id)` — no API or schema changes were needed
+  (step timestamps were already exposed on the Step proto).
+- The `/runs/[id]` page now links into the replay view from a "▶ Replay
+  timeline" link in its header.
+- Notable React-hooks tripwire: the lint rule (`react-hooks/purity`) bans
+  `Date.now()` during render, so the replay page uses TanStack Query's
+  `dataUpdatedAt` as its "now" reference instead. Stable per render and
+  refreshes with the 2s poll on in-progress runs.
+
+Still pending in Week 9: animated DAG transitions during in-progress runs,
+a cost/score analytics page, and shadcn/ui polish for empty/error states.
 
 ## Pages
 
@@ -36,7 +52,7 @@ Live run-state animation on the DAG and run-replay timeline scrubbing land Week 
 | `/workflows/[id]` | YAML viewer + DAG render + "Run" button | Week 4 |
 | `/runs` | List of runs across workflows | Week 4 |
 | `/runs/[id]` | Single run: DAG with state, step list with tokens/cost/latency, Jaeger link | Week 4–5 |
-| `/runs/[id]/replay` | Run replay timeline scrubber | Week 9 |
+| `/runs/[id]/replay` | Run replay timeline: Gantt rows + scrubber + focused-step inspector | Week 9 |
 | `/evals` | Eval-run list with overall score, scorer chips, latency/cost | Week 7 |
 | `/evals/[id]` | Per-eval detail: stat strip + aggregate scores + per-case table | Week 7 |
 | `/analytics` | Cost trends, workflow scores over time | Week 9 |
