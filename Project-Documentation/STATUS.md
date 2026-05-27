@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-27 (Week 7 — `/evals` + `/evals/[id]` dashboard pages live; next is the optional compare view, then Week 8 CI eval-gate)_
+_Last updated: 2026-05-27 (Week 8 — CI eval-gate live; ready to tag `v0.5.0-cicd`)_
 
 ## DONE
 
@@ -38,16 +38,17 @@ _Last updated: 2026-05-27 (Week 7 — `/evals` + `/evals/[id]` dashboard pages l
 | 2026-05-24 | **Week 7, commit 2** — Eval persistence: migration 0003 (`eval_runs` + `eval_result_cases`, JSONB scores); eval-runner writes results to Postgres; extended `EvalRun` proto (overall_score, seeds, latency p50/p95, cost); Go `EvalService` (GetEvalRun/ListEvalRuns read; RunEval → Unimplemented). Verified: eval persisted → API serves it (overall, p50, scorers, per-case). | 26f3d18 |
 | 2026-05-27 | Handoff docs refresh: STATUS + README updated for the next session. | d569be5 |
 | 2026-05-27 | **Week 7, commit 3** — `/evals` dashboard pages: list view (`/evals`) with overall score, per-scorer chips tinted by quality, p50/p95 latency, total cost; detail view (`/evals/[id]`) with stat strip + aggregate scorer chips + expandable per-case table. New `evalClient` in `src/lib/rpc.ts`; `/evals` nav link added. Verified live: `ListEvalRuns` + `GetEvalRun` 200 against the existing persisted eval, both pages SSR clean and CSR data fetch lands. | 9a1b297 |
+| 2026-05-27 | **Week 8, CI eval-gate** — `.github/workflows/eval-gate.yml` + `scripts/ci-eval-gate.py`: PRs that touch `packages/examples/workflows/*.yaml` boot the dev stack, register baseline (from `origin/<base>`) + PR YAMLs, run the eval-runner against each, post a Δ-vs-baseline markdown table via `gh pr comment`, and fail the check on any per-scorer regression beyond `--gate-max-regression` (default 0.05). Eval-runner CLI grew `--baseline-json`, `--out-json`, `--out-md`, `--gate-max-regression`; new `gate.py` module with 5 unit tests (10/10 pass). Helper bypasses the `(name, version)` UNIQUE constraint by suffixing the YAML name with a per-role short hex. Verified locally end-to-end: gate passes on identical YAMLs (Δ=0), fails (exit 1) on an inflated-baseline regression test. `make eval-gate` runs the same helper locally. | _pending_ |
 
 ## IN FLIGHT
 
-**Branch:** none. `main` is at `9a1b297` (fast-forwarded from `feat/dashboard-evals-page`, branch retained on origin). Clean checkpoint.
+**Branch:** `feat/ci-eval-gate` (commit pending). No further work in flight after that.
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 7, optional two-run comparison view** — `/evals?compare=<a>&<b>` rendering the markdown-style diff; backend already produces it via `render_markdown(report, baseline)` in `apps/eval-runner/harnessflow_eval/reporters/markdown.py`. Can defer to Week 8 — the CI gate is the primary consumer and will render the diff itself.
-2. **Week 8, CI eval-gate** — `.github/workflows/eval-gate.yml`: on a PR that changes `packages/examples/workflows/*.yaml`, run the suite vs main, post the markdown comparison as a PR comment, block on regression. Reuses the eval-runner CLI + `render_markdown` baseline diff. Tag `v0.5.0-cicd` at end of Week 8.
-3. **Week 9, run-replay + analytics** — `/runs/[id]/replay` timeline scrubber, `/analytics` cost/score trends. Pulls from existing tables; no schema changes expected.
+1. **Tag `v0.5.0-cicd`** once the gate has run green against a real PR. The first PR that touches a workflow YAML doubles as the gate's own smoke test; if it passes, tag and push.
+2. **Week 9, run-replay + analytics** — `/runs/[id]/replay` timeline scrubber, `/analytics` cost/score trends. Pulls from existing tables; no schema changes expected.
+3. **Week 9 polish, optional `/evals?compare=<a>&<b>`** — dashboard-side rendering of the same markdown diff the CI gate posts. Cheap follow-up; defer until somebody asks for it.
 
 ## Releases
 

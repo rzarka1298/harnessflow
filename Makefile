@@ -1,7 +1,7 @@
 # HarnessFlow developer Makefile
 # Targets are scaffolded; bodies will be implemented as the corresponding code lands.
 
-.PHONY: help up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval demo-bandit test lint fmt clean tools-check
+.PHONY: help up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval eval-gate demo-bandit test lint fmt clean tools-check
 
 COMPOSE := docker compose
 
@@ -85,8 +85,14 @@ migrate-status: ## Print current migration version.
 demo: ## Run the canonical research-assistant demo workflow end-to-end.
 	bash scripts/demo.sh
 
-eval: ## Run the eval suite against the current main workflow.
-	@echo "TODO(week-7): cd apps/eval-runner && uv run harnessflow_eval --suite research-assistant"
+eval: ## Run the eval suite against a workflow id (set HARNESSFLOW_WORKFLOW_ID).
+	@test -n "$$HARNESSFLOW_WORKFLOW_ID" || { echo "set HARNESSFLOW_WORKFLOW_ID=<uuid>" >&2; exit 1; }
+	uv run --directory apps/eval-runner harnessflow-eval --workflow-id $$HARNESSFLOW_WORKFLOW_ID --dataset $${HARNESSFLOW_DATASET:-research-assistant}
+
+eval-gate: ## Run the CI eval-gate against locally changed workflow YAMLs (api+worker must be up).
+	uv run --directory apps/eval-runner python $(CURDIR)/scripts/ci-eval-gate.py \
+		--changed-files $$(git diff --name-only origin/main...HEAD -- 'packages/examples/workflows/*.yaml') \
+		--out-md /tmp/eval-gate-comment.md
 
 demo-bandit: ## (Week 13) A/B compare learned-retry vs static-retry policies.
 	@echo "TODO(week-13): scripts/demo-bandit.sh"

@@ -1,15 +1,19 @@
 # Evals — Overview
 
-> **Status (Week 7, near complete).** The eval *runner* is built: `apps/eval-runner/`
-> with three quality scorers, the `research-assistant.jsonl` dataset, the
-> httpx-based runner, markdown/JSON reporters, a CLI, and unit tests. Results
-> are persisted to Postgres (`eval_runs` + `eval_result_cases`, migration 0003)
-> and served read-only by Go `EvalService` (`RunEval` is intentionally
-> `Unimplemented` — execution stays in the eval-runner / CI gate). The
-> dashboard `/evals` and `/evals/[id]` pages are live. **Still pending:** the
-> optional two-run comparison view (`/evals?compare=<a>&<b>`) and the CI
-> eval-gate (`.github/workflows/eval-gate.yml`, Week 8). See
-> [ADR-0006](../decisions/0006-custom-eval-runner.md).
+> **Status (Week 8, complete).** Eval runner + persistence + dashboard pages +
+> CI eval-gate are all in. `apps/eval-runner/` has three quality scorers,
+> the `research-assistant.jsonl` dataset, the httpx-based runner,
+> markdown/JSON reporters, a CLI with `--baseline-json`/`--out-{json,md}`
+> /`--gate-max-regression` flags, and 10 unit tests (including 5 for the
+> gate). Results persist to Postgres (`eval_runs` + `eval_result_cases`,
+> migration 0003) and are served read-only by Go `EvalService`. Dashboard
+> `/evals` + `/evals/[id]` are live. The CI gate
+> (`.github/workflows/eval-gate.yml` + `scripts/ci-eval-gate.py`) boots the
+> dev stack on each PR that touches a workflow YAML, registers
+> baseline-vs-PR, evals both, posts the markdown diff as a PR comment, and
+> fails the check on any per-scorer regression beyond `--gate-max-regression`
+> (default 0.05). The week-14 autonomous mutation agent piggybacks on this
+> exact gate. See [ADR-0006](../decisions/0006-custom-eval-runner.md).
 
 **Location:** `apps/eval-runner/` (Python, uv). CI gate (planned) at `.github/workflows/eval-gate.yml`.
 
@@ -49,18 +53,43 @@ Off-the-shelf eval frameworks (deepeval, ragas, langchain.evaluation) bury the d
    - `json.py` — for the dashboard
    - `pr_comment.py` — posts via `gh` CLI
 
-## CI gate (week 8 — the killer recruiter feature)
+## CI gate (week 8 — the killer recruiter feature, now live)
 
-`.github/workflows/eval-gate.yml`:
+`.github/workflows/eval-gate.yml` + `scripts/ci-eval-gate.py`:
 
-1. Trigger: any PR that modifies `packages/examples/workflows/*.yaml`.
-2. Spin up docker-compose stack.
-3. Run eval suite against both the PR version and `main` version of the workflow.
-4. Diff the scores; produce markdown comparison.
-5. Post comment on PR (via `gh pr comment`).
-6. Set check status: green if all scorers within threshold, red if any regresses beyond `delta < min_delta` configured in the workflow YAML.
+1. **Trigger:** any PR that modifies `packages/examples/workflows/*.yaml`
+   (also re-runs on changes to the eval-runner or the gate scripts themselves
+   so the gate is exercised end-to-end on its own PRs).
+2. **Boot:** `docker compose up -d postgres redis temporal otel-collector`,
+   apply Postgres migrations via `psql`, build the Go API + Python worker
+   (host processes, `nohup`), seed the ChromaDB corpus, wait for `/readyz`.
+3. **Diff inputs:** `git diff --name-only origin/<base>...HEAD --
+   'packages/examples/workflows/*.yaml'` — files added on this PR.
+4. **For each file** (in `scripts/ci-eval-gate.py`):
+   - Read the baseline YAML via `git show origin/<base>:<path>` (skipped when
+     a file is newly added — the PR run is reported ungated for visibility).
+   - Rewrite `name:` in each copy with a per-role suffix
+     (`-gate-{base,pr}-<8 hex>`) so the `(name, version)` UNIQUE constraint
+     on `workflows` doesn't reject the second registration.
+   - POST each to `WorkflowService.CreateWorkflow`, run the eval-runner
+     against each; the PR run gets `--baseline-json <base.json>
+     --gate-max-regression 0.05` so its markdown output includes a Δ column
+     and its exit code reflects the gate verdict.
+   - Files whose stem doesn't match any dataset under
+     `apps/eval-runner/harnessflow_eval/datasets/` (e.g. `approval-demo.yaml`)
+     are skipped with a logged note.
+5. **Comment:** concatenated per-file markdown is posted via `gh pr comment
+   --body-file`. New comment each PR push; sticky-comment upgrade is a
+   later polish.
+6. **Verdict:** the workflow fails if any file's gate exit code was nonzero.
 
-The week-14 autonomous mutation agent piggybacks on this exact same gate.
+The gate runs against MockProvider (no LLM keys in CI), so scores are
+deterministic and free. The week-14 autonomous mutation agent piggybacks on
+this exact gate.
+
+The gate is testable locally: bring up `make up` + the api + worker, then
+`make eval-gate` (which runs `scripts/ci-eval-gate.py` against whatever
+YAMLs have changed vs `origin/main`).
 
 ## Related ADRs
 

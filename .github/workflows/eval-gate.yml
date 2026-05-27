@@ -1,0 +1,184 @@
+# HarnessFlow eval-gate — the Week 8 "killer feature" CI workflow.
+#
+# Triggered on PRs that modify a workflow YAML under
+# packages/examples/workflows/. For each changed file, this:
+#
+#   1. Boots the dev stack subset needed for an eval (postgres + redis +
+#      temporal + otel-collector) plus the in-house Go API and Python worker.
+#   2. Runs scripts/ci-eval-gate.py, which registers the baseline YAML (from
+#      origin/<base_ref>) and the PR YAML, runs the eval suite against each,
+#      and emits a single markdown comment body with a Δ table per scorer.
+#   3. Posts the markdown as a PR comment.
+#   4. Fails the check if any scorer regressed beyond the threshold.
+#
+# Most of the actual logic lives in scripts/ci-eval-gate.py (testable
+# locally — see Project-Documentation/evals/overview.md) so this YAML stays
+# scrutable. The gate is unauthenticated in CI: eval runs on MockProvider
+# (no API keys), which keeps results deterministic and free.
+
+name: eval-gate
+
+on:
+  pull_request:
+    paths:
+      - "packages/examples/workflows/**.yaml"
+      - "apps/eval-runner/**"
+      - "scripts/ci-eval-gate.py"
+      - ".github/workflows/eval-gate.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: eval-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  eval-gate:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://harnessflow:harnessflow@localhost:5432/harnessflow
+      HARNESSFLOW_API_BASE_URL: http://localhost:8080
+      # Force MockProvider in CI — eval scores stay deterministic and we
+      # don't burn LLM credits per PR.
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+
+    steps:
+      - name: Checkout (full history for baseline diff)
+        uses: actions/checkout@v4
+        with:
+          # ci-eval-gate.py reads `git show origin/<base>:<path>` to get the
+          # baseline version of each changed YAML, so we need the base ref's
+          # blob present.
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.sum
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Boot dev stack (postgres + redis + temporal + otel-collector)
+        run: |
+          docker compose up -d postgres redis temporal otel-collector
+          # Wait for the services with declared health-checks.
+          for svc in postgres redis temporal; do
+            for i in $(seq 1 60); do
+              status=$(docker compose ps --format json $svc | python3 -c 'import json,sys; d=json.load(sys.stdin); print((d[0] if isinstance(d, list) else d).get("Health", ""))' 2>/dev/null || true)
+              if [ "$status" = "healthy" ]; then
+                echo "$svc healthy"; break
+              fi
+              if [ "$i" = "60" ]; then
+                echo "::error::$svc never became healthy"; docker compose logs $svc; exit 1
+              fi
+              sleep 2
+            done
+          done
+
+      - name: Apply Postgres migrations
+        run: |
+          # All migrations are plain SQL; concatenating them in order is
+          # equivalent to `migrate up` on a fresh DB and avoids installing
+          # the migrate binary.
+          for f in apps/api/migrations/*.up.sql; do
+            echo "-- applying $f"
+            docker compose exec -T postgres psql -U harnessflow -d harnessflow -v ON_ERROR_STOP=1 < "$f"
+          done
+
+      - name: Build & start API
+        run: |
+          cd apps/api
+          go build -o /tmp/harnessflow-api ./cmd/api
+          nohup /tmp/harnessflow-api > /tmp/api.log 2>&1 &
+          echo $! > /tmp/api.pid
+
+      - name: Install worker + eval-runner Python deps
+        run: |
+          uv sync --directory apps/worker
+          uv sync --directory apps/eval-runner
+
+      - name: Seed ChromaDB corpus (needed by the `retrieve` activity)
+        run: |
+          # uv changes cwd to --directory, so pass an absolute script path.
+          uv run --directory apps/worker python "$GITHUB_WORKSPACE/scripts/seed-chroma.py"
+
+      - name: Start worker
+        run: |
+          cd apps/worker
+          nohup uv run python -m harnessflow_worker > /tmp/worker.log 2>&1 &
+          echo $! > /tmp/worker.pid
+
+      - name: Wait for /readyz
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/readyz > /dev/null; then
+              echo "api ready"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::api never became ready"; tail -50 /tmp/api.log; exit 1
+
+      - name: Compute changed workflow YAMLs
+        id: changed
+        run: |
+          base="origin/${{ github.base_ref }}"
+          # `git diff --name-only base...HEAD` lists files that changed on
+          # the PR branch since it diverged from base. Filter to workflow
+          # YAMLs only.
+          files=$(git diff --name-only "$base"...HEAD -- 'packages/examples/workflows/*.yaml' || true)
+          echo "$files"
+          # Pass as a space-separated single-line value through a heredoc
+          # to handle the empty case.
+          {
+            echo 'files<<EOF'
+            echo "$files"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run eval-gate
+        id: gate
+        if: steps.changed.outputs.files != ''
+        run: |
+          # shellcheck disable=SC2046
+          uv run --directory apps/eval-runner python "$GITHUB_WORKSPACE/scripts/ci-eval-gate.py" \
+            --changed-files $(echo "${{ steps.changed.outputs.files }}" | xargs) \
+            --baseline-ref "origin/${{ github.base_ref }}" \
+            --api-base-url "$HARNESSFLOW_API_BASE_URL" \
+            --gate-max-regression 0.05 \
+            --out-md /tmp/comment.md
+        continue-on-error: true
+
+      - name: Post / update PR comment
+        if: steps.changed.outputs.files != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # gh pr comment posts a new comment each invocation; that's fine
+          # for now — we can upgrade to a sticky-comment action later if
+          # the PR threads get noisy.
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body-file /tmp/comment.md
+
+      - name: Surface gate verdict
+        if: steps.changed.outputs.files != '' && steps.gate.outcome != 'success'
+        run: |
+          echo "::error::eval-gate detected a regression — see PR comment"
+          exit 1
+
+      - name: Dump server logs on failure
+        if: failure()
+        run: |
+          echo "--- api log ---"; tail -200 /tmp/api.log || true
+          echo "--- worker log ---"; tail -200 /tmp/worker.log || true

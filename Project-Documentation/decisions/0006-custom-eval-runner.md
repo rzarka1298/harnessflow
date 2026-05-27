@@ -22,6 +22,24 @@ Integrate `promptfoo` as an optional *consumer* (it can target a HarnessFlow wor
 - **Operational:** maintenance is on us. When a new scorer is needed, add a file in `scorers/` and a corresponding test.
 - **Recruiter signal:** "I built our own eval framework because the off-the-shelf ones hid the design" is a strong, opinionated stance at AI-infra companies (Braintrust, Patronus, Helicone, Anthropic Frontier). The framework is itself the deliverable.
 
+## Implementation notes (Week 8)
+
+Two non-obvious things the CI gate works around:
+
+- **`(name, version)` UNIQUE on `workflows`.** The gate registers a
+  baseline+PR pair per file via `CreateWorkflow`, so identical YAMLs collide.
+  `scripts/ci-eval-gate.py` rewrites `name:` with a per-role suffix
+  (`-gate-base-<8hex>` / `-gate-pr-<8hex>`) before posting. Names are
+  display-only at runtime; the eval runner targets workflows by id. An
+  alternative would have been a new `upsert` mode on `CreateWorkflow`, but
+  that bleeds CI concerns into the API surface.
+
+- **Per-scorer regression, not overall.** The gate flags any scorer whose
+  mean drops by more than `--gate-max-regression` (default 0.05), rather
+  than gating on the headline `overall_score`. The overall is an
+  unweighted mean and can hide a catastrophic drop in one scorer (e.g.
+  exact-match → 0) behind improvements elsewhere. See `gate.py`.
+
 ## Alternatives considered
 
 - **`deepeval`.** Rejected: opinionated API; LLM-as-judge implementation locks us into their judge prompt structure.
