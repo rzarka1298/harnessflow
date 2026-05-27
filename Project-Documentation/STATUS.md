@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-22 (Week 7 in progress — eval runner core landed)_
+_Last updated: 2026-05-27 (Week 7 — eval runner core + persistence done; `/evals` page next)_
 
 ## DONE
 
@@ -35,21 +35,22 @@ _Last updated: 2026-05-22 (Week 7 in progress — eval runner core landed)_
 | 2026-05-22 | **Week 6, commit 3/4** — Failure analysis: migration 0002 (`input_preview`/`output_preview`); worker persists rendered prompt + response; proto Step + dashboard expandable step detail (error/prompt/response). Verified previews returned by GetRun. | 7891c80 |
 | 2026-05-22 | **Week 6, commit 4/4** — Project-Documentation sweep: refreshed evals/dashboard/infrastructure/demo overviews to match reality, added `workers/llm-client.md` + `orchestration/temporal-patterns.md`, fixed stale claims found in a docs-vs-code audit. | 7891c80 |
 | 2026-05-22 | **Week 7, commit 1** — Eval runner core: `apps/eval-runner/` (uv) with `exact_match`/`embedding_similarity`/`llm_judge` scorers, `research-assistant.jsonl` (10 cases), httpx Connect-API runner, report aggregation + markdown/JSON reporters, CLI, 5 unit tests. Reuses worker `LLMClient` via uv path dep (+ added `py.typed` to worker). Verified live. | 81d86dd |
-| 2026-05-24 | **Week 7, commit 2** — Eval persistence: migration 0003 (`eval_runs` + `eval_result_cases`, JSONB scores); eval-runner writes results to Postgres; extended `EvalRun` proto (overall_score, seeds, latency p50/p95, cost); Go `EvalService` (GetEvalRun/ListEvalRuns read; RunEval → Unimplemented). Verified: eval persisted → API serves it (overall, p50, scorers, per-case). | _pending branch merge_ |
+| 2026-05-24 | **Week 7, commit 2** — Eval persistence: migration 0003 (`eval_runs` + `eval_result_cases`, JSONB scores); eval-runner writes results to Postgres; extended `EvalRun` proto (overall_score, seeds, latency p50/p95, cost); Go `EvalService` (GetEvalRun/ListEvalRuns read; RunEval → Unimplemented). Verified: eval persisted → API serves it (overall, p50, scorers, per-case). | 26f3d18 |
+| 2026-05-27 | Handoff docs refresh: STATUS + README updated for the next session. | _pending_ |
 
 ## IN FLIGHT
 
-**Branch:** `feat/week7-eval-persistence`. Week 7 in progress.
+**Branch:** none. `main` is at `26f3d18`. No work in flight — clean checkpoint.
 
-**Current task:** merge commit 2; then the `/evals` dashboard page (commit 3), then the Week-8 CI eval-gate.
+**Current task:** resume Week 7 at the `/evals` dashboard page.
 
-**Next file to touch:** `apps/dashboard/src/app/evals/page.tsx` — eval-runs list + detail page wiring `EvalService`.
+**Next file to touch:** `apps/dashboard/src/app/evals/page.tsx` — eval-runs list + per-run detail wiring `EvalService.ListEvalRuns` + `GetEvalRun`. Add an `/evals` nav link in `apps/dashboard/src/app/layout.tsx`.
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 7, eval persistence + EvalService** — `eval_results` (+ `eval_result_cases`) migration; implement the `EvalService` handler (RunEval/GetEvalRun/ListEvalRuns) so eval runs are stored and queryable; have the eval-runner POST results (or the API drive eval runs).
-2. **Week 7, `/evals` dashboard page** — list eval runs + a two-run comparison table.
-3. **Week 8, CI eval-gate** — `.github/workflows/eval-gate.yml`: on a PR that changes `packages/examples/workflows/*.yaml`, run the suite vs main, post the markdown comparison, block on regression. The `render_markdown(report, baseline)` diff path already exists.
+1. **Week 7, `/evals` dashboard page** — list eval runs (overall score, per-scorer chips, latency p50/p95, cost) backed by `EvalService.ListEvalRuns`; per-run detail (`/evals/[id]`) showing aggregate scores + the per-case table from `GetEvalRun`. Status enums and int64 fields are wire-strings (handled the same way as in `/runs`).
+2. **Week 7, optional two-run comparison view** — `/evals?compare=<a>&<b>` rendering the markdown-style diff; backend already produces it via `render_markdown(report, baseline)`.
+3. **Week 8, CI eval-gate** — `.github/workflows/eval-gate.yml`: on a PR that changes `packages/examples/workflows/*.yaml`, run the suite vs main, post the markdown comparison as a PR comment, block on regression. Reuses the eval-runner CLI + `render_markdown` baseline diff. Tag `v0.5.0-cicd` at end of Week 8.
 
 ## Releases
 
