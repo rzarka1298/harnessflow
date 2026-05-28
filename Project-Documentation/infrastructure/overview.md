@@ -68,11 +68,34 @@ Healthchecks on every service. `make up` blocks until everything is healthy.
   Adapter + a rule mapping the Temporal SDK metric — see the chart README).
 - `templates/NOTES.txt` — post-install instructions printed by Helm.
 
-Verified: `helm lint` clean; `helm template` renders with both bundled
-and externals-only paths; rendered manifests pass `kubectl apply
---dry-run=client`. Real `kind` smoke-test (`make kind-up && make
-kind-load && helm install ...`) is the Week-10 closing checkpoint
-tracked in STATUS.
+- `templates/migrate-job.yaml` — DB schema as a **post-install /
+  post-upgrade** hook Job (golang-migrate) plus a normal ConfigMap that
+  renders the vendored `files/migrations/*.up.sql`. It's post-install,
+  not pre-install, because the bundled Postgres is a main resource that
+  doesn't exist during the pre-install phase — a pre-install hook
+  deadlocks waiting for a DB (and an envFrom ConfigMap) that aren't there
+  yet. A `wait-for-postgres` init container (`pg_isready`) handles the
+  race so the Job doesn't burn its backoffLimit. Migrations are vendored
+  via `make helm-sync-migrations` (copies of `apps/api/migrations/*`).
+
+**kind smoke-test — passed 2026-05-28** (kind v0.31, k8s v1.35):
+- All three images build (`api` 42MB distroless, `dashboard` 307MB,
+  `worker` 919MB). Fixed two build bugs found here: the api Dockerfile
+  now builds from the repo root (it needs `packages/sdk/gen/go` via
+  go.work — the old `apps/api`-context build couldn't resolve it), and
+  the dashboard Dockerfile disables pnpm 10's strict build-script check
+  for the optional native deps `sharp`/`unrs-resolver`.
+- Chart installs; the post-install migrate hook applies all 6 tables to
+  in-cluster Postgres; the `dashboard` pod reaches `1/1 Running` and
+  serves HTTP 200; the `api` logs `postgres connected` and exits only on
+  the deliberately-absent Temporal.
+- **Upstream snag:** the bundled bitnami `postgresql`/`redis` images 404
+  (2025 bitnami catalog migration), so the smoke test installs against
+  plain `postgres`/`redis` Deployments (`infrastructure/kind/dev-deps.yaml`)
+  via the chart's `external*` blocks. Tracked as a follow-up — swap the
+  subchart provider or vendor first-party DB manifests. `helm lint` clean;
+  `helm template` renders both dependency paths; manifests pass
+  `kubectl apply --dry-run=client`.
 
 Convenience targets in the repo `Makefile`: `helm-deps`, `helm-lint`,
 `helm-template`, `kind-up`, `kind-down`, `kind-load`.
@@ -108,5 +131,7 @@ Cost target: <$10/day when running. Document in `COST.md`.
 - [ ] Decide ingress: ALB on EKS, port-forward on kind, host-port on docker-compose
 - [ ] Backup story for RDS — `automated_backup_retention_period = 7` is fine for a demo
 - [ ] EKS node-group instance type — t3.medium is enough for the demo workload; document why
-- [ ] Real `kind` install + smoke-test run (Week-10 closeout)
+- [x] Real `kind` install + smoke-test run (Week-10 closeout) — passed 2026-05-28; see above.
+- [ ] Bitnami subchart images 404 (2025 catalog migration) — swap subchart provider or vendor first-party Postgres/Redis manifests so the bundled path works clone-and-run.
+- [ ] Stand up the Temporal subchart in-cluster (or point at a managed Temporal) for a full api↔worker run on kind.
 - [ ] Prometheus Adapter rule for `temporal_workflow_task_queue_backlog` so the worker HPA can scale on queue depth, not CPU

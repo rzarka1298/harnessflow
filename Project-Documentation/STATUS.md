@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-27 (Week 10 in flight — Helm chart + kind config + dashboard Dockerfile landed; live kind smoke-test remains)_
+_Last updated: 2026-05-28 (Week 10 complete — Helm chart + kind smoke-test passed; Week 11 Terraform next)_
 
 ## DONE
 
@@ -47,14 +47,16 @@ _Last updated: 2026-05-27 (Week 10 in flight — Helm chart + kind config + dash
 | 2026-05-27 | **Week 9, commit 4** — Dashboard polish: shared `StateMessage` component (`LoadingState`, `EmptyState`, `ErrorState`, `InlineError`) under `src/components/`, used by every page that fetches data. Each variant is a dashed-border panel with Unicode glyph + title + body + optional CTA — hand-rolled rather than pulling in shadcn since the dashboard is already consistent with itself. Error states get a `Retry` button wired to the failing query's `refetch()`. Empty states explain how to get data (e.g., `/evals` tells you to run `harnessflow-eval` or open a PR; `/runs` points at "Run workflow" + `make demo`). Top nav (`layout.tsx`) now `sticky top-0 z-20` with backdrop-blur so it stays visible on long pages. Skipped: user-facing dark-mode toggle (OS preference is honored). All 7 fetching pages return 200; lint + tsc clean. | 79b70bf |
 | 2026-05-27 | **Week 10, commit 1** — Helm chart at `infrastructure/helm/harnessflow/` (Chart.yaml + values.yaml + _helpers.tpl + Deployments/Services/ConfigMap/Secret/HPA/NOTES.txt) plus a minimal `infrastructure/kind/cluster.yaml`. Three subchart deps (`bitnami/postgresql`, `bitnami/redis`, `temporalio/temporal`) gated by `*.enabled` flags so production can swap to managed services via `external*` blocks. Worker HPA defaults to CPU; opts into `temporal_workflow_task_queue_backlog` as a Pods custom metric once Prometheus Adapter is installed (rule + opt-in flag documented in chart README). Dashboard now ships a multi-stage Dockerfile using Next.js `output: 'standalone'`. Convenience `make helm-{deps,lint,template}` + `make kind-{up,down,load}` targets. `helm lint` clean; `helm template` renders both bundled (~70 resources) and externals-only (1 CM + 1 Secret + 2 Svc + 3 Deploy + 1 HPA) paths; `kubectl apply --dry-run=client` accepts the manifests. Real `kind` smoke-test still to do (kind isn't installed in this shell). | a492e9b |
 
+| 2026-05-28 | **Week 10, commit 2** — kind smoke-test + the fixes it surfaced. (1) api Dockerfile now builds from the repo root with go.work + `packages/sdk/gen/go` (the old `apps/api`-context build couldn't resolve the workspace dep); added a root `.dockerignore`; `make kind-load` uses `-f apps/api/Dockerfile .`. (2) dashboard Dockerfile disables pnpm 10's strict build-script check (`PNPM_CONFIG_STRICT_DEP_BUILDS`/`VERIFY_DEPS_BEFORE_RUN=false`) for the optional native deps sharp/unrs-resolver. (3) New `templates/migrate-job.yaml`: post-install/post-upgrade hook Job (golang-migrate) + ConfigMap from vendored `files/migrations/*.up.sql`; `make helm-sync-migrations`. Post-install (not pre-install) because bundled Postgres is a main resource absent during the pre-install phase. (4) `infrastructure/kind/dev-deps.yaml` — plain pg/redis stand-ins. **Result:** all 3 images build; chart installs; migrate hook creates all 6 tables in-cluster; dashboard 1/1 Running serving HTTP 200; api logs `postgres connected` and exits only on the absent Temporal. **Upstream snag:** bundled bitnami pg/redis images 404 (2025 catalog migration) — smoke test used external plain pg/redis; tracked as a follow-up. | _pending_ |
+
 ## IN FLIGHT
 
-**Branch:** none. `main` is at `a492e9b`. Week 10 — chart + kind config + dashboard Dockerfile shipped; live `kind create cluster → helm install` smoke-test is the closing item (needs `kind` installed locally, e.g. `brew install kind`).
+**Branch:** `feat/helm-chart-smoke` (commit pending). Week 10 complete after this.
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 10, kind smoke-test** — install `kind` (`brew install kind`), run `make kind-up && make kind-load && make helm-deps && helm install hf infrastructure/helm/harnessflow -n hf --create-namespace ...`, verify the api/worker/dashboard pods reach `Ready`, port-forward, smoke-test that a workflow run completes end-to-end. Also: a Prometheus Adapter rule for `temporal_workflow_task_queue_backlog` so the worker HPA can scale on queue depth (currently CPU-only as the safe default).
-2. **Week 11, Terraform + Redpanda** — VPC, EKS (one node group, t3.medium), RDS Postgres, ElastiCache Redis, IAM/IRSA, S3 via `terraform-aws-modules/eks` + `vpc`. `terraform plan` only — no apply yet. Redpanda event firehose: workflow lifecycle events → Kafka topic → Python consumer → Parquet on S3. ADR-0004 gets finalized here.
+1. **Week 11, Terraform + Redpanda** — VPC, EKS (one node group, t3.medium), RDS Postgres, ElastiCache Redis, IAM/IRSA, S3 via `terraform-aws-modules/eks` + `vpc`. `terraform plan` only — no apply yet. Redpanda event firehose: workflow lifecycle events → Kafka topic → Python consumer → Parquet on S3. ADR-0004 gets finalized here.
+2. **Week 10 follow-ups (do alongside Week 11):** swap the bitnami subchart provider (or vendor first-party pg/redis manifests) so the bundled chart path works clone-and-run; stand up the Temporal subchart in-cluster (or managed) for a full api↔worker run on kind; Prometheus Adapter rule for `temporal_workflow_task_queue_backlog` to scale the worker HPA on queue depth.
 3. **Week 12 ship** — `terraform apply`, Helm install on EKS, smoke test; record 5-min demo video; tag `v1.0.0`.
 
 ## Releases

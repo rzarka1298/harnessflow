@@ -1,0 +1,25 @@
+# Root build context is used by apps/api/Dockerfile (it needs the Go
+# workspace + packages/sdk/gen/go). Keep everything heavy/irrelevant out
+# so the context upload stays small.
+.git
+**/node_modules
+**/.venv
+**/.next
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/*.tsbuildinfo
+**/dist
+**/build
+apps/dashboard
+apps/worker
+apps/eval-runner
+infrastructure
+Project-Documentation
+docs
+scripts
+*.md
+data
+tmp
+*.log

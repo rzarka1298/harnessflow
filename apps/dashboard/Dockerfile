@@ -11,6 +11,15 @@ FROM node:22-alpine AS deps
 RUN apk add --no-cache libc6-compat
 RUN corepack enable pnpm
 WORKDIR /app
+# pnpm 10+ hard-errors when a dependency ships a native build script that
+# isn't explicitly approved (here: sharp, unrs-resolver), and re-runs that
+# check before any `pnpm run` script. Neither dep is needed in the runtime
+# image — sharp is Next's optional image optimizer (falls back to a wasm
+# codec) and unrs-resolver is lint-only — so we disable both the strict
+# build check and the pre-run dep verification rather than install native
+# toolchains to compile them.
+ENV PNPM_CONFIG_STRICT_DEP_BUILDS=false \
+    PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
@@ -18,6 +27,10 @@ RUN pnpm install --frozen-lockfile
 FROM node:22-alpine AS build
 RUN corepack enable pnpm
 WORKDIR /app
+# Same pnpm config as the deps stage so `pnpm build`'s pre-run dep check
+# doesn't re-trip on the skipped native build scripts.
+ENV PNPM_CONFIG_STRICT_DEP_BUILDS=false \
+    PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # next.config.ts sets output: 'standalone'; build emits .next/standalone

@@ -26,37 +26,73 @@ upstream subcharts).
 
 ## Quickstart — local kind cluster
 
+> **Heads-up on the bundled DB/cache subcharts** — see "Known issue:
+> Bitnami images" below. The bitnami `postgresql` / `redis` public images
+> were pulled in the 2025 catalog migration, so the bundled path currently
+> 404s on image pull. The smoke-test recipe below installs against plain
+> `postgres` / `redis` Deployments (`infrastructure/kind/dev-deps.yaml`)
+> via the chart's `external*` blocks. The Temporal subchart (heavy:
+> Cassandra StatefulSet) is left off for the local smoke test; the
+> api↔Temporal↔worker path is exercised by `make demo` on the
+> docker-compose stack.
+
 ```bash
-# 1. spin up kind + ingress controller (Week-10 baseline)
-kind create cluster --name harnessflow --config infrastructure/kind/cluster.yaml
+# 1. cluster + images
+make kind-up          # kind create cluster --config infrastructure/kind/cluster.yaml
+make kind-load        # docker build all three, kind load docker-image
 
-# 2. build + load images (no registry needed for kind)
-docker build -t harnessflow/api:dev      apps/api
-docker build -t harnessflow/worker:dev   apps/worker
-docker build -t harnessflow/dashboard:dev apps/dashboard
-kind load docker-image --name harnessflow \
-  harnessflow/api:dev harnessflow/worker:dev harnessflow/dashboard:dev
+# 2. plain pg + redis (stand-ins for the bitnami subcharts)
+kubectl create namespace hf
+kubectl apply -n hf -f infrastructure/kind/dev-deps.yaml
+kubectl wait --for=condition=ready pod -l app=postgres -n hf --timeout=90s
 
-# 3. fetch chart deps
-helm repo add bitnami  https://charts.bitnami.com/bitnami
-helm repo add temporal https://go.temporal.io/helm-charts
-helm dependency build infrastructure/helm/harnessflow
-
-# 4. install
+# 3. install the chart against the external pg/redis
 helm install hf infrastructure/helm/harnessflow \
-  --namespace harnessflow --create-namespace \
-  --set images.registry=harnessflow \
-  --set images.tag=dev \
-  --set images.pullPolicy=IfNotPresent \
-  --set temporal.server.replicaCount=1 \
-  --wait
+  --namespace hf \
+  --set images.registry=harnessflow --set images.tag=dev --set images.pullPolicy=Never \
+  --set postgresql.enabled=false --set redis.enabled=false --set temporal.enabled=false \
+  --set externalPostgres.host=postgres --set externalPostgres.existingSecret=hf-pg \
+  --set externalRedis.host=redis \
+  --set externalTemporal.host=temporal-frontend.hf.svc.cluster.local
 
-# 5. smoke-test the deployment
-kubectl -n harnessflow port-forward svc/hf-harnessflow-api 8080:8080 &
-kubectl -n harnessflow port-forward svc/hf-harnessflow-dashboard 3000:3000 &
-curl -s http://localhost:8080/readyz   # → {"status":"ready"}
-open http://localhost:3000             # dashboard renders
+# 4. verify
+kubectl get pods -n hf
+kubectl exec -n hf deploy/postgres -- psql -U harnessflow -d harnessflow -c '\dt'
+kubectl -n hf port-forward svc/hf-harnessflow-dashboard 3000:3000 &
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3000/   # → 200
 ```
+
+### Verified (2026-05-28, kind v0.31 / k8s v1.35)
+
+- All three images build (`api` 42MB distroless, `dashboard` 307MB, `worker` 919MB).
+- Chart installs; the **post-install migrate hook applies all 6 tables**
+  to the in-cluster Postgres (`workflows`, `workflow_runs`,
+  `workflow_steps`, `eval_runs`, `eval_result_cases`, `schema_migrations`).
+- `dashboard` pod reaches `1/1 Running` and serves **HTTP 200**.
+- `api` logs `postgres connected`, then exits only on
+  `dial temporal-frontend…` — i.e. DB + config wiring are correct; the
+  sole blocker is the deliberately-absent Temporal.
+
+## Known issue: Bitnami images
+
+The `postgresql` and `redis` dependencies are bitnami charts, and bitnami
+moved their public images out of `docker.io/bitnami/*` during their 2025
+catalog migration — so `helm install` with the bundled subcharts fails at
+image pull (`docker.io/bitnami/postgresql:17.x: not found`).
+
+Workarounds, cheapest first:
+1. **External services** (what the smoke test does): set
+   `postgresql.enabled=false` / `redis.enabled=false` and point the
+   `externalPostgres` / `externalRedis` blocks at any reachable instance —
+   managed (RDS/ElastiCache) in prod, or the plain Deployments in
+   `infrastructure/kind/dev-deps.yaml` locally.
+2. **Pin working images** via `--set
+   postgresql.image.repository=…`/`tag=…` to a registry that still hosts
+   them (e.g. the `bitnamilegacy` archive while it lasts).
+
+Durable fix (tracked in `Project-Documentation/STATUS.md` / infra
+overview TODO): swap the subchart provider, or vendor first-party
+Postgres/Redis manifests so clone-and-run doesn't depend on bitnami.
 
 ## External dependencies
 
@@ -123,7 +159,11 @@ bursts.
 
 - Chart renders cleanly (`helm lint`, `helm template` with both bundled
   and external dependency paths) and `kubectl --dry-run=client` accepts
-  the resulting manifests.
-- Real `kind` smoke-test is the Week-10 closing item — that exercises
-  the full pull-image / migrate / start path; tracked in
-  `Project-Documentation/STATUS.md`.
+  the manifests.
+- **kind smoke-test passed** (2026-05-28) — images build + load, chart
+  installs, post-install migrate hook creates the schema, dashboard
+  serves HTTP 200, api connects to Postgres. See "Verified" above.
+- Open follow-ups: (1) bundled-subchart image availability (see "Known
+  issue: Bitnami images"); (2) stand up the Temporal subchart in-cluster
+  for a full api↔worker run, or point at a managed Temporal; (3)
+  Prometheus Adapter rule so the worker HPA scales on queue depth.

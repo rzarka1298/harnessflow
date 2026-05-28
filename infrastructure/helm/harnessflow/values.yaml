@@ -37,6 +37,20 @@ env:
     anthropicApiKey: ""
 
 # ---------------------------------------------------------------------
+# Database migrations
+# ---------------------------------------------------------------------
+# Runs as a pre-install / pre-upgrade Helm hook Job (golang-migrate)
+# against the target Postgres before the app pods roll. The .up.sql files
+# are vendored from apps/api/migrations into files/migrations/ — refresh
+# with `make helm-sync-migrations`.
+migrations:
+  enabled: true
+  image: migrate/migrate:v4.18.1
+  # Used by the wait-for-postgres init container (needs pg_isready).
+  waitImage: postgres:16-alpine
+  backoffLimit: 5
+
+# ---------------------------------------------------------------------
 # api (Go orchestrator — Connect HTTP + Temporal client)
 # ---------------------------------------------------------------------
 api:

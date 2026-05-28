@@ -1,0 +1,101 @@
+{{- if .Values.migrations.enabled -}}
+{{/* DB-migration as a post-install/post-upgrade Helm hook.
+
+     The api/worker assume their tables exist; nothing in the app applies
+     migrations at startup (deliberate — startup-migrations race when
+     replicas > 1). So we run them once, as a hook Job using the
+     golang-migrate image.
+
+     Timing: this is a *post*-install hook, not pre-install. When Postgres
+     is bundled in the same release it's a main resource that only exists
+     after the install phase — a pre-install hook would deadlock waiting
+     for a database that hasn't been created yet (and its envFrom
+     ConfigMap wouldn't exist either). The trade-off is that app pods can
+     start before the schema lands and crash-loop briefly; they recover on
+     the next restart once this Job completes. The wait-for-postgres init
+     container keeps the Job itself from burning its backoffLimit.
+
+     The .up.sql files are vendored into files/migrations/ and rendered
+     into the ConfigMap below. They're copies of apps/api/migrations/*;
+     `make helm-sync-migrations` refreshes them. The ConfigMap is a normal
+     resource (not a hook) so it's present when the hook Job mounts it. */}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "harnessflow.fullname" . }}-migrations
+  labels:
+    {{- include "harnessflow.labels" . | nindent 4 }}
+data:
+  {{- range $path, $_ := .Files.Glob "files/migrations/*.up.sql" }}
+  {{ base $path }}: |-
+    {{- $.Files.Get $path | nindent 4 }}
+  {{- end }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "harnessflow.fullname" . }}-migrate
+  labels:
+    {{- include "harnessflow.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  template:
+    metadata:
+      labels:
+        {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" "migrate") | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      {{- with .Values.images.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # Postgres may still be starting when the hook fires (the bundled
+      # subchart's pod and this Job race). Block until it answers before
+      # running migrate, so the Job doesn't burn its backoffLimit on
+      # connection-refused.
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ .Values.migrations.waitImage }}
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER"; do
+                echo "waiting for postgres at $POSTGRES_HOST:$POSTGRES_PORT…"
+                sleep 2
+              done
+          envFrom:
+            - configMapRef:
+                name: {{ include "harnessflow.fullname" . }}-config
+      containers:
+        - name: migrate
+          image: {{ .Values.migrations.image }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "harnessflow.fullname" . }}-config
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "harnessflow.postgresSecretName" . }}
+                  key: {{ if .Values.postgresql.enabled }}password{{ else }}postgres-password{{ end }}
+          command:
+            - sh
+            - -c
+            - |
+              migrate \
+                -path=/migrations \
+                -database="postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB?sslmode=disable" \
+                up
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
+      volumes:
+        - name: migrations
+          configMap:
+            name: {{ include "harnessflow.fullname" . }}-migrations
+{{- end -}}
