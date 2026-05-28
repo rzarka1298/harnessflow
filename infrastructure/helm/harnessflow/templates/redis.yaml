@@ -1,0 +1,50 @@
+{{- if .Values.redis.enabled -}}
+{{/* First-party bundled Redis for local/kind/demo. Ephemeral — HarnessFlow
+     uses Redis only for transient pub/sub, so no persistence. Production
+     sets redis.enabled=false and points externalRedis at ElastiCache. */}}
+{{- $component := "redis" -}}
+{{- $name := include "harnessflow.componentName" (dict "ctx" . "component" $component) -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 8 }}
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image }}
+          ports:
+            - name: redis
+              containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+spec:
+  ports:
+    - port: 6379
+      targetPort: redis
+      name: redis
+  selector:
+    {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+{{- end -}}

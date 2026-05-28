@@ -1,0 +1,114 @@
+{{- if .Values.postgresql.enabled -}}
+{{/* First-party bundled Postgres for local/kind/demo. Deliberately plain
+     — single replica, official postgres:16-alpine image, optional PVC.
+     NOT for production: set postgresql.enabled=false and point
+     externalPostgres at a managed instance (RDS) there. Replaces the
+     bitnami subchart whose public images vanished in the 2025 catalog
+     migration. */}}
+{{- $component := "postgres" -}}
+{{- $name := include "harnessflow.componentName" (dict "ctx" . "component" $component) -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+type: Opaque
+stringData:
+  # Key name matches what the api/worker/migrate templates reference and
+  # what externalPostgres.existingSecret is documented to provide.
+  postgres-password: {{ .Values.postgresql.auth.password | quote }}
+{{- if .Values.postgresql.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- with .Values.postgresql.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.persistence.size }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate   # single PVC; never run two pods against the same volume
+  selector:
+    matchLabels:
+      {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgresql.image }}
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.auth.database | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $name }}
+                  key: postgres-password
+            # Keeps the data dir off the volume root so a mounted PVC
+            # (which may carry a lost+found) doesn't block initdb.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgres
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.postgresql.auth.username | quote }}]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.postgresql.auth.username | quote }}]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.postgresql.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          {{- if .Values.postgresql.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ $name }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "harnessflow.componentLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+spec:
+  ports:
+    - port: 5432
+      targetPort: postgres
+      name: postgres
+  selector:
+    {{- include "harnessflow.componentSelectorLabels" (dict "ctx" . "component" $component) | nindent 4 }}
+{{- end -}}

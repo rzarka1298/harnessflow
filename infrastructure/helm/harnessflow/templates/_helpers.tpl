@@ -63,12 +63,13 @@ app.kubernetes.io/component: {{ .component }}
 {{- printf "%s/%s:%s" $registry .svc.image.repository $tag -}}
 {{- end -}}
 
-{{/* Postgres connection string. Uses the bundled subchart when enabled,
-     otherwise the externalPostgres block. The secret containing the
-     password is wired separately via env-from. */}}
+{{/* Postgres connection bits. Uses the bundled first-party Postgres
+     (templates/postgres.yaml) when enabled, otherwise the externalPostgres
+     block. The password always lives in a Secret under the key
+     `postgres-password` (bundled or external), wired via secretKeyRef. */}}
 {{- define "harnessflow.postgresHost" -}}
 {{- if .Values.postgresql.enabled -}}
-{{- printf "%s-postgresql" .Release.Name -}}
+{{- include "harnessflow.componentName" (dict "ctx" . "component" "postgres") -}}
 {{- else -}}
 {{- required "externalPostgres.host is required when postgresql.enabled=false" .Values.externalPostgres.host -}}
 {{- end -}}
@@ -100,7 +101,7 @@ app.kubernetes.io/component: {{ .component }}
 
 {{- define "harnessflow.postgresSecretName" -}}
 {{- if .Values.postgresql.enabled -}}
-{{- printf "%s-postgresql" .Release.Name -}}
+{{- include "harnessflow.componentName" (dict "ctx" . "component" "postgres") -}}
 {{- else -}}
 {{- required "externalPostgres.existingSecret is required when postgresql.enabled=false" .Values.externalPostgres.existingSecret -}}
 {{- end -}}

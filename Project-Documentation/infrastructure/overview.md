@@ -39,11 +39,21 @@ Healthchecks on every service. `make up` blocks until everything is healthy.
 
 `infrastructure/helm/harnessflow/`:
 
-- `Chart.yaml` — chart metadata + subchart deps (`bitnami/postgresql`,
-  `bitnami/redis`, `temporalio/temporal`). Jaeger / Prometheus / Grafana
-  are intentionally out of scope here; they install separately (e.g. via
+- `Chart.yaml` — chart metadata + the one subchart dep
+  (`temporalio/temporal`). Postgres + Redis are first-party templates
+  (see below), not subcharts. Jaeger / Prometheus / Grafana are
+  intentionally out of scope here; they install separately (e.g. via
   `prometheus-community/kube-prometheus-stack`) so observability stays a
   cluster-wide concern, not bound to a single app's lifecycle.
+- `templates/postgres.yaml` + `templates/redis.yaml` — bundled
+  first-party Postgres (Deployment + Service + Secret + optional PVC) and
+  Redis (Deployment + Service) on the official `postgres:16-alpine` /
+  `redis:7-alpine` images, gated by `postgresql.enabled` / `redis.enabled`.
+  These replaced the bitnami subcharts after the 2025 bitnami catalog
+  migration pulled their public images (`helm install` 404'd on pull).
+  The bundled DB serves local/demo only — production sets the flags false
+  and points `externalPostgres` / `externalRedis` at managed RDS /
+  ElastiCache, where bitnami's hardening would have lived anyway.
 - `values.yaml` — fully commented defaults. Per-service blocks for `api`
   / `worker` / `dashboard`, plus `external{Postgres,Redis,Temporal}`
   blocks that activate when the matching subchart is toggled off.
@@ -89,13 +99,12 @@ Healthchecks on every service. `make up` blocks until everything is healthy.
   in-cluster Postgres; the `dashboard` pod reaches `1/1 Running` and
   serves HTTP 200; the `api` logs `postgres connected` and exits only on
   the deliberately-absent Temporal.
-- **Upstream snag:** the bundled bitnami `postgresql`/`redis` images 404
-  (2025 bitnami catalog migration), so the smoke test installs against
-  plain `postgres`/`redis` Deployments (`infrastructure/kind/dev-deps.yaml`)
-  via the chart's `external*` blocks. Tracked as a follow-up — swap the
-  subchart provider or vendor first-party DB manifests. `helm lint` clean;
-  `helm template` renders both dependency paths; manifests pass
-  `kubectl apply --dry-run=client`.
+- Re-verified 2026-05-28 after replacing the bitnami pg/redis subcharts
+  with first-party templates: the **bundled path now installs
+  clone-and-run** (no `external*` flags) — `hf-harnessflow-postgres` and
+  `hf-harnessflow-redis` both `1/1 Running`, migrate hook creates all 6
+  tables in the bundled Postgres, api logs `postgres connected`. `helm
+  lint` clean; `helm template` renders.
 
 Convenience targets in the repo `Makefile`: `helm-deps`, `helm-lint`,
 `helm-template`, `kind-up`, `kind-down`, `kind-load`.
@@ -132,6 +141,6 @@ Cost target: <$10/day when running. Document in `COST.md`.
 - [ ] Backup story for RDS — `automated_backup_retention_period = 7` is fine for a demo
 - [ ] EKS node-group instance type — t3.medium is enough for the demo workload; document why
 - [x] Real `kind` install + smoke-test run (Week-10 closeout) — passed 2026-05-28; see above.
-- [ ] Bitnami subchart images 404 (2025 catalog migration) — swap subchart provider or vendor first-party Postgres/Redis manifests so the bundled path works clone-and-run.
+- [x] Bitnami subchart images 404 (2025 catalog migration) — replaced with first-party Postgres/Redis templates; bundled path verified clone-and-run on kind 2026-05-28.
 - [ ] Stand up the Temporal subchart in-cluster (or point at a managed Temporal) for a full api↔worker run on kind.
 - [ ] Prometheus Adapter rule for `temporal_workflow_task_queue_backlog` so the worker HPA can scale on queue depth, not CPU

@@ -108,11 +108,9 @@ helm-deps: ## Fetch upstream subchart tarballs (postgres/redis/temporal) into ch
 helm-lint: ## helm lint the harnessflow chart.
 	helm lint infrastructure/helm/harnessflow
 
-helm-template: ## Render chart with subcharts disabled — quick local diff.
+helm-template: ## Render chart (bundled pg/redis, temporal off) — quick local diff.
 	helm template hf infrastructure/helm/harnessflow \
-		--set postgresql.enabled=false --set redis.enabled=false --set temporal.enabled=false \
-		--set externalPostgres.host=postgres.example --set externalPostgres.existingSecret=pg-creds \
-		--set externalTemporal.host=temporal.example --set externalRedis.host=redis.example
+		--set temporal.enabled=false --set externalTemporal.host=temporal.example
 
 kind-up: ## Create the local kind cluster from infrastructure/kind/cluster.yaml.
 	kind create cluster --name harnessflow --config infrastructure/kind/cluster.yaml

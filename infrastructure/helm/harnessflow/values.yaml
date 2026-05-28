@@ -142,17 +142,25 @@ dashboard:
 # external instance via the matching `external` block.
 # ---------------------------------------------------------------------
 
+# Bundled Postgres — a first-party plain Deployment (NOT a subchart) on
+# the official postgres image, for local/kind/demo only. Production sets
+# `enabled: false` and points externalPostgres at managed RDS.
 postgresql:
   enabled: true
+  image: postgres:16-alpine
   auth:
     username: harnessflow
     password: harnessflow
     database: harnessflow
-  # Single-replica, default storage for kind. Production overrides go
-  # via the upstream chart's full values surface.
-  primary:
-    persistence:
-      size: 8Gi
+  # emptyDir by default so kind installs need no PVC; set enabled: true +
+  # a size for a PersistentVolumeClaim (data survives pod restarts).
+  persistence:
+    enabled: false
+    size: 8Gi
+    storageClass: ""
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 512Mi }
 
 # External-postgres overrides used when postgresql.enabled=false.
 externalPostgres:
@@ -162,11 +170,15 @@ externalPostgres:
   user: harnessflow
   existingSecret: ""    # k8s Secret with key `postgres-password`
 
+# Bundled Redis — first-party plain Deployment on the official redis
+# image. Ephemeral (no persistence); HarnessFlow uses Redis only for
+# transient pub/sub. Production points externalRedis at ElastiCache.
 redis:
   enabled: true
-  auth:
-    enabled: false
-  architecture: standalone
+  image: redis:7-alpine
+  resources:
+    requests: { cpu: 25m, memory: 32Mi }
+    limits: { cpu: 200m, memory: 128Mi }
 
 externalRedis:
   host: ""

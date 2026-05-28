@@ -82,7 +82,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "harnessflow.postgresSecretName" . }}
-                  key: {{ if .Values.postgresql.enabled }}password{{ else }}postgres-password{{ end }}
+                  key: postgres-password
           command:
             - sh
             - -c

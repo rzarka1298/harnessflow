@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-28 (Week 10 complete — Helm chart + kind smoke-test passed; Week 11 Terraform next)_
+_Last updated: 2026-05-28 (Week 10 complete + bitnami caveat resolved — chart installs clone-and-run on kind; Week 11 Terraform next)_
 
 ## DONE
 
@@ -49,14 +49,16 @@ _Last updated: 2026-05-28 (Week 10 complete — Helm chart + kind smoke-test pas
 
 | 2026-05-28 | **Week 10, commit 2** — kind smoke-test + the fixes it surfaced. (1) api Dockerfile now builds from the repo root with go.work + `packages/sdk/gen/go` (the old `apps/api`-context build couldn't resolve the workspace dep); added a root `.dockerignore`; `make kind-load` uses `-f apps/api/Dockerfile .`. (2) dashboard Dockerfile disables pnpm 10's strict build-script check (`PNPM_CONFIG_STRICT_DEP_BUILDS`/`VERIFY_DEPS_BEFORE_RUN=false`) for the optional native deps sharp/unrs-resolver. (3) New `templates/migrate-job.yaml`: post-install/post-upgrade hook Job (golang-migrate) + ConfigMap from vendored `files/migrations/*.up.sql`; `make helm-sync-migrations`. Post-install (not pre-install) because bundled Postgres is a main resource absent during the pre-install phase. (4) `infrastructure/kind/dev-deps.yaml` — plain pg/redis stand-ins. **Result:** all 3 images build; chart installs; migrate hook creates all 6 tables in-cluster; dashboard 1/1 Running serving HTTP 200; api logs `postgres connected` and exits only on the absent Temporal. **Upstream snag:** bundled bitnami pg/redis images 404 (2025 catalog migration) — smoke test used external plain pg/redis; tracked as a follow-up. | 9e55a43 |
 
+| 2026-05-28 | **Week 10, commit 3** — Resolved the bitnami caveat. Dropped the `bitnami/postgresql` + `bitnami/redis` subchart deps (their public images 404 after the 2025 catalog migration); replaced with first-party `templates/postgres.yaml` + `templates/redis.yaml` (plain Deployments on official `postgres:16-alpine` / `redis:7-alpine`, gated by `postgresql.enabled`/`redis.enabled`, optional PVC for pg). Standardized the PG secret key to `postgres-password` across bundled + external paths; helpers now route the bundled hostnames to our own services. Temporal stays the lone subchart. Removed the now-redundant `dev-deps.yaml` workaround. **Re-verified on kind:** bundled path installs clone-and-run (no `external*` flags) — `hf-harnessflow-postgres` + `hf-harnessflow-redis` both 1/1 Running, migrate hook creates all 6 tables in the bundled PG, api logs `postgres connected`, dashboard serves HTTP 200. | _pending_ |
+
 ## IN FLIGHT
 
-**Branch:** none. `main` is at `9e55a43`. Week 10 complete (Helm chart + kind smoke-test passed). Clean checkpoint; Week 11 Terraform next.
+**Branch:** `feat/helm-firstparty-db` (commit pending). Week 10 fully closed after this.
 
 ## NEXT (top 3 from ROADMAP)
 
 1. **Week 11, Terraform + Redpanda** — VPC, EKS (one node group, t3.medium), RDS Postgres, ElastiCache Redis, IAM/IRSA, S3 via `terraform-aws-modules/eks` + `vpc`. `terraform plan` only — no apply yet. Redpanda event firehose: workflow lifecycle events → Kafka topic → Python consumer → Parquet on S3. ADR-0004 gets finalized here.
-2. **Week 10 follow-ups (do alongside Week 11):** swap the bitnami subchart provider (or vendor first-party pg/redis manifests) so the bundled chart path works clone-and-run; stand up the Temporal subchart in-cluster (or managed) for a full api↔worker run on kind; Prometheus Adapter rule for `temporal_workflow_task_queue_backlog` to scale the worker HPA on queue depth.
+2. **Week 10 follow-ups (do alongside Week 11):** stand up the Temporal subchart in-cluster (or managed) for a full api↔worker run on kind; Prometheus Adapter rule for `temporal_workflow_task_queue_backlog` to scale the worker HPA on queue depth. (Bitnami pg/redis caveat is resolved — first-party templates, verified clone-and-run.)
 3. **Week 12 ship** — `terraform apply`, Helm install on EKS, smoke test; record 5-min demo video; tag `v1.0.0`.
 
 ## Releases
