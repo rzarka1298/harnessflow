@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-05-28 (Week 10 complete + bitnami caveat resolved — chart installs clone-and-run on kind; Week 11 Terraform next)_
+_Last updated: 2026-06-10 (Week 11 complete — Redpanda firehose verified end-to-end + Terraform AWS env (plan-only); ADR-0004 finalized. Week 12 ship next)_
 
 ## DONE
 
@@ -51,15 +51,21 @@ _Last updated: 2026-05-28 (Week 10 complete + bitnami caveat resolved — chart 
 
 | 2026-05-28 | **Week 10, commit 3** — Resolved the bitnami caveat. Dropped the `bitnami/postgresql` + `bitnami/redis` subchart deps (their public images 404 after the 2025 catalog migration); replaced with first-party `templates/postgres.yaml` + `templates/redis.yaml` (plain Deployments on official `postgres:16-alpine` / `redis:7-alpine`, gated by `postgresql.enabled`/`redis.enabled`, optional PVC for pg). Standardized the PG secret key to `postgres-password` across bundled + external paths; helpers now route the bundled hostnames to our own services. Temporal stays the lone subchart. Removed the now-redundant `dev-deps.yaml` workaround. **Re-verified on kind:** bundled path installs clone-and-run (no `external*` flags) — `hf-harnessflow-postgres` + `hf-harnessflow-redis` both 1/1 Running, migrate hook creates all 6 tables in the bundled PG, api logs `postgres connected`, dashboard serves HTTP 200. | 4a38b4f |
 
+| 2026-06-10 | **Week 11, commit 1 — firehose producer.** `harnessflow_worker/events.py`: `WorkflowEvent` (flat JSON schema), `EventEmitter` protocol, `KafkaEventEmitter` (aiokafka, lazy import), `NullEmitter`, `build_emitter()`. Wired into `record_run_status` (run.started/completed/failed) + `with_persistence` (step.completed/failed); keyed by run_id; best-effort (never fails a workflow) + optional (NullEmitter when no brokers). Redpanda + console added to docker-compose (KRaft dev mode, :19092). aiokafka dep + 7 tests; ruff/mypy clean, 17/17 worker tests. Verified live: 1 run → 6 events on topic. | 3b5bf95 |
+
+| 2026-06-10 | **Week 11, commit 2 — firehose consumer.** `apps/event-consumer/` (uv app): consumes the topic, writes date-partitioned Parquet to S3 (MinIO locally). `sink.py` pure `events_to_parquet` under a fixed Arrow schema + Hive `dt=` partition key; `consumer.py` poll→batch→flush, at-least-once (write-then-commit). 5 offline tests; ruff/mypy clean. `make events-consume`. Verified full pipeline: the 6 events drained to one Parquet object in MinIO (6 rows × 15 cols), read back valid via pyarrow. | 3723040 |
+
+| 2026-06-10 | **Week 11, commit 3 — Terraform AWS demo env (plan-only).** `infrastructure/terraform/envs/demo/`: VPC (2 AZ, single NAT), EKS (1× t3.medium node group, IRSA, EBS CSI), RDS Postgres 16 (db.t4g.small single-AZ, password→Secrets Manager), ElastiCache Redis 7 (single node), S3 events bucket (SSE, 90-day lifecycle), IRSA role for the event-consumer SA. outputs feed the Helm `external*` values. COST.md (~$7/day) + README. `terraform fmt`/`init`/`validate` all pass (real AWS provider + community modules); plan/apply need creds (Week 12). Finalizes ADR-0004. | 04bcc89 |
+
 ## IN FLIGHT
 
-**Branch:** none. `main` is at `4a38b4f`. Week 10 fully closed (Helm chart + kind smoke-test + bitnami caveat resolved). Clean checkpoint; Week 11 Terraform next.
+**Branch:** none. `main` is at `04bcc89`. Week 11 complete (Redpanda firehose end-to-end + Terraform plan-only + ADR-0004 finalized). Clean checkpoint; Week 12 ship next.
 
 ## NEXT (top 3 from ROADMAP)
 
-1. **Week 11, Terraform + Redpanda** — VPC, EKS (one node group, t3.medium), RDS Postgres, ElastiCache Redis, IAM/IRSA, S3 via `terraform-aws-modules/eks` + `vpc`. `terraform plan` only — no apply yet. Redpanda event firehose: workflow lifecycle events → Kafka topic → Python consumer → Parquet on S3. ADR-0004 gets finalized here.
-2. **Week 10 follow-ups (do alongside Week 11):** stand up the Temporal subchart in-cluster (or managed) for a full api↔worker run on kind; Prometheus Adapter rule for `temporal_workflow_task_queue_backlog` to scale the worker HPA on queue depth. (Bitnami pg/redis caveat is resolved — first-party templates, verified clone-and-run.)
-3. **Week 12 ship** — `terraform apply`, Helm install on EKS, smoke test; record 5-min demo video; tag `v1.0.0`.
+1. **Week 12 ship** — `terraform apply` (needs AWS creds), Helm install on EKS pointing `external*` at the Terraform outputs, smoke test; record 5-min demo video; polish README + ARCHITECTURE; tag `v1.0.0`; `terraform destroy`.
+2. **Week 10/11 follow-ups (optional, do during Week 12 prep):** stand up Temporal in-cluster (or managed Temporal Cloud) for a full api↔worker run on kind/EKS; Prometheus Adapter rule for `temporal_workflow_task_queue_backlog` so the worker HPA scales on queue depth.
+3. **Phase 6 — research extensions (Weeks 13–14, `research/v1.1` branch):** contextual-bandit retry-policy learner, then the autonomous workflow-mutation agent. Both gate on eval-pass before merging to main.
 
 ## Releases
 
