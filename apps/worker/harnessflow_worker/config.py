@@ -16,6 +16,10 @@ class WorkerConfig(BaseModel):
     environment: str
     database_url: str
     otlp_endpoint: str
+    # Redpanda/Kafka firehose. Empty brokers => events disabled (NullEmitter),
+    # so the worker runs unchanged when Redpanda isn't present.
+    events_brokers: str
+    events_topic: str
 
     @classmethod
     def load(cls) -> WorkerConfig:
@@ -31,4 +35,8 @@ class WorkerConfig(BaseModel):
             ),
             # gRPC endpoint, no scheme. Empty disables tracing.
             otlp_endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT_GRPC", "localhost:4317"),
+            events_brokers=os.getenv("HARNESSFLOW_EVENTS_BROKERS", ""),
+            events_topic=os.getenv(
+                "HARNESSFLOW_EVENTS_TOPIC", "harnessflow.workflow.events"
+            ),
         )

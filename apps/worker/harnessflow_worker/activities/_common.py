@@ -6,11 +6,18 @@ from __future__ import annotations
 
 import time
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import asyncpg
 import structlog
 
+from harnessflow_worker.events import (
+    STEP_COMPLETED,
+    STEP_FAILED,
+    EventEmitter,
+    NullEmitter,
+    WorkflowEvent,
+)
 from harnessflow_worker.llm import LLMClient
 from harnessflow_worker.persistence import step_completed, step_failed, step_started
 from harnessflow_worker.types import ActivityInput, ActivityResult
@@ -29,6 +36,9 @@ class Deps:
 
     pool: asyncpg.Pool
     llm: LLMClient
+    # Firehose emitter; defaults to a no-op so existing construction sites and
+    # tests that don't care about events keep working unchanged.
+    events: EventEmitter = field(default_factory=NullEmitter)
 
 
 # Truncation cap for persisted prompt/response previews — enough for failure
@@ -68,6 +78,17 @@ async def with_persistence(
     except Exception as e:
         latency = int((time.monotonic() - start) * 1000)
         await step_failed(deps.pool, step_id, latency_ms=latency, error=str(e))
+        await deps.events.emit(
+            WorkflowEvent(
+                event_type=STEP_FAILED,
+                run_id=activity_input.run_id,
+                workflow_name=activity_input.workflow_name,
+                step_name=activity_input.step_name,
+                step_type=activity_input.step.type,
+                latency_ms=latency,
+                error=str(e),
+            )
+        )
         log.exception(
             "step failed",
             step=activity_input.step_name,
@@ -85,6 +106,19 @@ async def with_persistence(
         output_tokens=result.output_tokens,
         cost_usd_cents=result.cost_usd_cents,
         output_preview=_truncate(result.output),
+    )
+    await deps.events.emit(
+        WorkflowEvent(
+            event_type=STEP_COMPLETED,
+            run_id=activity_input.run_id,
+            workflow_name=activity_input.workflow_name,
+            step_name=activity_input.step_name,
+            step_type=activity_input.step.type,
+            latency_ms=latency,
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+            cost_usd_cents=result.cost_usd_cents,
+        )
     )
     log.info(
         "step ok",

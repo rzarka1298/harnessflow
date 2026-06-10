@@ -10,6 +10,7 @@
 #   Prometheus   http://localhost:9090
 #   Grafana      http://localhost:3000   (anonymous admin)
 #   MinIO        http://localhost:9001   (harnessflow / harnessflow)
+#   Redpanda     kafka API on localhost:19092; console http://localhost:8085
 #
 # Application services (api, worker, dashboard) are added to this file as they
 # are wired up — api in Week 2, worker in Week 3, dashboard in Week 4. Until
@@ -143,6 +144,43 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  # --- Event firehose (ADR-0004) ---------------------------------------------
+  # Single-binary Redpanda in KRaft dev mode — the Kafka-API substrate for the
+  # workflow-events topic. Auto-creates topics in dev, so the producer/consumer
+  # need no pre-provisioning. The worker emits to it (when
+  # HARNESSFLOW_EVENTS_BROKERS is set) and apps/event-consumer drains it to
+  # Parquet on MinIO/S3.
+  redpanda:
+    image: redpandadata/redpanda:v24.2.7
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --default-log-level=info
+      # Two listeners: PLAINTEXT for in-network clients, OUTSIDE for the host.
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:19092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092,OUTSIDE://localhost:19092
+    ports:
+      - "19092:19092" # Kafka API (host)
+      - "9644:9644" # Admin API
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Web UI for inspecting topics/messages — handy when demoing the firehose.
+  redpanda-console:
+    image: redpandadata/console:v2.7.2
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports:
+      - "8085:8080"
 
 volumes:
   postgres-data:

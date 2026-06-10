@@ -67,9 +67,33 @@ The `LLMClient` is the project's most important worker-side piece. It is deliber
 4. **Cost accounting.** Per-call $ cost computed from a small price table; aggregated into the parent `workflow_steps.token_usage` and `workflow_steps.cost_usd_cents` columns.
 5. **Budget guard.** Per-workflow-run cap from YAML (`budget_usd: 1.00`). If exceeded mid-run, raises a non-retryable activity error.
 
+## Event firehose (producer side)
+
+Week 11 (ADR-0004). The worker emits workflow lifecycle events to a Redpanda
+(Kafka-API) topic, `harnessflow.workflow.events`, drained downstream to
+Parquet on S3 by `apps/event-consumer`. The producer lives in
+`harnessflow_worker/events.py`:
+
+- **Event types:** `run.started` / `run.completed` / `run.failed` (emitted
+  from `record_run_status`), and `step.completed` / `step.failed` (emitted
+  from the `with_persistence` wrapper, so every DSL step is covered).
+- **One flat JSON schema** (`WorkflowEvent`), keyed by `run_id` so all events
+  for a run share a partition and stay ordered.
+- **Best-effort + optional.** `emit` swallows and logs producer errors —
+  Postgres (written synchronously in the same activities) is the source of
+  truth; the firehose is a lossy-tolerant analytics stream that must never
+  fail a workflow. With no brokers configured (`HARNESSFLOW_EVENTS_BROKERS`
+  unset) the factory returns a `NullEmitter` and the worker behaves exactly
+  as before — so `make demo` needs no Redpanda.
+
+Verified end-to-end: one research-assistant run produced 6 events
+(`run.started`, 4× `step.completed`, `run.completed`) on the topic, all on
+one partition keyed by run_id.
+
 ## Related ADRs
 
 - [ADR-0003](../decisions/0003-skip-langchain.md) — why no LangChain
+- [ADR-0004](../decisions/0004-skip-kafka-for-mvp.md) — Temporal+Redis for MVP, Redpanda firehose in Week 11
 
 ## TODO as we go
 

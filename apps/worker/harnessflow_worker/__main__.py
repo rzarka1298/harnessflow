@@ -30,6 +30,7 @@ from harnessflow_worker.activities.tool_call import make_tool_call
 from harnessflow_worker.activities.verify import make_verify
 from harnessflow_worker.config import WorkerConfig
 from harnessflow_worker.db import new_pool
+from harnessflow_worker.events import build_emitter
 from harnessflow_worker.llm import build_default_client
 from harnessflow_worker.metrics import setup_metrics
 from harnessflow_worker.otel import setup_otel
@@ -56,7 +57,9 @@ async def _amain() -> None:
     log.info("postgres connected")
 
     llm = build_default_client()
-    deps = Deps(pool=pool, llm=llm)
+    events = build_emitter(cfg.events_brokers, cfg.events_topic)
+    await events.start()
+    deps = Deps(pool=pool, llm=llm, events=events)
 
     client = await Client.connect(
         cfg.temporal_host,
@@ -97,6 +100,7 @@ async def _amain() -> None:
         with suppress(asyncio.CancelledError):
             await t
 
+    await events.stop()
     await pool.close()
     if tracer_provider:
         # force_flush BEFORE shutdown so in-flight spans reach the collector
