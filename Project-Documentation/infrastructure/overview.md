@@ -4,7 +4,7 @@
 
 ## Current state (2026-05-15)
 
-Week 1 Day 3 complete — the docker-compose dev stack is up and verified. `make up` starts 9 services (postgres, redis, temporal, temporal-ui, otel-collector, jaeger, prometheus, grafana, minio), all healthchecked. Verified: every UI returns 200, Temporal gRPC frontend reports `SERVING`, all 3 Prometheus scrape targets are `up`, Grafana datasources (Prometheus + Jaeger) are provisioned, and an OTLP test span flows app → otel-collector → Jaeger.
+Week 1 Day 3 complete — the docker-compose dev stack is up and verified. `make up` starts the core services (postgres, redis, temporal, temporal-ui, otel-collector, jaeger, prometheus, grafana, minio; Redpanda + console added in Week 11), all healthchecked. Verified: every UI returns 200, Temporal gRPC frontend reports `SERVING`, all 3 Prometheus scrape targets are `up`, Grafana datasources (Prometheus + Jaeger) are provisioned, and an OTLP test span flows app → otel-collector → Jaeger.
 
 Config files: `infrastructure/otel/collector-config.yaml`, `infrastructure/prometheus/prometheus.yml`, `infrastructure/grafana/provisioning/{datasources,dashboards}/`. Makefile targets `up`/`down`/`logs`/`ps`/`restart`/`nuke` are live.
 
@@ -28,12 +28,33 @@ Services in `docker-compose.yml`:
 | jaeger | `jaegertracing/all-in-one` | 16686 (UI) | Trace storage + UI |
 | prometheus | `prom/prometheus` | 9090 | Metrics scrape + storage |
 | grafana | `grafana/grafana` | 3000 | Dashboards (provisioned) |
-| minio | `minio/minio` | 9000, 9001 (UI) | S3-compatible storage |
+| minio | `minio/minio` | 9000, 9001 (UI) | S3-compatible storage (+ event-firehose Parquet sink) |
+| redpanda | `redpandadata/redpanda` | 19092 (Kafka), 9644 (admin) | Event-firehose substrate (ADR-0004), KRaft dev mode |
+| redpanda-console | `redpandadata/console` | 8085 | Topic/message inspector UI |
 | api | (local build) | 8080 | Go orchestrator |
 | worker | (local build) | — | Python Temporal worker |
 | dashboard | (local build) | 3001 | Next.js (port 3001 to avoid Grafana clash) |
 
 Healthchecks on every service. `make up` blocks until everything is healthy.
+
+## Event firehose (Week 11 — landed, ADR-0004)
+
+The analytics path the PRD wanted from Kafka, built on Redpanda (single-binary
+KRaft Kafka) without the operational weight. One topic,
+`harnessflow.workflow.events`:
+
+- **Producer:** the worker (`harnessflow_worker/events.py`) emits run/step
+  lifecycle events, best-effort + optional. See `workers/overview.md`.
+- **Consumer:** `apps/event-consumer/` (uv app) drains the topic and writes
+  date-partitioned Parquet to S3 — MinIO locally
+  (`s3://harnessflow-events/workflow-events/dt=YYYY-MM-DD/*.parquet`), real S3
+  on EKS (Terraform-managed bucket, IRSA for credentials). At-least-once
+  (write-then-commit); fixed Arrow schema so the column set is stable across
+  batches.
+
+Verified end-to-end locally: a research-assistant run emitted 6 events;
+`make events-consume` drained them to one Parquet object in MinIO (6 rows,
+15 columns, correct per-event fields), read back valid via pyarrow.
 
 ## Helm chart (Week 10 — landed)
 

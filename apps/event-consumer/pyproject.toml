@@ -1,0 +1,49 @@
+[project]
+name = "harnessflow-event-consumer"
+version = "0.1.0"
+description = "HarnessFlow event firehose consumer — drains the workflow-events topic to Parquet on S3."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "aiokafka>=0.11.0",
+    "pyarrow>=18.0.0",
+    "boto3>=1.35.0",
+    "pydantic>=2.10.0",
+    "structlog>=24.4.0",
+]
+
+[project.scripts]
+harnessflow-event-consumer = "harnessflow_events.__main__:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "boto3-stubs[s3]>=1.35.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["harnessflow_events"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[[tool.mypy.overrides]]
+# aiokafka + pyarrow ship no type stubs; narrow + documented.
+module = ["aiokafka", "aiokafka.*", "pyarrow", "pyarrow.*"]
+ignore_missing_imports = true

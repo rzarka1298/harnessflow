@@ -1,7 +1,7 @@
 # HarnessFlow developer Makefile
 # Targets are scaffolded; bodies will be implemented as the corresponding code lands.
 
-.PHONY: help up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval eval-gate demo-bandit test lint fmt clean tools-check helm-sync-migrations helm-deps helm-lint helm-template kind-up kind-down kind-load
+.PHONY: help up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval eval-gate events-consume demo-bandit test lint fmt clean tools-check helm-sync-migrations helm-deps helm-lint helm-template kind-up kind-down kind-load
 
 COMPOSE := docker compose
 
@@ -93,6 +93,12 @@ eval-gate: ## Run the CI eval-gate against locally changed workflow YAMLs (api+w
 	uv run --directory apps/eval-runner python $(CURDIR)/scripts/ci-eval-gate.py \
 		--changed-files $$(git diff --name-only origin/main...HEAD -- 'packages/examples/workflows/*.yaml') \
 		--out-md /tmp/eval-gate-comment.md
+
+# --- Event firehose (ADR-0004) -----------------------------------------
+events-consume: ## Drain the workflow-events topic to Parquet on MinIO (needs make up + an emitting worker).
+	HARNESSFLOW_EVENTS_S3_ENDPOINT=http://localhost:9000 \
+	AWS_ACCESS_KEY_ID=harnessflow AWS_SECRET_ACCESS_KEY=harnessflow \
+	uv run --directory apps/event-consumer harnessflow-event-consumer
 
 # --- Helm / kind --------------------------------------------------------
 helm-sync-migrations: ## Re-vendor apps/api/migrations/*.up.sql into the chart's files/migrations/.
