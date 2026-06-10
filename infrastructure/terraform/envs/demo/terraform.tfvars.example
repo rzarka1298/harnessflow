@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars and adjust. All values have working defaults in
+# variables.tf, so an empty tfvars also plans cleanly.
+
+region             = "us-east-1"
+name               = "harnessflow"
+environment        = "demo"
+kubernetes_version = "1.31"
+
+# Cost knobs — the defaults target <$10/day (see COST.md).
+node_instance_type      = "t3.medium"
+node_desired_size       = 2
+postgres_instance_class = "db.t4g.small"
+redis_node_type         = "cache.t4g.micro"

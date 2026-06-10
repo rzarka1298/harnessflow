@@ -1,7 +1,7 @@
 # ADR-0004: Skip Kafka for MVP; use Temporal+Redis; add Redpanda in week 11
 
 Date: 2026-05-14
-Status: Accepted
+Status: Accepted — **implemented Week 11 (2026-06-10)**
 
 ## Context
 
@@ -25,6 +25,29 @@ The actual job Kafka would do — *event firehose for downstream analytics consu
 - **Forecloses (temporarily):** event-stream fanout to arbitrary downstream consumers. Acceptable for MVP.
 - **Operational:** docker-compose stays manageable. EKS doesn't need MSK provisioning.
 - **Recruiter signal:** "I chose Temporal as the queue and added Redpanda as an analytics path, after defending the choice" reads as senior judgment. "I bolted on Kafka because everyone does" reads as cargo-culting.
+
+## Implementation (Week 11)
+
+Landed as designed — the stretch goal was not dropped.
+
+- **Substrate:** single-binary Redpanda (KRaft dev mode) in docker-compose;
+  on AWS the same topic would live on a managed broker. One topic,
+  `harnessflow.workflow.events`.
+- **Producer:** the worker emits run/step lifecycle events
+  (`harnessflow_worker/events.py`), best-effort and optional — a Redpanda
+  outage never fails a workflow, because Postgres is the source of truth and
+  this is explicitly an analytics path, exactly as argued above. With no
+  brokers configured the producer is a no-op (`NullEmitter`).
+- **Consumer:** `apps/event-consumer/` drains the topic to date-partitioned
+  Parquet on S3 (MinIO locally, Terraform-managed bucket + IRSA on EKS),
+  at-least-once (write-then-commit).
+- **Schema:** JSON on the wire, fixed Arrow schema at the Parquet boundary.
+  A schema registry + Avro is noted as a future step, not built — it would be
+  ceremony for one topic with both ends in-repo.
+
+Verified end-to-end: a research-assistant run produced 6 events that the
+consumer wrote to one Parquet object, read back valid. See
+`Project-Documentation/infrastructure/overview.md` and the two app overviews.
 
 ## Alternatives considered
 

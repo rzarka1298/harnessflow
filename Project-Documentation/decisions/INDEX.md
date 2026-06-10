@@ -5,7 +5,7 @@
 | [0001](./0001-use-temporal-not-custom-orchestrator.md) | Use Temporal Go SDK, don't roll a custom orchestrator | Accepted | 2026-05-14 |
 | [0002](./0002-connect-go-not-grpc.md) | Use Connect-Go over raw gRPC for the API surface | Accepted | 2026-05-14 |
 | [0003](./0003-skip-langchain.md) | No LangChain — build a thin in-house LLMClient | Accepted | 2026-05-14 |
-| [0004](./0004-skip-kafka-for-mvp.md) | Skip Kafka for MVP; use Temporal+Redis; add Redpanda in week 11 | Accepted | 2026-05-14 |
+| [0004](./0004-skip-kafka-for-mvp.md) | Skip Kafka for MVP; use Temporal+Redis; add Redpanda in week 11 | Accepted (implemented Wk 11) | 2026-05-14 |
 | [0005](./0005-otel-genai-semconv.md) | Adopt OpenTelemetry GenAI semantic conventions | Accepted | 2026-05-14 |
 | [0006](./0006-custom-eval-runner.md) | Build a custom eval runner instead of using deepeval/ragas | Accepted | 2026-05-14 |
 | [0007](./0007-contextual-bandit-not-deep-rl.md) | Use contextual bandits, not deep RL, for retry-policy learning | Proposed (week 13) | 2026-05-14 |
