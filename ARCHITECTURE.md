@@ -1,10 +1,40 @@
 # HarnessFlow Architecture
 
-> **Status:** current through week 11. The component map + data flows below are
-> kept in lockstep with the code; a polished Excalidraw diagram is the one
-> remaining week-12 artifact (this ASCII + table is the source of truth until then).
+> Current product: local PRD-to-verified-branch runs (ADR-0009). The legacy YAML
+> platform remains available; its original architecture is documented below.
 
-## One-paragraph summary
+## Project-run architecture
+
+```text
+Project dashboard → loopback Connect API → Postgres projects / project_runs
+                              ↓                   ↑ state + versioned controls
+                     Temporal project workflow → Python project_tick
+                                                       ↓ repository lock
+                                                 isolated Git worktree
+                                                       ↓
+                  plan → independent plan review → implement → checks → review
+                                                      ↑         │        │
+                                                      └─ repair ┘────────┘
+                                                                    ↓
+                                                   verified branch + evidence
+```
+
+Temporal schedules recoverable units, not one indefinitely running agent. A project
+snapshot stores phases, task progress, attempts, limits, checks, reviews and artifacts.
+Postgres controls are authoritative; Temporal signals wake waiting workflows.
+Database uniqueness plus a host file lock prevent concurrent writers to a repository.
+The subprocess watchdog retains that lock while stopping children after worker death.
+
+Each Codex invocation gets fresh context assembled from durable state. Planning and
+review use a read-only sandbox; coding uses workspace-write with network disabled by
+default. Frozen acceptance argv execute directly through Codex's native sandbox.
+Completion requires every task, passing evidence for the current commit, a clean
+worktree, and independent review. Optional PR publication is explicit; no auto-merge.
+
+The default deployment is one trusted local host, not a security boundary for
+untrusted users/repositories. See [project runtime details](Project-Documentation/projects/overview.md).
+
+## Legacy YAML platform summary
 
 A user (or a CI job) submits a workflow YAML to the **Go orchestrator** (`apps/api`). The orchestrator validates the YAML against the JSON Schema in `packages/sdk/schema/`, persists workflow metadata to Postgres via sqlc, and (when a run is requested) compiles the workflow into a deterministic Temporal Workflow function that executes against a Temporal cluster. **Python workers** (`apps/worker`) register against the same Temporal cluster and implement the activity types (`llm_call`, `retrieve`, `tool_call`, `verify`). Activities call OpenAI/Anthropic via a thin in-house `LLMClient` and ChromaDB for retrieval. All Go and Python code is instrumented with **OpenTelemetry** — a single trace ID flows from the inbound Connect RPC through Temporal and into the LLM API call, viewable in Jaeger. Metrics flow to Prometheus + Grafana. The **Next.js dashboard** (`apps/dashboard`) calls the same Connect services the Go server exposes, using the same `.proto`-generated types via Connect-ES. Workers also emit run/step **lifecycle events** to a Redpanda topic, which `apps/event-consumer` drains to date-partitioned Parquet on S3 for analytics — a best-effort path off the workflow's critical line (Postgres remains the source of truth).
 

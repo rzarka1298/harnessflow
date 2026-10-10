@@ -2,12 +2,19 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-06-10 (Week 11 complete — Redpanda firehose verified end-to-end + Terraform AWS env (plan-only); ADR-0004 finalized. Week 12 ship next)_
+_Last updated: 2026-10-10 — local PRD-to-verified-branch product pivot; both real-Codex acceptance fixtures passed._
 
 ## DONE
 
 | Date | Item | Commit |
 | --- | --- | --- |
+| 2026-10-10 | Durable ProjectService, migrations, versioned controls, loopback guard, Temporal scheduling and generated contracts. Live isolated-schema persistence test passed. | c05c4e7 |
+| 2026-10-10 | PRD project dashboard, asynchronous controls, evidence, mobile and legacy replay. Production build and browser tests passed. | 26888f5 |
+| 2026-10-10 | Versioned contention backoff and regenerated sqlc models. | 5c9ce13 |
+| 2026-10-10 | Fail-closed evaluation evidence and no implicit neutral real-judge output. 30 tests passed. | 8d1dab9 |
+| 2026-10-10 | Managed local launcher, real quality gates, general CI/browser tests, loopback Compose and explicit mock demos. | 8742433, dd170fb |
+| 2026-10-10 | GSD Core 1.16.0, webapp-testing and vercel-react-best-practices installed and researched; active GSD phase artifacts validate. | local tooling; skills.md |
+| 2026-10-10 | Real Codex new and existing repository runs completed with commit-bound evidence, independent review and external behavioral checks; original checkouts retained. | project runs c07c8da3, 71659e53; [acceptance](projects/acceptance.md) |
 | 2026-05-14 | Approved 14-week project plan written and saved to `~/.claude/plans/i-am-developing-a-serialized-codd.md` | (pre-repo) |
 | 2026-05-14 | Repo scaffold: LICENSE, README, ARCHITECTURE, CLAUDE.md, Makefile, .gitignore, .env.example, .envrc.example | 92b178c |
 | 2026-05-14 | Project-Documentation skeleton — all 10 subfolders, all overview stubs, README, STATUS, ROADMAP | 92b178c |
@@ -59,13 +66,12 @@ _Last updated: 2026-06-10 (Week 11 complete — Redpanda firehose verified end-t
 
 ## IN FLIGHT
 
-**Branch:** none. `main` is at `04bcc89`. Week 11 complete (Redpanda firehose end-to-end + Terraform plan-only + ADR-0004 finalized). Clean checkpoint; Week 12 ship next.
+**Branch:** `feat/prd-project-runs` (base `6f3c856`). The implementation and real-model acceptance are complete. Both fixtures exercised persisted blockers and restart/resume before completion; integration caught a planning-role ambiguity, a Git file-monitor descriptor leak and a native CLI sandbox invocation change, all fixed. Final PR-publication hardening, quality checks and Git handoff remain in flight. See `.planning/STATE.md` and [acceptance](projects/acceptance.md).
 
-## NEXT (top 3 from ROADMAP)
+## NEXT
 
-1. **Week 12 ship** — `terraform apply` (needs AWS creds), Helm install on EKS pointing `external*` at the Terraform outputs, smoke test; record 5-min demo video; polish README + ARCHITECTURE; tag `v1.0.0`; `terraform destroy`.
-2. **Week 10/11 follow-ups (optional, do during Week 12 prep):** stand up Temporal in-cluster (or managed Temporal Cloud) for a full api↔worker run on kind/EKS; Prometheus Adapter rule for `temporal_workflow_task_queue_backlog` so the worker HPA scales on queue depth.
-3. **Phase 6 — research extensions (Weeks 13–14, `research/v1.1` branch):** contextual-bandit retry-policy learner, then the autonomous workflow-mutation agent. Both gate on eval-pass before merging to main.
+1. Complete final worker regression checks and Git handoff; preserve explicit local trust limits.
+2. After local release, expand the larger-project acceptance corpus and UX. Cloud rollout and research extensions are deferred, not authorized deployment work.
 
 ## Releases
 
@@ -74,12 +80,13 @@ _Last updated: 2026-06-10 (Week 11 complete — Redpanda firehose verified end-t
 
 ## Setting real LLM keys
 
-Without keys the demo runs on `MockProvider` (deterministic, free). To swap in real models, create `.env` from `.env.example` and set `OPENAI_API_KEY` and/or `ANTHROPIC_API_KEY`, then re-run `make up` and the worker via `.venv/bin/python -m harnessflow_worker`.
+Project runs use authenticated Codex CLI; no legacy provider keys are needed. Real YAML workflows need `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`. Mock output requires explicit `HARNESSFLOW_MOCK=1`, set automatically only by `make demo`; missing keys never silently select mocks.
 
 ## Dev stack quick reference
 
 - `make up` / `make down` / `make ps` / `make logs` / `make nuke` (deletes volumes).
-- `make migrate-up` to apply DB migrations (currently through 0003_eval_results).
+- `make dev` is the primary start command; dashboard `http://127.0.0.1:3001/projects`. Use `python3 scripts/local-dev.py --skip-install` for installed dependencies.
+- `make migrate-up` applies migrations through 0005_project_control_version.
 - `make proto` regenerates all SDK clients; idempotent (CI enforces `git diff --exit-code`).
 - `make demo` runs the research-assistant workflow end-to-end (seeds ChromaDB, starts api+worker as host processes).
 - Run apps directly:
@@ -95,5 +102,5 @@ Without keys the demo runs on `MockProvider` (deterministic, free). To swap in r
 
 - **PATH:** Homebrew tools (`go`, `terraform`, `helm`, `buf`, `sqlc`, `migrate`, `golangci-lint`, `gitleaks`) live in `/opt/homebrew/bin` which is NOT on the default PATH in this shell — prefix commands with `export PATH="/opt/homebrew/bin:$PATH"`. `uv` is at `/opt/anaconda3/bin/uv`. `node`/`pnpm`/`npx` are on PATH via nvm.
 - **Go monorepo:** two modules (`apps/api`, `packages/sdk/gen/go`) joined by the repo-root `go.work`.
-- **LLM keys:** without `OPENAI_API_KEY`/`ANTHROPIC_API_KEY`, everything runs on `MockProvider` (deterministic, free). Set keys in `.env` to use real models.
+- **Authentication:** Codex login for coding projects; provider keys for real legacy workflows; `HARNESSFLOW_MOCK=1` is explicit demo mode only.
 - **Next.js 16:** `apps/dashboard/AGENTS.md` warns that Next 16 has breaking changes vs older training data — consult `node_modules/next/dist/docs/` before writing dashboard code.

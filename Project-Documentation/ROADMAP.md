@@ -1,6 +1,19 @@
-# ROADMAP — 14 weeks to v1.1.0
+# ROADMAP
 
-> Trimmed from the master plan at `~/.claude/plans/i-am-developing-a-serialized-codd.md`. Single source of truth for *what's happening when*. Update only when scope or sequencing actually changes (rare).
+## Active direction — local PRD-to-verified-branch harness
+
+The October 2026 approved product plan supersedes the schedule below. See
+[ADR-0009](decisions/0009-prd-project-runs.md), the active
+[phase roadmap](../.planning/ROADMAP.md), and [STATUS](STATUS.md).
+
+The release bar is a usable local launcher, durable project runs, isolated Codex
+execution, independent command-based acceptance and review, explicit controls and
+limits, a working project dashboard, and real new/existing repository demonstrations.
+AWS deployment, tenancy, additional coding providers and research extensions are deferred.
+
+## Historical plan — 14 weeks to v1.1.0
+
+> Preserved for architectural history. This schedule is not the current execution plan.
 
 **Iron rules:**
 1. Every Friday `docker compose up && make demo` succeeds.
