@@ -42,14 +42,9 @@ class EvalRunner:
         self._poll = poll_interval_s
         self._timeout = run_timeout_s
 
-    async def run(
-        self, workflow_id: str, cases: list[Case], seeds_per_case: int = 1
-    ) -> EvalReport:
+    async def run(self, workflow_id: str, cases: list[Case], seeds_per_case: int = 1) -> EvalReport:
         async with httpx.AsyncClient(base_url=self._base, timeout=30.0) as client:
-            results = [
-                await self._run_case(client, workflow_id, c, seeds_per_case)
-                for c in cases
-            ]
+            results = [await self._run_case(client, workflow_id, c, seeds_per_case) for c in cases]
         return aggregate(workflow_id, "", seeds_per_case, results)
 
     async def _run_case(
@@ -59,15 +54,14 @@ class EvalRunner:
         seed_scores: list[dict[str, float]] = []
         for _ in range(max(1, seeds)):
             outcome = await self._run_once(client, workflow_id, case)
+            if outcome.status != "completed":
+                raise RuntimeError(f"case {case.id} did not complete: {outcome.status}")
             outcomes.append(outcome)
-            seed_scores.append(
-                {s.name: await s.score(case, outcome) for s in self._scorers}
-            )
+            seed_scores.append({s.name: await s.score(case, outcome) for s in self._scorers})
 
         # Average scores + latency across seeds; cost is the per-run mean.
         mean_scores = {
-            name: sum(d[name] for d in seed_scores) / len(seed_scores)
-            for name in seed_scores[0]
+            name: sum(d[name] for d in seed_scores) / len(seed_scores) for name in seed_scores[0]
         }
         mean_outcome = RunOutcome(
             output=outcomes[-1].output,

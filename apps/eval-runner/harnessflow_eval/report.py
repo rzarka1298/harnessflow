@@ -57,11 +57,7 @@ def aggregate(
     quality = [
         ScorerAggregate(
             scorer=name,
-            mean=(
-                sum(r.scores.get(name, 0.0) for r in results) / len(results)
-                if results
-                else 0.0
-            ),
+            mean=(sum(r.scores.get(name, 0.0) for r in results) / len(results) if results else 0.0),
         )
         for name in scorer_names
     ]
