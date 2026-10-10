@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HarnessFlow dashboard
 
 ## Getting Started
 
-First, run the development server:
+Run the API and project runner from the repository root using the local development launcher, then open the dashboard at http://localhost:3000. To start only the dashboard:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install --frozen-lockfile
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`NEXT_PUBLIC_API_BASE_URL` defaults to `http://localhost:8080`. Set it before `pnpm build` when the API is hosted elsewhere. `NEXT_PUBLIC_JAEGER_URL` configures the navigation link to traces.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project workflow
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The home page opens Projects. Add a product brief (pasted text or a Markdown/text file), project name, and absolute local Git repository path. Use an existing repository or initialize an empty repository before creating the project. The path refers to the machine running HarnessFlow.
 
-## Learn More
+Project creation does not execute the agent. Start a run from the project detail page; defaults are 30 coding attempts and four hours of active time. An optional model override and pull-request delivery setting are available.
 
-To learn more about Next.js, take a look at the following resources:
+The run page displays tasks, acceptance criteria, verification evidence, events, agent attempts, artifacts, branch/worktree paths, and delivery results. Pause at a checkpoint, then resume with clarification or additional limits. Blocked and exhausted runs can also resume. Canceling keeps recorded work and evidence available. Artifacts are viewable and downloadable.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Legacy workflow, run, eval, and analytics pages remain available in the navigation.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Verification
 
-## Deploy on Vercel
+```bash
+pnpm lint
+pnpm exec tsc --noEmit --incremental false
+pnpm build
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+With a development server on port 3100 and Python Playwright/Chromium installed:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+python3 tests/browser_project_smoke.py --url http://localhost:3100
+```
+
+This browser check uses mocked Connect RPC responses. It covers PRD file import, project creation, run defaults, evidence/artifacts, pause/clarify/extend/resume, cancellation, blocked/exhausted recovery, delivery, narrow-screen layout, and legacy timeline replay. It complements the real API/runner integration checks; it does not invoke Codex or modify repositories.
