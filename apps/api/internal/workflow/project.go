@@ -50,6 +50,13 @@ func ProjectWorkflow(ctx workflow.Context, in ProjectInput) error {
 			var signal string
 			signals.Receive(ctx, &signal)
 		case "queued", "running", "planning", "executing", "verifying":
+			// A retry may find a still-live repository owner. Back off instead of
+			// filling Temporal history while waiting for its watchdog to exit.
+			if result.Status == "running" && result.Reason != "" && workflow.GetVersion(ctx, "project-contention-backoff", workflow.DefaultVersion, 1) >= 1 {
+				if err := workflow.Sleep(ctx, time.Second); err != nil {
+					return err
+				}
+			}
 		default:
 			return fmt.Errorf("project_tick returned unknown status %q", result.Status)
 		}

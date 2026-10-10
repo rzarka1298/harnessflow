@@ -33,6 +33,32 @@ type EvalRun struct {
 	CompletedAt       pgtype.Timestamptz `db:"completed_at" json:"completed_at"`
 }
 
+type Project struct {
+	ID             pgtype.UUID        `db:"id" json:"id"`
+	Name           string             `db:"name" json:"name"`
+	RepositoryPath string             `db:"repository_path" json:"repository_path"`
+	Prd            string             `db:"prd" json:"prd"`
+	CreatedAt      pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type ProjectRun struct {
+	ID                 pgtype.UUID        `db:"id" json:"id"`
+	ProjectID          pgtype.UUID        `db:"project_id" json:"project_id"`
+	RepositoryPath     string             `db:"repository_path" json:"repository_path"`
+	Status             string             `db:"status" json:"status"`
+	Reason             string             `db:"reason" json:"reason"`
+	State              []byte             `db:"state" json:"state"`
+	Control            string             `db:"control" json:"control"`
+	Clarification      string             `db:"clarification" json:"clarification"`
+	MaxAttempts        int32              `db:"max_attempts" json:"max_attempts"`
+	MaxDurationSeconds int32              `db:"max_duration_seconds" json:"max_duration_seconds"`
+	Model              string             `db:"model" json:"model"`
+	RequestPr          bool               `db:"request_pr" json:"request_pr"`
+	CreatedAt          pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	ControlVersion     int64              `db:"control_version" json:"control_version"`
+}
+
 type Workflow struct {
 	ID          pgtype.UUID        `db:"id" json:"id"`
 	Name        string             `db:"name" json:"name"`

@@ -58,3 +58,20 @@ func TestProjectWorkflowWaitsForControl(t *testing.T) {
 		})
 	}
 }
+
+func TestProjectWorkflowBacksOffRepositoryContention(t *testing.T) {
+	var suite testsuite.WorkflowTestSuite
+	env := suite.NewTestWorkflowEnvironment()
+	env.RegisterActivityWithOptions(func(context.Context, ProjectInput) (ProjectTickResult, error) { return ProjectTickResult{}, nil }, activity.RegisterOptions{Name: "project_tick"})
+	env.OnActivity("project_tick", mock.Anything, mock.Anything).Return(ProjectTickResult{Status: "running", Reason: "Waiting for previous process"}, nil).Once()
+	env.OnActivity("project_tick", mock.Anything, mock.Anything).Return(ProjectTickResult{Status: "completed"}, nil).Once()
+	start := env.Now()
+	env.ExecuteWorkflow(ProjectWorkflow, ProjectInput{RunID: "run"})
+	if err := env.GetWorkflowError(); err != nil {
+		t.Fatal(err)
+	}
+	if env.Now().Sub(start) < time.Second {
+		t.Fatal("repository contention did not back off")
+	}
+	env.AssertExpectations(t)
+}
