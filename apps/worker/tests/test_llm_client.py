@@ -204,3 +204,14 @@ async def test_mock_fault_injection_triggers_fallback(monkeypatch: pytest.Monkey
 
 
 _ = Provider  # asserts the Protocol is importable
+
+
+@pytest.mark.asyncio
+async def test_missing_credentials_never_silently_generate_mock_output(monkeypatch) -> None:
+    from harnessflow_worker.llm import build_default_client
+
+    for key in ("HARNESSFLOW_MOCK", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+        monkeypatch.delenv(key, raising=False)
+    client = build_default_client()
+    with pytest.raises(ValueError, match="no provider"):
+        await client.complete(LLMRequest(model="gpt-4o", prompt="hello"))
