@@ -31,9 +31,7 @@ _tokens: Counter | None = None
 _cost: Counter | None = None
 
 
-def setup_metrics(
-    endpoint: str, service_name: str, environment: str
-) -> MeterProvider | None:
+def setup_metrics(endpoint: str, service_name: str, environment: str) -> MeterProvider | None:
     """Install a global MeterProvider exporting OTLP/gRPC to ``endpoint`` and
     bind the module's instruments to it.
 

@@ -1,9 +1,18 @@
 # HarnessFlow developer Makefile
 # Targets are scaffolded; bodies will be implemented as the corresponding code lands.
 
-.PHONY: help up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval eval-gate events-consume demo-bandit test lint fmt clean tools-check helm-sync-migrations helm-deps helm-lint helm-template kind-up kind-down kind-load
+.PHONY: help dev setup up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval eval-gate events-consume demo-bandit test lint typecheck build check fmt clean tools-check helm-sync-migrations helm-deps helm-lint helm-template kind-up kind-down kind-load
 
 COMPOSE := docker compose
+.DEFAULT_GOAL := help
+PYTHON_APPS := worker eval-runner event-consumer
+
+dev: ## Start local PRD harness (frozen dependencies, DB, migrations, API, worker, UI).
+	python3 scripts/local-dev.py
+
+setup: ## Install application dependencies from committed lockfiles.
+	@set -e; for app in $(PYTHON_APPS); do uv sync --frozen --directory apps/$$app; done
+	pnpm --dir apps/dashboard install --frozen-lockfile
 
 help: ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -44,7 +53,7 @@ GEN_GO := packages/sdk/gen/go
 GEN_PY := packages/sdk/gen/python
 
 # Local-dev DATABASE_URL — matches docker-compose.yml. CI overrides this.
-DATABASE_URL ?= postgres://harnessflow:harnessflow@localhost:5432/harnessflow?sslmode=disable
+DATABASE_URL ?= postgres://harnessflow:harnessflow@127.0.0.1:5432/harnessflow?sslmode=disable
 API_MIGRATIONS := apps/api/migrations
 
 proto: ## Regenerate proto + JSON-schema clients (Go, Python, TS). Idempotent.
@@ -52,6 +61,7 @@ proto: ## Regenerate proto + JSON-schema clients (Go, Python, TS). Idempotent.
 	buf lint
 	@echo ">> buf generate (Go + Connect, Python, TypeScript)"
 	buf generate
+	perl -0777 -pi -e 's/\n+\z/\n/' packages/sdk/gen/ts/harnessflow/*/v1/*_pb.ts
 	@echo ">> go mod tidy (generated Go module)"
 	cd $(GEN_GO) && go mod tidy
 	@echo ">> Pydantic models from JSON schema"
@@ -82,8 +92,8 @@ migrate-down: ## Roll back the most recent migration.
 migrate-status: ## Print current migration version.
 	migrate -path $(API_MIGRATIONS) -database "$(DATABASE_URL)" version
 
-demo: ## Run the canonical research-assistant demo workflow end-to-end.
-	bash scripts/demo.sh
+demo: ## Run a bounded, explicit-mock legacy workflow smoke test.
+	python3 scripts/local-dev.py --demo
 
 eval: ## Run the eval suite against a workflow id (set HARNESSFLOW_WORKFLOW_ID).
 	@test -n "$$HARNESSFLOW_WORKFLOW_ID" || { echo "set HARNESSFLOW_WORKFLOW_ID=<uuid>" >&2; exit 1; }
@@ -135,24 +145,37 @@ kind-load: ## Build the three first-party images and load them into kind.
 demo-bandit: ## (Week 13) A/B compare learned-retry vs static-retry policies.
 	@echo "TODO(week-13): scripts/demo-bandit.sh"
 
-test: ## Run unit + integration tests across all apps.
-	@echo "TODO: go test ./... && uv run pytest && pnpm test"
+test: ## Run launcher, Go, and Python unit tests (browser checks run separately in CI).
+	python3 -m unittest discover -s scripts/tests -v
+	go test ./apps/api/...
+	@set -e; for app in $(PYTHON_APPS); do uv run --frozen --directory apps/$$app pytest; done
 
 lint: ## Run linters across all apps.
-	@echo "TODO: golangci-lint run && ruff check && pnpm lint"
+	uv run --frozen --directory apps/worker ruff check $(CURDIR)/scripts/local-dev.py $(CURDIR)/scripts/project-smoke.py $(CURDIR)/scripts/tests
+	uv run --frozen --directory apps/worker ruff format --check $(CURDIR)/scripts/local-dev.py $(CURDIR)/scripts/project-smoke.py $(CURDIR)/scripts/tests
+	cd apps/api && golangci-lint run
+	@set -e; for app in $(PYTHON_APPS); do uv run --frozen --directory apps/$$app ruff check .; uv run --frozen --directory apps/$$app ruff format --check .; done
+	cd apps/dashboard && ./node_modules/.bin/eslint
+
+typecheck: ## Check Python and TypeScript types.
+	uv run --frozen --directory apps/worker mypy harnessflow_worker
+	uv run --frozen --directory apps/eval-runner mypy harnessflow_eval
+	uv run --frozen --directory apps/event-consumer mypy harnessflow_events
+	cd apps/dashboard && ./node_modules/.bin/tsc --noEmit
+
+build: ## Build Go API and production dashboard.
+	go build ./apps/api/...
+	cd apps/dashboard && ./node_modules/.bin/next build
+
+check: test lint typecheck build ## Run the full local quality gate.
 
 fmt: ## Format code in-place across all apps.
-	@echo "TODO: gofmt && ruff format && pnpm format"
+	cd apps/api && golangci-lint fmt
+	@set -e; for app in $(PYTHON_APPS); do uv run --frozen --directory apps/$$app ruff format .; done
+	cd apps/dashboard && ./node_modules/.bin/eslint --fix
 
-tools-check: ## Verify required local tooling is installed.
-	@command -v go >/dev/null || { echo "missing: go"; exit 1; }
-	@command -v docker >/dev/null || { echo "missing: docker"; exit 1; }
-	@command -v terraform >/dev/null || { echo "missing: terraform"; exit 1; }
-	@command -v helm >/dev/null || { echo "missing: helm"; exit 1; }
-	@command -v buf >/dev/null || { echo "missing: buf"; exit 1; }
-	@command -v uv >/dev/null || { echo "missing: uv"; exit 1; }
-	@command -v node >/dev/null || { echo "missing: node"; exit 1; }
-	@echo "all required tools installed"
+tools-check: ## Validate local harness tools, configuration, ports and Codex login.
+	python3 scripts/local-dev.py --check
 
 clean: ## Remove generated artifacts (does not touch source).
 	@echo "TODO: clean build/test artifacts"

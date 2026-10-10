@@ -44,6 +44,7 @@ jobs:
       # don't burn LLM credits per PR.
       OPENAI_API_KEY: ""
       ANTHROPIC_API_KEY: ""
+      HARNESSFLOW_MOCK: "1"
 
     steps:
       - name: Checkout (full history for baseline diff)
@@ -108,8 +109,8 @@ jobs:
 
       - name: Install worker + eval-runner Python deps
         run: |
-          uv sync --directory apps/worker
-          uv sync --directory apps/eval-runner
+          uv sync --frozen --directory apps/worker
+          uv sync --frozen --directory apps/eval-runner
 
       - name: Seed ChromaDB corpus (needed by the `retrieve` activity)
         run: |

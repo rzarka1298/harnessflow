@@ -33,9 +33,10 @@ def make_verify(deps: Deps) -> ActivityFn:
     @activity.defn(name="verify")
     async def verify(in_: ActivityInput) -> ActivityResult:
         criteria = in_.step.criteria or "The output is non-empty and on-topic."
-        concatenated = "\n\n---\n\n".join(
-            r.output for r in in_.prior_outputs.values() if r.output
-        ) or "(no prior outputs)"
+        concatenated = (
+            "\n\n---\n\n".join(r.output for r in in_.prior_outputs.values() if r.output)
+            or "(no prior outputs)"
+        )
         judge_prompt = _JUDGE_PROMPT.format(criteria=criteria, output=concatenated)
 
         async def body() -> ActivityResult:
