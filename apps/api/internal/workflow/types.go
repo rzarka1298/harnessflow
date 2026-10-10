@@ -28,7 +28,7 @@ type ApprovalSignal struct {
 	ApprovedBy string `json:"approved_by"`
 }
 
-// TaskQueue is the Temporal task queue both the API-side worker and (Week 3+)
+// DefaultTaskQueue is the Temporal task queue both the API-side worker and (Week 3+)
 // the Python worker register against. Sourced from config in main.go.
 const DefaultTaskQueue = "harnessflow-tasks"
 

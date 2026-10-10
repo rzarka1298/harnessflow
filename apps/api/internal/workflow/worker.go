@@ -28,6 +28,7 @@ func NewWorker(tc client.Client, taskQueue string, interceptors []interceptor.Wo
 	w.RegisterWorkflowWithOptions(HarnessFlowWorkflow, tworkflow.RegisterOptions{
 		Name: WorkflowName,
 	})
+	w.RegisterWorkflowWithOptions(ProjectWorkflow, tworkflow.RegisterOptions{Name: ProjectWorkflowName})
 
 	return w
 }

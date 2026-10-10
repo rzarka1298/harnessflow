@@ -1,4 +1,4 @@
-// conv.go: lossless conversions between sqlc-generated store rows and the
+// Package server provides conversions between sqlc-generated store rows and the
 // protobuf-generated wire types.
 package server
 

@@ -10,6 +10,8 @@ import (
 // Config holds all runtime configuration for the API service.
 type Config struct {
 	APIPort           int
+	APIHost           string
+	AllowedOrigin     string
 	LogLevel          string
 	Environment       string
 	DatabaseURL       string
@@ -28,9 +30,11 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 	return &Config{
-		APIPort:     port,
-		LogLevel:    envStr("LOG_LEVEL", "info"),
-		Environment: envStr("ENVIRONMENT", "development"),
+		APIPort:       port,
+		APIHost:       envStr("API_HOST", "127.0.0.1"),
+		AllowedOrigin: envStr("DASHBOARD_ORIGIN", "http://localhost:3000"),
+		LogLevel:      envStr("LOG_LEVEL", "info"),
+		Environment:   envStr("ENVIRONMENT", "development"),
 		DatabaseURL: envStr(
 			"DATABASE_URL",
 			"postgres://harnessflow:harnessflow@localhost:5432/harnessflow?sslmode=disable",
@@ -38,7 +42,7 @@ func Load() (*Config, error) {
 		TemporalHost:      envStr("TEMPORAL_HOST", "localhost:7233"),
 		TemporalNamespace: envStr("TEMPORAL_NAMESPACE", "default"),
 		TemporalTaskQueue: envStr("TEMPORAL_TASK_QUEUE", "harnessflow-tasks"),
-		OTLPEndpoint:      envStr("OTEL_EXPORTER_OTLP_ENDPOINT_GRPC", "localhost:4317"),
+		OTLPEndpoint:      envStr("OTEL_EXPORTER_OTLP_ENDPOINT_GRPC", ""),
 	}, nil
 }
 
