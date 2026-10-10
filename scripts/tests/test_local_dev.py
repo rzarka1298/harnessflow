@@ -3,6 +3,7 @@
 import importlib.util
 import os
 import signal
+import socket
 import subprocess
 import tempfile
 import unittest
@@ -50,6 +51,27 @@ class EnvironmentTests(unittest.TestCase):
 
 
 class ProcessTests(unittest.TestCase):
+    def test_port_probe_accepts_recently_closed_server_connection(self):
+        with socket.socket() as server:
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server.bind(("127.0.0.1", 0))
+            server.listen(1)
+            port = server.getsockname()[1]
+            with socket.create_connection(("127.0.0.1", port), timeout=2) as client:
+                connection, _ = server.accept()
+                connection.close()
+                # Server sends the first FIN, placing its endpoint in TIME_WAIT.
+                self.assertEqual(client.recv(1), b"")
+        launcher.check_port_available(port)
+
+    def test_port_probe_still_rejects_active_listener(self):
+        with socket.socket() as server:
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server.bind(("127.0.0.1", 0))
+            server.listen(1)
+            with self.assertRaisesRegex(RuntimeError, "already occupied"):
+                launcher.check_port_available(server.getsockname()[1])
+
     def test_skip_install_launches_next_directly_without_package_manager(self):
         with tempfile.TemporaryDirectory() as directory:
             processes = MagicMock()

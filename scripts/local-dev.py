@@ -65,6 +65,17 @@ def run(args: list[str], env: dict[str, str], cwd: Path = ROOT) -> None:
     subprocess.run(args, cwd=cwd, env=env, check=True)
 
 
+def check_port_available(port: int) -> None:
+    with socket.socket() as sock:
+        # Match server restart semantics: ignore closed connections in TIME_WAIT,
+        # while still rejecting a live listener (do not enable SO_REUSEPORT).
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind(("127.0.0.1", port))
+        except OSError as exc:
+            raise RuntimeError(f"Port {port} is already occupied; stop its server first") from exc
+
+
 def preflight(env: dict[str, str], mock: bool = False) -> None:
     tools = ["docker", "go", "uv", "pnpm", "migrate", "git"]
     if not mock:
@@ -74,13 +85,7 @@ def preflight(env: dict[str, str], mock: bool = False) -> None:
         raise RuntimeError("Missing tools: " + ", ".join(missing) + "; see README prerequisites")
     port = int(env["API_PORT"])
     for value in (port, 3001):
-        with socket.socket() as sock:
-            try:
-                sock.bind(("127.0.0.1", value))
-            except OSError as exc:
-                raise RuntimeError(
-                    f"Port {value} is already occupied; stop its server first"
-                ) from exc
+        check_port_available(value)
     subprocess.run(
         ["docker", "compose", "version"],
         cwd=ROOT,
