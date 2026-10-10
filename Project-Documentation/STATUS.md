@@ -66,12 +66,12 @@ _Last updated: 2026-10-10 — local PRD-to-verified-branch product pivot; both r
 
 ## IN FLIGHT
 
-**Branch:** `feat/prd-project-runs` (base `6f3c856`). The implementation and real-model acceptance are complete. Both fixtures exercised persisted blockers and restart/resume before completion; integration caught a planning-role ambiguity, a Git file-monitor descriptor leak and a native CLI sandbox invocation change, all fixed. Final PR-publication hardening, quality checks and Git handoff remain in flight. See `.planning/STATE.md` and [acceptance](projects/acceptance.md).
+**Branch:** `feat/prd-project-runs` (base `6f3c856`), pushed in [draft PR #2](https://github.com/rzarka1298/harnessflow/pull/2). The local release and real-model acceptance are complete. Both fixtures exercised persisted blockers and restart/resume before completion; integration caught and fixed a planning-role ambiguity, a Git file-monitor descriptor leak and a native CLI sandbox invocation change. The full `make check` gate passed (four generated-code ESLint warnings, no errors). Optional PR publication was hardened to validate the target before pushing. Human review of the draft PR remains; no merge or deployment has occurred. See `.planning/STATE.md` and [acceptance](projects/acceptance.md).
 
 ## NEXT
 
-1. Complete final worker regression checks and Git handoff; preserve explicit local trust limits.
-2. After local release, expand the larger-project acceptance corpus and UX. Cloud rollout and research extensions are deferred, not authorized deployment work.
+1. Review draft PR #2 and decide when to merge. No automatic merge or deployment is planned.
+2. Expand the larger-project acceptance corpus and UX. Cloud rollout and research extensions are deferred, not authorized deployment work.
 
 ## Releases
 

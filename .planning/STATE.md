@@ -1,7 +1,7 @@
 # Project State
 
 Current phase: 1 — Local project runs
-Status: real-model acceptance passed; final checks and handoff in progress
+Status: local release implemented and verified; draft PR review pending
 Branch: feat/prd-project-runs
 
 Completed: codebase audit; user decisions; GSD Core 1.16.0 and supplementary skill
@@ -9,7 +9,8 @@ installation; API/contracts/migrations; local launcher/checks; execution engine 
 dashboard; API/worker/browser verification; new and existing real-Codex fixtures
 completed with independent behavioral checks and original checkouts preserved.
 
-Next: final PR-publication hardening, full regression suite and Git handoff.
+Next: review draft PR #2 and expand acceptance to larger projects. The local
+release does not authorize automatic merge, cloud rollout or deployment.
 Release evidence is recorded in Project-Documentation/projects/acceptance.md.
 
 GSD integration: planning artifacts use the installed phase vocabulary. This session
