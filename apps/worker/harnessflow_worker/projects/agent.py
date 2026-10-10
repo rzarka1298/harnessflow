@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -18,6 +19,7 @@ class CodexAgent:
         self.workspace = workspace
         self.model = model
         self.binary = os.environ.get("HARNESSFLOW_CODEX_BIN", "codex")
+        self._sandbox_ready = False
 
     async def run(
         self,
@@ -99,17 +101,28 @@ class CodexAgent:
         command = [
             self.binary,
             "sandbox",
-            "-c",
-            'sandbox_mode="workspace-write"',
-            "-c",
-            "sandbox_workspace_write.network_access=false",
+            "--permission-profile",
+            ":workspace",
+            "--include-managed-config",
             "-C",
             str(self.workspace.path),
             "--",
-            *argv,
         ]
+        if not self._sandbox_ready:
+            probe = await run_process(
+                [*command, sys.executable, "-c", "pass"],
+                self.workspace.path,
+                timeout=min(timeout, 15),
+                poll=poll,
+                lock_fd=self.workspace.lock_fd,
+            )
+            if probe.exit_code:
+                raise RuntimeError(
+                    "Verification sandbox unavailable: " + (probe.stderr or probe.stdout)[-2000:]
+                )
+            self._sandbox_ready = True
         return await run_process(
-            command,
+            [*command, *argv],
             self.workspace.path,
             timeout=timeout,
             poll=poll,

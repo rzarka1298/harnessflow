@@ -5,6 +5,7 @@ from __future__ import annotations
 import fcntl
 import json
 import os
+import re
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -417,10 +418,19 @@ async def _deliver(
         },
     ]
     if row.get("request_pr") and not state.get("pr_url"):
+        target = await _publication_target(work, state, poll, remaining)
+        state["publication_target"] = target
         # Publication is an explicit run option. A failed publish is resumable and
         # cannot disguise a missing requested deliverable as a completed run.
         result = await run_process(
-            ["git", "push", "origin", f"HEAD:refs/heads/{work.branch}"],
+            [
+                "git",
+                "-c",
+                "core.hooksPath=/dev/null",
+                "push",
+                target["push_url"],
+                f"{head}:refs/heads/{work.branch}",
+            ],
             work.path,
             min(120, remaining()),
             poll,
@@ -429,7 +439,19 @@ async def _deliver(
         if result.exit_code:
             return "blocked", "Branch verified; publication failed: " + result.stderr[-2000:]
         existing = await run_process(
-            ["gh", "pr", "list", "--head", work.branch, "--json", "url"],
+            [
+                "gh",
+                "pr",
+                "list",
+                "--repo",
+                target["repository"],
+                "--base",
+                target["base_branch"],
+                "--head",
+                work.branch,
+                "--json",
+                "url",
+            ],
             work.path,
             60,
             poll,
@@ -450,6 +472,10 @@ async def _deliver(
                     "gh",
                     "pr",
                     "create",
+                    "--repo",
+                    target["repository"],
+                    "--base",
+                    target["base_branch"],
                     "--head",
                     work.branch,
                     "--title",
@@ -467,3 +493,61 @@ async def _deliver(
             state["pr_url"] = created.stdout.strip()
     event(state, "Delivered verified branch and acceptance evidence")
     return "completed", ""
+
+
+def _github_repository(url: str) -> str:
+    match = re.fullmatch(
+        r"(?:https://github\.com/|git@github\.com:|ssh://git@github\.com/)"
+        r"([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?",
+        url,
+    )
+    if not match:
+        raise ValueError("PR publication requires a GitHub.com origin without embedded credentials")
+    return match.group(1)
+
+
+async def _publication_target(
+    work: Workspace,
+    state: dict[str, Any],
+    poll: Callable[[], Awaitable[None]],
+    remaining: Callable[[], float],
+) -> dict[str, str]:
+    """Publish only an origin-default-branch change, never inferred gh remotes/bases."""
+    fetch_url = await work.git("remote", "get-url", "origin")
+    push_url = await work.git("remote", "get-url", "--push", "origin")
+    repository = _github_repository(fetch_url)
+    if _github_repository(push_url).lower() != repository.lower():
+        raise ValueError("Origin fetch and push repositories differ; publication refused")
+    remote = await run_process(
+        ["git", "ls-remote", "--symref", fetch_url, "HEAD"],
+        work.path,
+        min(60, remaining()),
+        poll,
+        lock_fd=work.lock_fd,
+    )
+    if remote.exit_code:
+        raise RuntimeError("Cannot verify origin's default branch: " + remote.stderr[-2000:])
+    branch, commit = "", ""
+    for line in remote.stdout.splitlines():
+        value, separator, ref = line.partition("\t")
+        if separator and ref == "HEAD":
+            if value.startswith("ref: refs/heads/"):
+                branch = value.removeprefix("ref: refs/heads/")
+            elif re.fullmatch(r"[0-9a-f]{40,64}", value):
+                commit = value
+    if not branch or not commit or commit != state["base_commit"]:
+        raise ValueError(
+            "Publication requires the saved base commit to equal origin's current "
+            "default-branch tip; deliver locally or start a new run from that tip"
+        )
+    target = {
+        "repository": repository,
+        "base_branch": branch,
+        "base_commit": commit,
+        "push_url": push_url,
+    }
+    if state.get("publication_target") and state["publication_target"] != target:
+        raise ValueError(
+            "Publication target changed since the previous attempt; publication refused"
+        )
+    return target
