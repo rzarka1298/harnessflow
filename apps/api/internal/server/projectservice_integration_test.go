@@ -98,6 +98,34 @@ func TestProjectLifecyclePersistence(t *testing.T) {
 	if attempts != 35 || control != "resume" || state != "{\"checkpoint\": 1}" || revision != 1 {
 		t.Fatalf("resume changed wrong state: %d %s %s", attempts, control, state)
 	}
+	// Retrying a saved resume must not grant the same extension twice.
+	if _, err := service.ControlRun(ctx, connect.NewRequest(&projectv1.ControlRunRequest{RunId: id, Action: "resume", AdditionalAttempts: 5})); connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Fatalf("duplicate resume: %v", err)
+	}
+	if err := pool.QueryRow(ctx, "SELECT max_attempts,control,control_version FROM project_runs WHERE id=$1", id).Scan(&attempts, &control, &revision); err != nil {
+		t.Fatal(err)
+	}
+	if attempts != 35 || control != "resume" || revision != 1 {
+		t.Fatalf("duplicate resume changed saved control: %d %s %d", attempts, control, revision)
+	}
+	if _, err := pool.Exec(ctx, "UPDATE project_runs SET status='running',control='' WHERE id=$1", id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.ControlRun(ctx, connect.NewRequest(&projectv1.ControlRunRequest{RunId: id, Action: "resume", AdditionalAttempts: 5})); connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Fatalf("resume while running: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "UPDATE project_runs SET status='blocked',control='cancel' WHERE id=$1", id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.ControlRun(ctx, connect.NewRequest(&projectv1.ControlRunRequest{RunId: id, Action: "resume", AdditionalAttempts: 5})); connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Fatalf("resume over pending cancel: %v", err)
+	}
+	if err := pool.QueryRow(ctx, "SELECT max_attempts,control,control_version FROM project_runs WHERE id=$1", id).Scan(&attempts, &control, &revision); err != nil {
+		t.Fatal(err)
+	}
+	if attempts != 35 || control != "cancel" || revision != 1 {
+		t.Fatalf("rejected resume changed pending cancel: %d %s %d", attempts, control, revision)
+	}
 	if _, err := pool.Exec(ctx, "UPDATE project_runs SET status='completed' WHERE id=$1", id); err != nil {
 		t.Fatal(err)
 	}

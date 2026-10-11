@@ -18,10 +18,14 @@ Claude Code skills route requests through this CLI; they do not orchestrate codi
 themselves.
 
 Run an explicit read-only judge after acceptance commands and independent review.
-When `ANTHROPIC_API_KEY` is configured, use Anthropic; otherwise use a separate
-read-only Codex attempt. The Anthropic request contains the PRD, frozen plan, actual
+When `ANTHROPIC_API_KEY` is configured and the diff fits the 200,000-character
+request bound, use Anthropic; otherwise use a separate read-only Codex attempt
+that can inspect the full repository. The recorded verdict names the provider, so
+this fallback is visible rather than an independent-provider claim. The Anthropic
+request contains the PRD, frozen plan, actual
 diff, acceptance evidence, and independent review findings. Users must treat those
 materials as data sent to the configured external provider.
+The Anthropic request polls durable controls and heartbeats throughout the call.
 
 The frozen deterministic acceptance commands remain mandatory and unchanged by
 judge provider or output. Completion requires the commands to pass at the delivered

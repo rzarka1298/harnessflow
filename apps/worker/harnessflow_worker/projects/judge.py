@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 from collections.abc import Awaitable, Callable
+from contextlib import suppress
 from typing import Any
 
 from harnessflow_worker.llm.client import AnthropicProvider
@@ -23,6 +24,27 @@ RUBRIC = (
     "only when every requirement passes and findings is empty. Be conservative about missing "
     "evidence, but do not reject on speculative preferences."
 )
+ANTHROPIC_DIFF_LIMIT = 200_000
+JUDGE_POLL_INTERVAL_SECONDS = 5.0
+
+
+async def _complete_with_polling(
+    request: Awaitable[Any], poll: Callable[[], Awaitable[None]], timeout: float
+) -> Any:
+    """Keep Temporal's heartbeat and run controls live during a provider call."""
+    task = asyncio.ensure_future(request)
+    try:
+        async with asyncio.timeout(timeout):
+            while not task.done():
+                done, _ = await asyncio.wait({task}, timeout=JUDGE_POLL_INTERVAL_SECONDS)
+                if not done:
+                    await poll()
+            return await task
+    finally:
+        if not task.done():
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
 
 
 async def judge_project(
@@ -39,12 +61,10 @@ async def judge_project(
     """Use Anthropic when configured, otherwise a separate read-only Codex attempt."""
     plan = Plan.model_validate(state["plan"])
     head = await workspace.git("rev-parse", "HEAD")
-    if os.environ.get("ANTHROPIC_API_KEY"):
+    diff = await workspace.diff(state["base_commit"]) if os.environ.get("ANTHROPIC_API_KEY") else ""
+    if os.environ.get("ANTHROPIC_API_KEY") and len(diff) <= ANTHROPIC_DIFF_LIMIT:
         from anthropic import AsyncAnthropic
 
-        diff = await workspace.diff(state["base_commit"])
-        if len(diff) > 200_000:
-            raise ValueError("Change diff exceeds the independent judge's 200 KB evidence limit")
         prompt = (
             RUBRIC
             + "\n\nJSON schema:\n"
@@ -66,14 +86,15 @@ async def judge_project(
         )
         await poll()
         provider = AnthropicProvider(AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"]))
-        response = await asyncio.wait_for(
+        response = await _complete_with_polling(
             provider.complete(
                 os.environ.get("HARNESSFLOW_JUDGE_MODEL", "claude-sonnet-4-6"),
                 prompt,
                 max_tokens=4096,
                 temperature=0,
             ),
-            timeout=timeout,
+            poll,
+            timeout,
         )
         await poll()
         verdict = JudgeVerdict.model_validate_json(response.text).model_dump()
@@ -89,6 +110,12 @@ async def judge_project(
         context_prompt(prd, state, clarification)
         + "\n\n"
         + RUBRIC
+        + (
+            "\nAnthropic evidence limit exceeded; use the full repository for this read-only "
+            "fallback judgement."
+            if diff
+            else ""
+        )
         + "\nInspect the actual repository, frozen plan, test code, base diff, "
         "and acceptance evidence.",
         JudgeVerdict,

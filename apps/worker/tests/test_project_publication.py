@@ -16,11 +16,17 @@ HEAD = "b" * 40
 
 
 class PublicationWorkspace:
-    def __init__(self, root: Path, push_url: str = "git@github.com:owner/repo.git") -> None:
+    def __init__(
+        self,
+        root: Path,
+        push_url: str = "git@github.com:owner/repo.git",
+        diff_content: str = "verified diff",
+    ) -> None:
         self.path = self.root = root
         self.branch = "harnessflow/run-id"
         self.lock_fd = 10
         self.push_url = push_url
+        self.diff_content = diff_content
 
     async def git(self, *args: str) -> str:
         return {
@@ -32,7 +38,7 @@ class PublicationWorkspace:
 
     async def diff(self, base: str) -> str:
         assert base == BASE
-        return "verified diff"
+        return self.diff_content
 
 
 def snapshot() -> dict[str, Any]:
@@ -85,6 +91,22 @@ def snapshot() -> dict[str, Any]:
             }
         ],
     }
+
+
+@pytest.mark.asyncio
+async def test_delivery_keeps_full_diff_artifact(tmp_path: Path) -> None:
+    diff = "a" * 500_000 + "final line\n"
+    state = snapshot()
+    result = await engine._deliver(
+        {"name": "Feature", "request_pr": False},
+        state,
+        PublicationWorkspace(tmp_path, diff_content=diff),
+        AsyncMock(),
+        lambda: 120,
+    )
+    assert result == ("completed", "")
+    artifact = next(item for item in state["artifacts"] if item["name"] == "changes.diff")
+    assert artifact["content"] == diff
 
 
 @pytest.mark.asyncio

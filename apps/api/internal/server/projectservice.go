@@ -229,9 +229,9 @@ func (s *ProjectService) ControlRun(ctx context.Context, req *connect.Request[pr
 	if q.Action != "resume" && (q.AdditionalAttempts != 0 || q.AdditionalSeconds != 0 || q.Clarification != "") {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("extensions and clarification require resume"))
 	}
-	r, err := scanProjectRun(s.Pool.QueryRow(ctx, `UPDATE project_runs SET control=$2, control_version=control_version+1, clarification=CASE WHEN $3='' THEN clarification ELSE $3 END,max_attempts=max_attempts+$4,max_duration_seconds=max_duration_seconds+$5,updated_at=NOW() WHERE id=$1 AND status NOT IN ('completed','failed','canceled') RETURNING `+projectRunColumns, q.RunId, q.Action, q.Clarification, q.AdditionalAttempts, q.AdditionalSeconds))
+	r, err := scanProjectRun(s.Pool.QueryRow(ctx, `UPDATE project_runs SET control=$2, control_version=control_version+1, clarification=CASE WHEN $3='' THEN clarification ELSE $3 END,max_attempts=max_attempts+$4,max_duration_seconds=max_duration_seconds+$5,updated_at=NOW() WHERE id=$1 AND status NOT IN ('completed','failed','canceled') AND ($2 <> 'resume' OR (status IN ('paused','blocked','exhausted') AND control='')) RETURNING `+projectRunColumns, q.RunId, q.Action, q.Clarification, q.AdditionalAttempts, q.AdditionalSeconds))
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("run does not exist or is terminal"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("run is terminal, not paused, or already has a pending control"))
 	}
 	if err != nil {
 		return nil, projectError(err)

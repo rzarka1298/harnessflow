@@ -473,7 +473,7 @@ async def _deliver(
         {
             "name": "changes.diff",
             "media_type": "text/plain",
-            "content": (await work.diff(state["base_commit"]))[:500000],
+            "content": await work.diff(state["base_commit"]),
         },
         {
             "name": "acceptance.json",
