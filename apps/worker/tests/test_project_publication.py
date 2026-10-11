@@ -40,6 +40,16 @@ def snapshot() -> dict[str, Any]:
         "base_commit": BASE,
         "completed_task_ids": ["T1"],
         "review": {"passed": True, "findings": []},
+        "judge": {
+            "passed": True,
+            "findings": [],
+            "requirement_verdicts": [
+                {"requirement_id": "R1", "passed": True, "reason": "Behavior verified"}
+            ],
+            "provider": "codex",
+            "model": "default",
+            "commit": HEAD,
+        },
         "plan": {
             "summary": "Feature",
             "assumptions": [],

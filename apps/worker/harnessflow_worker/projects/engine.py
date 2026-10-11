@@ -14,7 +14,14 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from harnessflow_worker.projects.agent import CodexAgent, context_prompt
-from harnessflow_worker.projects.models import AgentResult, Plan, Review, completion_ready
+from harnessflow_worker.projects.judge import judge_project
+from harnessflow_worker.projects.models import (
+    AgentResult,
+    Plan,
+    Review,
+    completion_ready,
+    judge_ready,
+)
 from harnessflow_worker.projects.process import RunInterruptedError, run_process
 from harnessflow_worker.projects.workspace import Workspace, repository_lock_name
 
@@ -267,6 +274,7 @@ async def _owned_tick(
                     status, reason = "blocked", "Three coding attempts made no repository progress"
                 state["evidence"] = []
                 state["review"] = {"passed": False, "findings": []}
+                state.pop("judge", None)
         elif phase == "verify":
             status = "verifying"
             plan = Plan.model_validate(state["plan"])
@@ -328,10 +336,62 @@ async def _owned_tick(
                 Review,
             )
             state["phase"] = (
-                "deliver"
+                "judge"
                 if state["review"]["passed"] and not state["review"]["findings"]
                 else "repair"
             )
+        elif phase == "judge":
+            status = "verifying"
+            attempt_id = str(uuid.uuid4())
+            attempt = {"id": attempt_id, "phase": phase, "started_at": now(), "status": "running"}
+            state["agent_attempts"] = [*state.get("agent_attempts", []), attempt][-100:]
+            try:
+                state["judge"], usage = await judge_project(
+                    workspace=work,
+                    agent=agent,
+                    prd=row["prd"],
+                    state=state,
+                    clarification=row.get("clarification", ""),
+                    poll=poll,
+                    timeout=remaining(),
+                    attempt_id=attempt_id,
+                )
+                for key in ["input", "output"]:
+                    state["tokens"][key] += usage[key]
+                attempt["status"] = "completed"
+            except BaseException:
+                attempt["status"] = "interrupted"
+                raise
+            finally:
+                attempt["ended_at"] = now()
+            plan = Plan.model_validate(state["plan"])
+            if judge_ready(plan, state["judge"], state["head_commit"]):
+                state["phase"] = "deliver"
+                event(state, "Independent judge passed every requirement")
+            else:
+                state["phase"] = "repair"
+                judged_ids = {
+                    item["requirement_id"] for item in state["judge"]["requirement_verdicts"]
+                }
+                state["review"] = {
+                    "passed": False,
+                    "findings": [
+                        *state["judge"]["findings"],
+                        *[
+                            f"Judge did not assess requirement {requirement.id}"
+                            for requirement in plan.requirements
+                            if requirement.id not in judged_ids
+                        ],
+                        *[
+                            f"{item['requirement_id']}: {item['reason']}"
+                            for item in state["judge"]["requirement_verdicts"]
+                            if not item["passed"]
+                        ],
+                    ],
+                }
+                if not state["review"]["findings"]:
+                    state["review"]["findings"].append("Judge verdict was inconsistent")
+                event(state, "Independent judge found acceptance gaps; preparing repair")
         elif phase == "repair":
             status = "executing"
             if state["attempts"] >= int(row["max_attempts"]):
@@ -357,7 +417,10 @@ async def _owned_tick(
                 state["phase"] = "verify"
             event(state, result["summary"])
         elif phase == "deliver":
-            status, reason = await _deliver(row, state, work, poll, remaining)
+            if not state.get("judge"):
+                state["phase"] = "judge"
+            else:
+                status, reason = await _deliver(row, state, work, poll, remaining)
         else:
             status, reason = "failed", f"Unknown execution phase: {phase}"
     except RunInterruptedError as exc:
@@ -396,6 +459,7 @@ async def _deliver(
         head,
         state.get("review", {}).get("passed", False)
         and not state.get("review", {}).get("findings"),
+        state.get("judge"),
     ):
         return "blocked", "Completion evidence does not match the current repository revision"
     summary = f"# {row['name']}\n\n{plan.summary}\n\nBranch: {work.branch}\nCommit: {head}\n\n"

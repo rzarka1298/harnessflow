@@ -44,6 +44,18 @@ export interface ProjectSnapshot {
   tokens?: { input: number; output: number };
   cost_usd?: number | null;
   review?: { passed: boolean; findings: string[] };
+  judge?: {
+    passed: boolean;
+    findings: string[];
+    requirement_verdicts: {
+      requirement_id: string;
+      passed: boolean;
+      reason: string;
+    }[];
+    provider: string;
+    model: string;
+    commit: string;
+  };
   failure_count?: number;
   agent_attempts?: {
     id: string;

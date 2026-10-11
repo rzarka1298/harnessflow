@@ -24,7 +24,7 @@ def main():
         "createdAt": "2026-10-10T12:00:00Z",
     }
     snapshot = {
-        "phase": "implement", "branch": "harnessflow/run-1",
+        "phase": "judge", "branch": "harnessflow/run-1",
         "workspace_path": "/tmp/harnessflow/run-1", "head_commit": "abc123def456",
         "attempts": 2, "active_seconds": 180,
         "tokens": {"input": 1500, "output": 500},
@@ -37,6 +37,11 @@ def main():
         "completed_task_ids": [],
         "events": [{"at": "2026-10-10T12:03:00Z", "message": "Implementing feedback form"}],
         "evidence": [{"check_id": "C1", "requirement_ids": ["R1"], "argv": ["npm", "test"], "exit_code": 0, "output": "1 test passed", "commit": "abc123def456", "passed": True}],
+        "judge": {
+            "passed": True, "provider": "openai", "model": "gpt-5",
+            "commit": "abc123def456", "findings": [],
+            "requirement_verdicts": [{"requirement_id": "R1", "passed": True, "reason": "Feedback submissions persist after reload."}],
+        },
         "artifacts": [{"name": "changes.diff", "content": "+ export function FeedbackForm() {}", "media_type": "text/plain"}],
     }
     run = {"id": "run-1", "projectId": "project-1", "status": "running", "snapshotJson": json.dumps(snapshot), "createdAt": "2026-10-10T12:00:00Z"}
@@ -107,6 +112,13 @@ def main():
         page.wait_for_url("**/projects/project-1/runs/run-1")
         expect(page.get_by_role("heading", name="Implement feedback form")).to_be_visible()
         expect(page.get_by_text("Users can save feedback.")).to_be_visible()
+        phases = page.get_by_label("Run phases")
+        expect(phases.locator("span").nth(5)).to_contain_text("review")
+        expect(phases.locator("span").nth(6)).to_contain_text("judge")
+        expect(page.get_by_text("Judge evidence")).to_be_visible()
+        expect(page.get_by_text("openai · gpt-5")).to_be_visible()
+        expect(page.get_by_text("Feedback submissions persist after reload.")).to_be_visible()
+        expect(page.locator("p").filter(has_text="Commit abc123def456").last).to_be_visible()
         page.locator("summary").filter(has_text="C1").click()
         expect(page.get_by_text("1 test passed", exact=False)).to_be_visible()
         page.locator("summary").filter(has_text="changes.diff").click()

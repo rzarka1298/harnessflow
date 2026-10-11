@@ -45,13 +45,26 @@ def test_completion_requires_current_passing_evidence_for_every_requirement() ->
             "argv": ["python3", "-m", "unittest"],
         }
     ]
-    assert completion_ready(plan, ["T1"], evidence, "abc", True)
-    assert not completion_ready(plan, ["T1"], [], "abc", True)
-    assert not completion_ready(plan, ["T1"], evidence, "new-commit", True)
-    assert not completion_ready(plan, [], evidence, "abc", True)
-    assert not completion_ready(plan, ["T1"], evidence, "abc", False)
-    evidence[0]["exit_code"] = 1
+    judge = {
+        "passed": True,
+        "findings": [],
+        "requirement_verdicts": [
+            {"requirement_id": "R1", "passed": True, "reason": "Observed behavior"}
+        ],
+        "commit": "abc",
+    }
+    assert completion_ready(plan, ["T1"], evidence, "abc", True, judge)
     assert not completion_ready(plan, ["T1"], evidence, "abc", True)
+    assert not completion_ready(plan, ["T1"], [], "abc", True, judge)
+    assert not completion_ready(plan, ["T1"], evidence, "new-commit", True, judge)
+    assert not completion_ready(plan, [], evidence, "abc", True, judge)
+    assert not completion_ready(plan, ["T1"], evidence, "abc", False, judge)
+    assert not completion_ready(plan, ["T1"], evidence, "abc", True, {**judge, "commit": "old"})
+    assert not completion_ready(
+        plan, ["T1"], evidence, "abc", True, {**judge, "requirement_verdicts": []}
+    )
+    evidence[0]["exit_code"] = 1
+    assert not completion_ready(plan, ["T1"], evidence, "abc", True, judge)
 
 
 def test_plan_rejects_uncovered_requirements_and_cyclic_tasks() -> None:

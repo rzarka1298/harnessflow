@@ -145,6 +145,9 @@ def context_prompt(prd: str, state: dict[str, Any], clarification: str) -> str:
         + clarification
         + "\n\nDurable project context:\n"
         + json.dumps(
-            {key: state.get(key) for key in ["plan", "completed_task_ids", "evidence", "review"]}
+            {
+                key: state.get(key)
+                for key in ["plan", "completed_task_ids", "evidence", "review", "judge"]
+            }
         )
     )
