@@ -1,7 +1,7 @@
 # Project State
 
 Current phase: 2 — Judge, CLI and agent entry points
-Status: Codex and Claude paths verified; live Anthropic check pending
+Status: Phase 1 verified; judge, CLI and skills implemented; live Anthropic check deferred
 Branch: feat/project-judge-cli-skills (stacked on feat/prd-project-runs)
 
 Completed: codebase audit; user decisions; GSD Core 1.16.0 and supplementary skill
@@ -9,10 +9,12 @@ installation; API/contracts/migrations; local launcher/checks; execution engine 
 dashboard; API/worker/browser verification; new and existing real-Codex fixtures
 completed with independent behavioral checks and original checkouts preserved.
 
-Next: review draft PR #2 and stacked PR #3. Both PR #3 checks passed; the
-three-task CLI trial and Codex judge evidence are recorded. The independent
-Anthropic path remains unverified without a key. The local release does not
-authorize automatic merge, cloud rollout or deployment.
+Next: finish refreshed CI on draft PR #2 and stacked PR #3, then obtain the
+human merge decision. The three-task CLI trial and Codex judge evidence are
+recorded. The independent Anthropic path remains unverified; the user chose to
+defer its live call. Review findings on duplicate resume, complete diff
+delivery, judge heartbeat and large-diff fallback have been fixed. The local
+release does not authorize automatic merge, cloud rollout or deployment.
 Release evidence is recorded in Project-Documentation/projects/acceptance.md.
 
 GSD integration: planning artifacts use the installed phase vocabulary. This session
@@ -23,5 +25,5 @@ these artifacts in subsequent sessions. Preserve already-approved product decisi
 ## Session Continuity
 
 Last session: 2026-10-11
-Stopped at: GSD resume completed; CI and Claude skill verified, Anthropic key absent.
+Stopped at: Phase 1 verification passed; PR review fixes pushed; Anthropic live call deferred by user.
 Resume file: none

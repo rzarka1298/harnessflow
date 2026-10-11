@@ -1,6 +1,6 @@
 ---
 phase: 01-local-project-runs
-verified: 2026-10-11T22:25:00Z
+verified: 2026-10-11T22:30:00Z
 status: passed
 score: 8/8 must-haves verified
 covered_files:
@@ -21,7 +21,7 @@ covered_files:
   - apps/worker/tests/test_project_execution.py
   - apps/worker/tests/test_project_publication.py
   - scripts/project-smoke.py
-covered_digest: "v3:sha256:89ff99d341a6b98272224631e5eb0fa3cfcd4a57c931e90508b2d19f92eac22c"
+covered_digest: "v3:sha256:92c9feb3856eab0e77ab24e9b851ea8d38effef6b9c6f49e9f1169ae892ef05c"
 behavior_unverified: 0
 ---
 
@@ -56,6 +56,8 @@ by the release fixtures.
 - PR #2 head `a79711e`: `checks`, `eval-gate`, and GitGuardian passed on 2026-10-11.
 - `make check` passed on the stacked branch containing this Phase 1 tree, with
   four non-failing generated-code ESLint warnings.
+- The coverage fingerprint was refreshed on the stacked branch after Phase 2
+  changed shared worker files; the Phase 1 behavior remained verified.
 - Focused Go server, Postgres lifecycle, and worker publication tests passed
   after the review fixes.
 - The recorded real-Codex runs are local and their transcripts are intentionally

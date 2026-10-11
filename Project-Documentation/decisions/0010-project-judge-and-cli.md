@@ -1,6 +1,6 @@
 # ADR-0010: CLI and independent judge for local coding projects
 
-Status: Proposed (Codex path validated on feature branch; live Anthropic call pending)
+Status: Accepted for local release (live Anthropic call deferred by user)
 
 ## Context
 
@@ -40,7 +40,8 @@ transfer and model usage when Anthropic is configured. A judge pass supplements
 command evidence and is not a correctness guarantee.
 
 The CLI and Codex fallback were exercised end to end with an empty and a three-task
-repository fixture. The Anthropic path still needs a live credentialed validation;
+repository fixture. The Anthropic path still needs a live credentialed validation,
+which the user deferred for now;
 tests currently mock its response. The maintained YAML workflow demo continues to
 use its existing setup.
 
