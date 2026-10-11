@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-10-11 — Phase 1 verified; PR review fixes pushed; live Anthropic judge call deferred._
+_Last updated: 2026-10-11 — broader existing-project acceptance passed; live Anthropic judge call deferred._
 
 ## DONE
 
@@ -17,6 +17,7 @@ _Last updated: 2026-10-11 — Phase 1 verified; PR review fixes pushed; live Ant
 | 2026-10-10 | Real Codex new and existing repository runs completed with commit-bound evidence, independent review and external behavioral checks; original checkouts retained. | project runs c07c8da3, 71659e53; [acceptance](projects/acceptance.md) |
 | 2026-10-11 | PR review fixes: reject duplicate/ineligible resume, retain full diff, heartbeat and cancel during Anthropic judging, use read-only Codex fallback for oversized diffs. Full local gate passed; Phase 1 verification report added. | 9fbdf2a, 825deb2; [acceptance](projects/acceptance.md) |
 | 2026-10-10 | CLI and global Codex/Claude skill installer, requirement-level judge, dashboard evidence, multi-task fixture; `make check` and browser smoke passed. Real Codex greeting and three-task inventory runs delivered commit-bound checks and passing judge verdicts; Codex skill reported status from another workspace. | feature branch; [acceptance](projects/acceptance.md) |
+| 2026-10-11 | Existing Python expense-CLI fixture: real PRD run delivered three tasks with four frozen checks, five passing Codex judge verdicts, 11 delivered tests, independent CLI/Decimal/isolation verification, and an unchanged original checkout. Full `make check` passed. | run cffef0d9; [acceptance](projects/acceptance.md) |
 | 2026-05-14 | Approved 14-week project plan written and saved to `~/.claude/plans/i-am-developing-a-serialized-codd.md` | (pre-repo) |
 | 2026-05-14 | Repo scaffold: LICENSE, README, ARCHITECTURE, CLAUDE.md, Makefile, .gitignore, .env.example, .envrc.example | 92b178c |
 | 2026-05-14 | Project-Documentation skeleton — all 10 subfolders, all overview stubs, README, STATUS, ROADMAP | 92b178c |
@@ -92,7 +93,7 @@ heartbeat and oversized-diff handling were fixed.
 ## NEXT
 
 1. Review green draft PR #2 and stacked PR #3 before deciding when to merge. No automatic merge or deployment is planned.
-2. Expand the real-project acceptance corpus beyond the current three-task inventory fixture. Cloud rollout and research extensions are deferred, not authorized deployment work.
+2. Extend acceptance to a larger, messier repository and run the fixture in CI when a safe, authenticated model runner is available. Cloud rollout and research extensions are deferred, not authorized deployment work.
 3. Validate the Anthropic judge with a credentialed live call later if desired; the user deferred it for now.
 
 ## Releases

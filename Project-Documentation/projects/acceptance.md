@@ -49,3 +49,37 @@ context; a $0.50 cap completed successfully. No repository files were changed.
 
 Draft [PR #3](https://github.com/rzarka1298/harnessflow/pull/3) passed its GitHub
 checks and GitGuardian check on 2026-10-11. It remains unmerged.
+
+## Existing-project report fixture (2026-10-11)
+
+The [expense-report PRD](fixtures/expense-report-prd.md) starts with a committed,
+working Python expense CLI rather than an empty repository. It asks the harness
+to preserve `add`, `list`, and JSON storage while adding a Decimal-based report
+command, date filtering, tests, and documentation. The fixture adds an untracked
+private note to the original checkout to test worktree isolation. The run was
+started with `harnessflow run` against the local stack, without PR publication.
+
+| Run | Delivered commit | Harness checks | Independent check |
+| --- | --- | --- | --- |
+| `cffef0d9-9835-42b8-9e80-4a81ce207de3` | `28951d95e14540a59922ab7d5efa802c6fd215b5` | Four frozen commands passed; Codex judge passed all five requirements | [Acceptance verifier](../../scripts/expense-acceptance.py) passed exact CLI, date, Decimal, read-only ledger, 11-test, clean-commit, and original-checkout checks. |
+
+The original checkout retained its base commit, starter files, and untracked
+private note. No merge, push, or deployment was requested by the fixture.
+There was no Anthropic key, so the judge used read-only Codex as designed.
+
+To reproduce, create a temporary directory and run:
+
+```sh
+python3 scripts/expense-acceptance.py prepare --root /tmp/harnessflow-expense-example
+harnessflow run Project-Documentation/projects/fixtures/expense-report-prd.md \
+  --repo /tmp/harnessflow-expense-example/repository \
+  --name "Expense report acceptance" --max-attempts 12 \
+  --max-duration-seconds 3600 --wait
+```
+
+Read the delivered `workspace_path` from `harnessflow status RUN_ID --full`, then
+run `python3 scripts/expense-acceptance.py verify --root
+/tmp/harnessflow-expense-example --workspace WORKSPACE_PATH`. The verifier is
+separate from the harness's frozen checks and is designed to fail on the
+unextended starter. The PRD and starter files are committed; temporary ledgers,
+private notes, worktrees, and model transcripts are not.
