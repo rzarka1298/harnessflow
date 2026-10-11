@@ -1,0 +1,6 @@
+interface:
+  display_name: "HarnessFlow Project"
+  short_description: "Start or manage a durable PRD run"
+  default_prompt: "Use $harnessflow-project to run a local PRD with HarnessFlow."
+policy:
+  allow_implicit_invocation: false
