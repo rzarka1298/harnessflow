@@ -9,8 +9,8 @@ installation; API/contracts/migrations; local launcher/checks; execution engine 
 dashboard; API/worker/browser verification; new and existing real-Codex fixtures
 completed with independent behavioral checks and original checkouts preserved.
 
-Next: finish refreshed CI on draft PR #2 and stacked PR #3, then obtain the
-human merge decision. The three-task CLI trial and Codex judge evidence are
+Next: obtain the human merge decision for green draft PR #2 and stacked PR #3.
+The three-task CLI trial and Codex judge evidence are
 recorded. The independent Anthropic path remains unverified; the user chose to
 defer its live call. Review findings on duplicate resume, complete diff
 delivery, judge heartbeat and large-diff fallback have been fixed. The local
@@ -25,5 +25,5 @@ these artifacts in subsequent sessions. Preserve already-approved product decisi
 ## Session Continuity
 
 Last session: 2026-10-11
-Stopped at: Phase 1 verification passed; PR review fixes pushed; Anthropic live call deferred by user.
+Stopped at: Phase 1 verification passed; both PRs green after review fixes; Anthropic live call deferred by user.
 Resume file: none

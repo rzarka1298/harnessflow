@@ -81,8 +81,8 @@ See [ADR-0010](decisions/0010-project-judge-and-cli.md).
 
 **Current branch:** `feat/project-judge-cli-skills`, stacked on the local-release
 branch in [draft PR #3](https://github.com/rzarka1298/harnessflow/pull/3). GitHub
-checks passed before the review fixes; refreshed checks are in progress. The PR
-is not merged or deployed. No Anthropic API key was configured. `make check`
+checks and GitGuardian passed after the review fixes. The PR is not merged or
+deployed. No Anthropic API key was configured. `make check`
 passed after the fixes (four generated-code ESLint warnings), and browser smoke
 passed. Review findings on control idempotency, full diff delivery, judge
 heartbeat and oversized-diff handling were fixed.
@@ -91,7 +91,7 @@ heartbeat and oversized-diff handling were fixed.
 
 ## NEXT
 
-1. Finish refreshed CI on draft PR #2 and stacked PR #3; review them before deciding when to merge. No automatic merge or deployment is planned.
+1. Review green draft PR #2 and stacked PR #3 before deciding when to merge. No automatic merge or deployment is planned.
 2. Expand the real-project acceptance corpus beyond the current three-task inventory fixture. Cloud rollout and research extensions are deferred, not authorized deployment work.
 3. Validate the Anthropic judge with a credentialed live call later if desired; the user deferred it for now.
 
