@@ -151,7 +151,8 @@ def main():
         page.set_viewport_size({"width": 390, "height": 844})
         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Mobile layout overflows"
         page.goto(args.url + "/runs/legacy-1/replay")
-        page.wait_for_load_state("networkidle")
+        expect(page.get_by_role("heading", name="Run replay")).to_be_visible()
+        expect(page.get_by_role("button", name="Replay", exact=False)).to_be_visible()
         page.get_by_role("button", name="Replay", exact=False).click()
         page.wait_for_function("Number(document.querySelector('input[type=range]').value) > 10 && Number(document.querySelector('input[type=range]').value) < 100")
         page.get_by_role("button", name="Pause", exact=True).click()
