@@ -2,18 +2,31 @@
 
 ## Product boundary
 
-The supported path is a trusted developer on one local machine, with Codex CLI
-authenticated and an existing Git repository (an empty `git init` is sufficient).
-`make dev` starts Postgres/Temporal in Docker and API/worker/dashboard on the host.
-Projects are separate from legacy YAML workflows, which retain their existing URLs.
-The dashboard begins at `/projects`.
+The primary product is a trusted developer's local PRD-to-verified-branch harness.
+The maintained YAML workflow platform remains available as a foundation and demo.
+For coding runs, authenticate Codex CLI and use an existing Git repository (an
+empty `git init` is sufficient). `make dev` starts Postgres/Temporal in Docker and
+API/worker/dashboard on the host. Project runs are separate from YAML workflows;
+the dashboard begins at `/projects`.
+
+The optional CLI is installed from the repository with
+`uv tool install --editable apps/cli`. Run
+`harnessflow run ./PRD.md --repo /absolute/path/to/repository` to submit the PRD
+file to the local API and receive a run ID and dashboard URL. `harnessflow status`,
+`resume`, `pause`, and `cancel` manage an existing run; `status --full` includes
+the complete snapshot. Repo-local Codex and Claude Code skills are in
+`.agents/skills/harnessflow-project/` and `.claude/skills/harnessflow-project/`.
+They submit through the CLI; they do not replace the durable project runtime.
+Run `make install-skills` to copy them into your user skill directories for use
+from other repositories; existing differing files are not overwritten.
+Codex sandboxed sessions need loopback network access to reach the local API.
 
 ## Durable execution
 
 `ProjectService` persists intake and a run before starting a deterministic Temporal
 workflow. A reconciliation loop retries interrupted starts and pending controls.
 Each `project_tick` advances one phase: prepare, plan, plan review, implementation,
-verification, independent review, repair, or delivery. Temporal continues as new
+verification, independent review, judge, repair, or delivery. Temporal continues as new
 after a bounded history. Waiting runs consume no coding attempts or active time.
 
 Postgres owns snapshots and versioned pause/resume/cancel requests. Signals are only
@@ -41,8 +54,15 @@ edits and retries the unfinished task; it never promotes interrupted work to don
 A planner links requirements to tasks and executable argv checks. A separate review
 accepts that plan before checks are frozen. Coding attempts cannot redefine them.
 The supervisor records real exit codes, output and commit IDs; failed checks trigger
-repair. A fresh read-only review inspects implementation and test quality. Delivery
-rechecks clean status and evidence against HEAD before declaring completion.
+repair. A fresh read-only review and an explicit independent judge inspect the
+implementation against the PRD. If `ANTHROPIC_API_KEY` is set, the judge uses
+Anthropic; otherwise it uses a separate read-only Codex attempt. The Anthropic judge
+receives the PRD, frozen plan, actual diff, acceptance evidence, and independent
+review findings, so those materials leave the local machine for that provider.
+Delivery still requires the deterministic frozen command checks to pass on the
+delivered commit, a clean worktree, and a passing judge. Model judgment supplements
+the command gate; it does not replace it. Delivery rechecks status and evidence
+against HEAD before declaring completion.
 
 This is evidence-backed automation, not proof that an arbitrary PRD has no defects.
 LLM-generated acceptance criteria and reviews can miss requirements. Human review of

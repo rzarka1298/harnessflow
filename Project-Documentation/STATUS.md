@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-10-10 — local PRD-to-verified-branch product pivot; both real-Codex acceptance fixtures passed._
+_Last updated: 2026-10-10 — CLI and Codex judge path validated on real runs; Anthropic live call remains pending._
 
 ## DONE
 
@@ -15,6 +15,7 @@ _Last updated: 2026-10-10 — local PRD-to-verified-branch product pivot; both r
 | 2026-10-10 | Managed local launcher, real quality gates, general CI/browser tests, loopback Compose and explicit mock demos. | 8742433, dd170fb |
 | 2026-10-10 | GSD Core 1.16.0, webapp-testing and vercel-react-best-practices installed and researched; active GSD phase artifacts validate. | local tooling; skills.md |
 | 2026-10-10 | Real Codex new and existing repository runs completed with commit-bound evidence, independent review and external behavioral checks; original checkouts retained. | project runs c07c8da3, 71659e53; [acceptance](projects/acceptance.md) |
+| 2026-10-10 | CLI and global Codex/Claude skill installer, requirement-level judge, dashboard evidence, multi-task fixture; `make check` and browser smoke passed. Real Codex greeting and three-task inventory runs delivered commit-bound checks and passing judge verdicts; Codex skill reported status from another workspace. | feature branch; [acceptance](projects/acceptance.md) |
 | 2026-05-14 | Approved 14-week project plan written and saved to `~/.claude/plans/i-am-developing-a-serialized-codd.md` | (pre-repo) |
 | 2026-05-14 | Repo scaffold: LICENSE, README, ARCHITECTURE, CLAUDE.md, Makefile, .gitignore, .env.example, .envrc.example | 92b178c |
 | 2026-05-14 | Project-Documentation skeleton — all 10 subfolders, all overview stubs, README, STATUS, ROADMAP | 92b178c |
@@ -66,12 +67,28 @@ _Last updated: 2026-10-10 — local PRD-to-verified-branch product pivot; both r
 
 ## IN FLIGHT
 
-**Branch:** `feat/prd-project-runs` (base `6f3c856`), pushed in [draft PR #2](https://github.com/rzarka1298/harnessflow/pull/2). The local release and real-model acceptance are complete. Both fixtures exercised persisted blockers and restart/resume before completion; integration caught and fixed a planning-role ambiguity, a Git file-monitor descriptor leak and a native CLI sandbox invocation change. The full `make check` gate passed (four generated-code ESLint warnings, no errors). Optional PR publication was hardened to validate the target before pushing. Human review of the draft PR remains; no merge or deployment has occurred. See `.planning/STATE.md` and [acceptance](projects/acceptance.md).
+The PRD coding harness is the primary product; the YAML workflow platform remains
+a maintained foundation and demo. The current follow-up adds a local CLI, repo-local
+Codex/Claude Code skills, and an explicit judge phase (Anthropic with
+`ANTHROPIC_API_KEY`, otherwise read-only Codex). The CLI and Codex fallback were
+validated end to end; live Anthropic and Claude Code invocations remain pending. The
+Anthropic path sends the PRD, plan, diff and evidence to an external provider; the
+frozen deterministic acceptance commands remain required regardless of judge.
+See [ADR-0010](decisions/0010-project-judge-and-cli.md).
+
+**Current branch:** `feat/project-judge-cli-skills`, stacked on the local-release
+branch. This milestone is not merged or deployed. Claude Code CLI invocation was
+attempted but hit the account session limit; its skill is installed. No Anthropic
+API key was configured. `make check` passed (four generated-code ESLint warnings)
+and browser smoke passed. A peer read-only review found no high/medium issues.
+
+**Previous release branch:** `feat/prd-project-runs` (base `6f3c856`), pushed in [draft PR #2](https://github.com/rzarka1298/harnessflow/pull/2). The local release and real-model acceptance are complete. Both fixtures exercised persisted blockers and restart/resume before completion; integration caught and fixed a planning-role ambiguity, a Git file-monitor descriptor leak and a native CLI sandbox invocation change. The full `make check` gate passed (four generated-code ESLint warnings, no errors). Optional PR publication was hardened to validate the target before pushing. Human review of the draft PR remains; no merge or deployment has occurred. See `.planning/STATE.md` and [acceptance](projects/acceptance.md).
 
 ## NEXT
 
-1. Review draft PR #2 and decide when to merge. No automatic merge or deployment is planned.
-2. Expand the larger-project acceptance corpus and UX. Cloud rollout and research extensions are deferred, not authorized deployment work.
+1. Validate the Anthropic judge with a credentialed live call and retry Claude Code skill invocation after its session limit resets.
+2. Review the stacked feature branch and draft PR #2 before deciding when to merge. No automatic merge or deployment is planned.
+3. Expand the real-project acceptance corpus beyond the current three-task inventory fixture. Cloud rollout and research extensions are deferred, not authorized deployment work.
 
 ## Releases
 

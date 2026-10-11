@@ -22,3 +22,25 @@ These are intentionally small release fixtures, not a guarantee that any PRD can
 be fully implemented. The sessions also exercised blocked/resumed paths while
 integration issues were fixed. A fresh run need not have the same attempts or
 model-generated plan. See [overview](overview.md) for limits and trust boundaries.
+
+## Judge and CLI follow-up (2026-10-10)
+
+The updated local stack ran an explicit requirement-level Codex judge after
+read-only review and frozen command checks. No Anthropic key was configured;
+the independent-provider path was validated with a mocked API response only.
+
+| Fixture | Entry point / run | Delivered commit | Evidence and external check |
+| --- | --- | --- | --- |
+| Empty greeting project | `scripts/project-smoke.py --kind new` / `8d737edf-e7f0-46b1-8366-e500d7c31088` | `eec28591445e3839aba4de687fe7dd5b0cb1ec56` | Four checks passed at HEAD; judge passed all four requirements; five unittest cases and smoke assertions passed. |
+| Three-task inventory PRD | `harnessflow run Project-Documentation/projects/fixtures/inventory-prd.md` / `fcd68133-d769-4e59-a026-7cbd826d8640` | `f6fc7030648992ef46606e14c10ebd788471040b` | Four checks passed at HEAD after one repair; judge passed all six requirements; ten unittest cases and separate Decimal/order assertions passed. |
+
+The CLI returned a dashboard URL immediately, and `harnessflow status` reported
+the final judge provider and commit. The inventory run had three dependent tasks,
+four coding attempts, and a repair cycle. Both original checkouts retained an
+unborn HEAD and no files; the generated branches stayed in isolated worktrees.
+The run snapshots and model transcripts remain local rather than being committed.
+The Codex skill was invoked from a different workspace and successfully reported
+the completed run when loopback network access was enabled in its sandbox. A
+read-only Codex sandbox denied loopback access. Claude Code invocation could not
+be exercised because the CLI session limit was reached, although the skill files
+were installed and their command contract was inspected.
