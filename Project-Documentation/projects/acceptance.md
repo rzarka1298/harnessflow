@@ -83,3 +83,40 @@ run `python3 scripts/expense-acceptance.py verify --root
 separate from the harness's frozen checks and is designed to fail on the
 unextended starter. The PRD and starter files are committed; temporary ledgers,
 private notes, worktrees, and model transcripts are not.
+
+## Multi-module ticket project with dirty checkout (2026-10-11)
+
+The [WorkQueue PRD](fixtures/ticket-triage-prd.md) extends an existing Python
+ticket CLI split across storage, service, formatting, CSV import, and CLI
+modules. Its starter has six passing tests, legacy records without due dates or
+tags, and four working commands. Preparation adds a tracked README edit and an
+untracked private-token file to the source checkout; neither belongs in the
+delivered branch. The requested `triage` command adds strict calendar dates,
+priority/due/ID ordering, exact tag filtering, text and JSON output, and
+read-only behavior. No PR publication was requested.
+
+| Run | Delivered commit | Harness checks | Independent check |
+| --- | --- | --- | --- |
+| `23646454-73f7-403e-afe4-a43e3fd98846` | `dff970fcc1a065cd1a5342c60c16de9e3d8cd619` | Four frozen commands passed; Codex judge passed all seven requirements | [Ticket verifier](../../scripts/ticket-acceptance.py) passed exact CLI text/JSON, ordering ties, date/tag filters, missing/legacy rows, CSV and existing commands, 15 tests, clean delivery, and unchanged dirty source checkout. |
+
+The source checkout retained its original commit, tracked local README draft,
+and untracked private-token file. The generated worktree contained neither
+local-only change. The independent verifier checked the delivered commit after
+the harness's own acceptance and judge phases.
+
+To reproduce, prepare a temporary root, run the PRD, then take `workspace_path`
+from `harnessflow status RUN_ID --full`:
+
+```sh
+python3 scripts/ticket-acceptance.py prepare --root /tmp/harnessflow-ticket-example
+harnessflow run Project-Documentation/projects/fixtures/ticket-triage-prd.md \
+  --repo /tmp/harnessflow-ticket-example/repository \
+  --name "WorkQueue triage acceptance" --max-attempts 12 \
+  --max-duration-seconds 3600 --wait
+python3 scripts/ticket-acceptance.py verify \
+  --root /tmp/harnessflow-ticket-example --workspace WORKSPACE_PATH
+```
+
+The verifier fails on the unextended starter. Model transcripts and temporary
+ticket data stay local; only the PRD, starter, verifier, and results are
+committed.

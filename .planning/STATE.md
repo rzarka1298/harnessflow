@@ -8,6 +8,9 @@ Completed: codebase audit; user decisions; GSD Core 1.16.0 and supplementary ski
 installation; API/contracts/migrations; local launcher/checks; execution engine and
 dashboard; API/worker/browser verification; new and existing real-Codex fixtures
 completed with independent behavioral checks and original checkouts preserved.
+Additional real-Codex expense and multi-module WorkQueue fixtures delivered
+commit-bound passing checks and Codex judge verdicts. WorkQueue preserved a
+source checkout containing both tracked and untracked local changes.
 
 Next: obtain the human merge decision for green draft PR #2 and stacked PR #3.
 The three-task CLI trial and Codex judge evidence are
@@ -16,6 +19,8 @@ defer its live call. Review findings on duplicate resume, complete diff
 delivery, judge heartbeat and large-diff fallback have been fixed. The local
 release does not authorize automatic merge, cloud rollout or deployment.
 Release evidence is recorded in Project-Documentation/projects/acceptance.md.
+An opt-in authenticated CI real-model acceptance job is not yet configured;
+the static fixture tests and linters are part of `make check`.
 
 GSD integration: planning artifacts use the installed phase vocabulary. This session
 uses the product's generic collaboration agents; it does not claim typed GSD agent
@@ -25,5 +30,5 @@ these artifacts in subsequent sessions. Preserve already-approved product decisi
 ## Session Continuity
 
 Last session: 2026-10-11
-Stopped at: Phase 1 verification passed; both PRs green after review fixes; Anthropic live call deferred by user.
+Stopped at: WorkQueue real-project acceptance, outside verifier, and full `make check` passed; Anthropic live call deferred by user.
 Resume file: none

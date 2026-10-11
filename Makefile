@@ -151,12 +151,16 @@ demo-bandit: ## (Week 13) A/B compare learned-retry vs static-retry policies.
 test: ## Run launcher, Go, and Python unit tests (browser checks run separately in CI).
 	python3 -m unittest discover -s scripts/tests -v
 	python3 -m unittest discover -s apps/cli/tests -v
+	cd Project-Documentation/projects/fixtures/expense-starter && python3 -m unittest discover -s tests -v
+	cd Project-Documentation/projects/fixtures/ticket-starter && python3 -m unittest discover -s tests -v
 	go test ./apps/api/...
 	@set -e; for app in $(PYTHON_APPS); do uv run --frozen --directory apps/$$app pytest; done
 
 lint: ## Run linters across all apps.
-	uv run --frozen --directory apps/worker ruff check $(CURDIR)/scripts/local-dev.py $(CURDIR)/scripts/project-smoke.py $(CURDIR)/scripts/expense-acceptance.py $(CURDIR)/scripts/tests
-	uv run --frozen --directory apps/worker ruff format --check $(CURDIR)/scripts/local-dev.py $(CURDIR)/scripts/project-smoke.py $(CURDIR)/scripts/expense-acceptance.py $(CURDIR)/scripts/tests
+	uv run --frozen --directory apps/worker ruff check $(CURDIR)/scripts/local-dev.py $(CURDIR)/scripts/project-smoke.py $(CURDIR)/scripts/expense-acceptance.py $(CURDIR)/scripts/ticket-acceptance.py $(CURDIR)/scripts/tests
+	uv run --frozen --directory apps/worker ruff format --check $(CURDIR)/scripts/local-dev.py $(CURDIR)/scripts/project-smoke.py $(CURDIR)/scripts/expense-acceptance.py $(CURDIR)/scripts/ticket-acceptance.py $(CURDIR)/scripts/tests
+	uv run --frozen --directory apps/worker ruff check $(CURDIR)/Project-Documentation/projects/fixtures/expense-starter $(CURDIR)/Project-Documentation/projects/fixtures/ticket-starter
+	uv run --frozen --directory apps/worker ruff format --check $(CURDIR)/Project-Documentation/projects/fixtures/expense-starter $(CURDIR)/Project-Documentation/projects/fixtures/ticket-starter
 	uv run --frozen --directory apps/worker ruff check $(CURDIR)/scripts/install-agent-skills.py
 	uv run --frozen --directory apps/worker ruff format --check $(CURDIR)/scripts/install-agent-skills.py
 	uv run --frozen --directory apps/worker ruff check $(CURDIR)/apps/cli

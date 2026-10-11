@@ -46,7 +46,7 @@ def prepare(root: Path) -> dict[str, str]:
     if repo.exists() or (root / "fixture.json").exists():
         raise ValueError(f"fixture already exists at {root}")
     root.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(STARTER, repo)
+    shutil.copytree(STARTER, repo, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     git(repo, "init", "-q")
     git(repo, "add", ".")
     git(repo, "commit", "-qm", "Initial expense ledger")
@@ -89,7 +89,7 @@ def verify(root: Path, workspace: Path) -> dict[str, str | int]:
     if (repo / "private-notes.txt").read_text(encoding="utf-8") != PRIVATE_NOTE:
         raise ValueError("original private note changed")
     for source in STARTER.rglob("*"):
-        if source.is_file():
+        if source.is_file() and "__pycache__" not in source.parts and source.suffix != ".pyc":
             relative = source.relative_to(STARTER)
             if (repo / relative).read_bytes() != source.read_bytes():
                 raise ValueError(f"original starter file changed: {relative}")

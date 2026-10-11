@@ -25,6 +25,7 @@ class ExpenseAcceptanceTests(unittest.TestCase):
             repo = Path(prepared["repository"])
             self.assertTrue((repo / "expenses.py").is_file())
             self.assertTrue((repo / "tests" / "test_expenses.py").is_file())
+            self.assertFalse(any(repo.rglob("__pycache__")))
             self.assertEqual((repo / "private-notes.txt").read_text(), "Keep this note private.\n")
             status = subprocess.check_output(["git", "status", "--porcelain"], cwd=repo, text=True)
             self.assertEqual(status.strip(), "?? private-notes.txt")
