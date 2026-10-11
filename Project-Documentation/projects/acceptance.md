@@ -41,6 +41,11 @@ unborn HEAD and no files; the generated branches stayed in isolated worktrees.
 The run snapshots and model transcripts remain local rather than being committed.
 The Codex skill was invoked from a different workspace and successfully reported
 the completed run when loopback network access was enabled in its sandbox. A
-read-only Codex sandbox denied loopback access. Claude Code invocation could not
-be exercised because the CLI session limit was reached, although the skill files
-were installed and their command contract was inspected.
+read-only Codex sandbox denied loopback access. On 2026-10-11, the installed
+Claude Code skill was invoked from the separate inventory workspace using Haiku
+and reported the greeting run's completed status, branch, commit, judge provider,
+and dashboard URL. The first invocation's $0.15 budget was too low for the host
+context; a $0.50 cap completed successfully. No repository files were changed.
+
+Draft [PR #3](https://github.com/rzarka1298/harnessflow/pull/3) passed its GitHub
+checks and GitGuardian check on 2026-10-11. It remains unmerged.
