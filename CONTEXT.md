@@ -28,3 +28,8 @@ A run that reached its coding-attempt or active-time limit. Further work require
 
 **Verified branch**:
 The run's deliverable after all planned tasks, acceptance checks and independent review pass. Publishing a pull request is optional; merging and deployment are separate decisions.
+
+**Real-model acceptance run**:
+An opt-in exercise of a project run against an actual coding model, followed by
+commit-bound checks and an independent fixture verifier. It is distinct from
+the deterministic test suite and can consume model usage.

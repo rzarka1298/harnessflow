@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-10-11 — local release merged and running; Phase 2 GSD metadata reconciled. Cloud deployment waits until the other tasks are finished._
+_Last updated: 2026-10-12 — local release merged and running; real-model CI credential isolation is in progress. Cloud deployment waits until the other tasks are finished._
 
 ## DONE
 
@@ -87,10 +87,15 @@ deferred a credentialed Anthropic judge call, so that path is unit-tested but
 not release-proven against Anthropic. It would send the PRD, plan, diff and
 evidence to that provider. Frozen deterministic checks remain required with
 either judge. See [ADR-0010](decisions/0010-project-judge-and-cli.md).
+Routine Git, publication and frozen-check subprocesses are being hardened so
+they do not inherit model API keys. This is a prerequisite, not a complete CI
+secret boundary; [ADR-0011](decisions/0011-real-model-ci-credential-boundary.md)
+records why the hosted live job stays disabled pending an isolated credential
+proxy and protected, fixed-input workflow.
 
 ## NEXT
 
-1. Decide whether to add a protected, opt-in real-model acceptance job in CI. Static fixture starters and verifier tests already run in `make check`; real Codex runs remain local until CI has safe model access.
+1. Isolate the model credential from worker and agent-executed code, then add a protected, manual real-model CI acceptance job with fixed fixtures. Static fixture starters and verifier tests already run in `make check`; real Codex runs remain local until the hosted boundary is verified.
 2. Validate the Anthropic live judge path if the user later opts in; the current release uses the Codex fallback.
 3. Consider cloud deployment only after the remaining local tasks are complete; do not provision a hosted environment yet.
 
