@@ -87,6 +87,56 @@ async def test_only_model_attempt_receives_model_credentials(
     assert "OPENAI_API_KEY" not in observed[0]
 
 
+@pytest.mark.asyncio
+async def test_gateway_model_attempt_uses_empty_home_and_no_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class Answer(BaseModel):
+        ok: bool
+
+    monkeypatch.setenv("HARNESSFLOW_CODEX_GATEWAY_URL", "http://127.0.0.1:8765/v1")
+    monkeypatch.delenv("CODEX_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    workspace_path = tmp_path / "workspace"
+    workspace_path.mkdir()
+    workspace = SimpleNamespace(root=tmp_path, path=workspace_path, lock_fd=None)
+    agent = CodexAgent(workspace)
+    observed: list[tuple[list[str], dict[str, str]]] = []
+
+    async def fake_run_process(argv: list[str], cwd: Path, **kwargs: object) -> Result:
+        env = kwargs["env"]
+        assert isinstance(env, dict)
+        observed.append((argv, env))
+        Path(argv[argv.index("--output-last-message") + 1]).write_text('{"ok":true}')
+        return Result(0, "", "")
+
+    async def poll() -> None:
+        return None
+
+    monkeypatch.setattr("harnessflow_worker.projects.agent.run_process", fake_run_process)
+    answer, _ = await agent.run("test", Answer, "gateway-test", poll, 10)
+    assert answer == {"ok": True}
+    argv, env = observed[0]
+    assert 'model_provider="harnessflow_gateway"' in argv
+    assert 'model_providers.harnessflow_gateway.base_url="http://127.0.0.1:8765/v1"' in argv
+    assert env["HOME"] == str(tmp_path / "codex-home")
+    assert env["CODEX_HOME"] == env["HOME"]
+    assert "CODEX_API_KEY" not in env and "OPENAI_API_KEY" not in env
+
+
+def test_gateway_mode_rejects_model_key_and_non_loopback_url(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workspace = SimpleNamespace(root=tmp_path, path=tmp_path, lock_fd=None)
+    monkeypatch.setenv("HARNESSFLOW_CODEX_GATEWAY_URL", "http://example.com/v1")
+    with pytest.raises(ValueError, match=r"127\.0\.0\.1"):
+        CodexAgent(workspace)
+    monkeypatch.setenv("HARNESSFLOW_CODEX_GATEWAY_URL", "http://127.0.0.1:8765/v1")
+    monkeypatch.setenv("CODEX_API_KEY", "should-not-reach-worker")
+    with pytest.raises(ValueError, match="must not receive"):
+        CodexAgent(workspace)
+
+
 def sleeping_command(marker: Path) -> list[str]:
     return [
         sys.executable,

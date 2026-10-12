@@ -7,6 +7,7 @@ import os
 import sys
 from collections.abc import Awaitable, Callable
 from typing import Any
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel
 
@@ -19,6 +20,22 @@ class CodexAgent:
         self.workspace = workspace
         self.model = model
         self.binary = os.environ.get("HARNESSFLOW_CODEX_BIN", "codex")
+        self.gateway_url = os.environ.get("HARNESSFLOW_CODEX_GATEWAY_URL", "").rstrip("/")
+        if self.gateway_url:
+            parsed = urlsplit(self.gateway_url)
+            if (
+                parsed.scheme != "http"
+                or parsed.hostname != "127.0.0.1"
+                or not parsed.port
+                or parsed.path != "/v1"
+                or parsed.username
+                or parsed.password
+                or parsed.query
+                or parsed.fragment
+            ):
+                raise ValueError("Codex gateway must be http://127.0.0.1:PORT/v1")
+            if os.environ.get("CODEX_API_KEY") or os.environ.get("OPENAI_API_KEY"):
+                raise ValueError("Codex gateway mode must not receive model API keys")
         self._sandbox_ready = False
 
     async def run(
@@ -38,6 +55,13 @@ class CodexAgent:
         if output.exists():
             # Each invocation gets a unique name; a prior final answer is never reused.
             raise RuntimeError("agent attempt ID already exists")
+        env = process_environment(include_model_credentials=not bool(self.gateway_url))
+        if self.gateway_url:
+            # Use an empty home so neither config nor cached user auth is reachable.
+            home = self.workspace.root / "codex-home"
+            home.mkdir(mode=0o700, exist_ok=True)
+            env["HOME"] = str(home)
+            env["CODEX_HOME"] = str(home)
         argv = [
             self.binary,
             "exec",
@@ -58,6 +82,23 @@ class CodexAgent:
             "--output-last-message",
             str(output),
         ]
+        if self.gateway_url:
+            argv.extend(
+                [
+                    "-c",
+                    'model_provider="harnessflow_gateway"',
+                    "-c",
+                    'model_providers.harnessflow_gateway.name="HarnessFlow gateway"',
+                    "-c",
+                    f'model_providers.harnessflow_gateway.base_url="{self.gateway_url}"',
+                    "-c",
+                    'model_providers.harnessflow_gateway.wire_api="responses"',
+                    "-c",
+                    "model_providers.harnessflow_gateway.requires_openai_auth=false",
+                    "-c",
+                    'web_search="disabled"',
+                ]
+            )
         if self.model:
             argv.extend(["--model", self.model])
         argv.append("-")
@@ -69,7 +110,7 @@ class CodexAgent:
             stdin=prompt,
             lock_fd=self.workspace.lock_fd,
             log_path=root / f"{name}.log",
-            env=process_environment(include_model_credentials=True),
+            env=env,
         )
         if result.exit_code:
             raise RuntimeError(f"Codex exited {result.exit_code}: {result.stderr[-2000:]}")

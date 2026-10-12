@@ -92,7 +92,7 @@ def preflight(env: dict[str, str], mock: bool = False) -> None:
         check=True,
         stdout=subprocess.DEVNULL,
     )
-    if not mock:
+    if not mock and not env.get("HARNESSFLOW_CODEX_GATEWAY_URL"):
         subprocess.run(
             [env.get("HARNESSFLOW_CODEX_BIN", "codex"), "login", "status"],
             env=env,
