@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-10-11 — multi-module dirty-checkout acceptance passed; live Anthropic judge call deferred._
+_Last updated: 2026-10-11 — PRs #2 and #3 merged; the local stack runs merged `main`._
 
 ## DONE
 
@@ -19,6 +19,7 @@ _Last updated: 2026-10-11 — multi-module dirty-checkout acceptance passed; liv
 | 2026-10-10 | CLI and global Codex/Claude skill installer, requirement-level judge, dashboard evidence, multi-task fixture; `make check` and browser smoke passed. Real Codex greeting and three-task inventory runs delivered commit-bound checks and passing judge verdicts; Codex skill reported status from another workspace. | feature branch; [acceptance](projects/acceptance.md) |
 | 2026-10-11 | Existing Python expense-CLI fixture: real PRD run delivered three tasks with four frozen checks, five passing Codex judge verdicts, 11 delivered tests, independent CLI/Decimal/isolation verification, and an unchanged original checkout. Full `make check` passed. | run cffef0d9; [acceptance](projects/acceptance.md) |
 | 2026-10-11 | Multi-module WorkQueue fixture: real PRD run delivered three tasks with four frozen checks, seven passing Codex judge verdicts, 15 delivered tests, independent CLI/text/JSON/legacy-data verification, and an unchanged checkout with tracked and untracked local changes. | run 23646454; [acceptance](projects/acceptance.md) |
+| 2026-10-11 | PR #2 and stacked PR #3 merged with merge commits, after all PR checks passed. Fast-forwarded local `main`, restarted the loopback stack, and verified API readiness, dashboard, CLI evidence, browser workflow, and live completed-run UI. Post-merge `main` CI passed. | bccb8d7, 2de8167; [acceptance](projects/acceptance.md) |
 | 2026-05-14 | Approved 14-week project plan written and saved to `~/.claude/plans/i-am-developing-a-serialized-codd.md` | (pre-repo) |
 | 2026-05-14 | Repo scaffold: LICENSE, README, ARCHITECTURE, CLAUDE.md, Makefile, .gitignore, .env.example, .envrc.example | 92b178c |
 | 2026-05-14 | Project-Documentation skeleton — all 10 subfolders, all overview stubs, README, STATUS, ROADMAP | 92b178c |
@@ -71,31 +72,25 @@ _Last updated: 2026-10-11 — multi-module dirty-checkout acceptance passed; liv
 ## IN FLIGHT
 
 The PRD coding harness is the primary product; the YAML workflow platform remains
-a maintained foundation and demo. The current follow-up adds a local CLI, repo-local
-Codex/Claude Code skills, and an explicit judge phase (Anthropic with
-`ANTHROPIC_API_KEY`, otherwise read-only Codex). The CLI and Codex fallback were
-validated end to end. The Claude Code skill was also invoked successfully from
-another workspace. The user deferred the live Anthropic judge call; that path
-is tested with a mocked response but is not release-proven against Anthropic. The
-Anthropic path sends the PRD, plan, diff and evidence to an external provider; the
-frozen deterministic acceptance commands remain required regardless of judge.
-See [ADR-0010](decisions/0010-project-judge-and-cli.md).
+a maintained foundation and demo. The local ProjectService, Codex executor,
+requirement-level judge, CLI and Codex/Claude Code entry-point skills are on
+`main` through merged [PR #2](https://github.com/rzarka1298/harnessflow/pull/2)
+and [PR #3](https://github.com/rzarka1298/harnessflow/pull/3). The local stack
+was restarted from merged `main` and is serving the dashboard at
+`http://127.0.0.1:3001/projects`. Post-merge `main` CI passed.
+The user confirmed local-only deployment; no hosted or public service is planned.
 
-**Current branch:** `feat/project-judge-cli-skills`, stacked on the local-release
-branch in [draft PR #3](https://github.com/rzarka1298/harnessflow/pull/3). GitHub
-checks and GitGuardian passed after the review fixes. The PR is not merged or
-deployed. No Anthropic API key was configured. `make check`
-passed after the fixes (four generated-code ESLint warnings), and browser smoke
-passed. Review findings on control idempotency, full diff delivery, judge
-heartbeat and oversized-diff handling were fixed.
-
-**Previous release branch:** `feat/prd-project-runs` (base `6f3c856`), pushed in [draft PR #2](https://github.com/rzarka1298/harnessflow/pull/2). The local release and real-model acceptance are complete. Both fixtures exercised persisted blockers and restart/resume before completion; integration caught and fixed a planning-role ambiguity, a Git file-monitor descriptor leak and a native CLI sandbox invocation change. The full `make check` gate passed (four generated-code ESLint warnings, no errors). Optional PR publication was hardened to validate the target before pushing. Human review of the draft PR remains; no merge or deployment has occurred. See `.planning/STATE.md` and [acceptance](projects/acceptance.md).
+The Codex fallback judge and CLI are validated by real project runs. The user
+deferred a credentialed Anthropic judge call, so that path is unit-tested but
+not release-proven against Anthropic. It would send the PRD, plan, diff and
+evidence to that provider. Frozen deterministic checks remain required with
+either judge. See [ADR-0010](decisions/0010-project-judge-and-cli.md).
 
 ## NEXT
 
-1. Review green draft PR #2 and stacked PR #3 before deciding when to merge. No automatic merge or deployment is planned.
-2. Decide whether to add an authenticated, opt-in real-model acceptance job in CI. The static fixture starters and verifier tests run in `make check`; real Codex runs remain local until CI has safe model access. Cloud rollout and research extensions are deferred, not authorized deployment work.
-3. Validate the Anthropic judge with a credentialed live call later if desired; the user deferred it for now.
+1. Reconcile GSD Phase 2 planning/verification metadata so the smart-entry router recognizes the completed phase.
+2. Decide whether to add a protected, opt-in real-model acceptance job in CI. Static fixture starters and verifier tests already run in `make check`; real Codex runs remain local until CI has safe model access.
+3. Validate the Anthropic live judge path if the user later opts in; the current release uses the Codex fallback.
 
 ## Releases
 
