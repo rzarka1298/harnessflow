@@ -26,7 +26,22 @@ The independent Anthropic path needs a live credentialed validation before it ca
 be called release-proven. This phase uses GSD evaluation guidance, but the generic
 agent runner does not implement GSD's typed AI-phase role-dispatch workflow.
 
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+| --- | --- | --- | --- |
+| 1. Local project runs | 5/5 | Complete | 2026-10-11 |
+| 2. Judge, CLI and agent entry points | 3/3 | Complete | 2026-10-11 |
+
+Phase 2 was implemented and tested before its GSD directory was reconciled.
+The three plan labels above describe shipped work retrospectively; they are not
+being presented as pre-execution GSD plans. See the Phase 2 verification report
+and [release acceptance](../Project-Documentation/projects/acceptance.md).
+
 ## Deferred
 
 Hosted tenancy/authentication, additional coding engines, automatic deployment,
-AWS rollout, contextual bandits and autonomous YAML optimization.
+AWS rollout, contextual bandits and autonomous YAML optimization. Cloud deployment
+will be considered only after the remaining local tasks are complete. The
+protected opt-in real-model CI job is the next local follow-up; live Anthropic
+validation remains deferred by user choice.
