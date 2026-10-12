@@ -47,8 +47,9 @@ and reported the greeting run's completed status, branch, commit, judge provider
 and dashboard URL. The first invocation's $0.15 budget was too low for the host
 context; a $0.50 cap completed successfully. No repository files were changed.
 
-Draft [PR #3](https://github.com/rzarka1298/harnessflow/pull/3) passed its GitHub
-checks and GitGuardian check on 2026-10-11. It remains unmerged.
+[PR #3](https://github.com/rzarka1298/harnessflow/pull/3) passed its GitHub
+checks and GitGuardian check and merged on 2026-10-11, after
+[PR #2](https://github.com/rzarka1298/harnessflow/pull/2).
 
 ## Existing-project report fixture (2026-10-11)
 
@@ -120,3 +121,17 @@ python3 scripts/ticket-acceptance.py verify \
 The verifier fails on the unextended starter. Model transcripts and temporary
 ticket data stay local; only the PRD, starter, verifier, and results are
 committed.
+
+## Merged local release (2026-10-11)
+
+PR #2 merged to `main` at `bccb8d78418dfe87d1f2d9f16482d67d7575fb5f`;
+stacked PR #3 was retargeted to `main` and merged at
+`2de81673e6c8a5ebad67374ead97cc7b6d0d47bd`. Both PRs had passing checks
+before merge. Local `main` fast-forwarded to the latter commit, and the local
+launcher rebuilt/restarted the API, worker, and dashboard without active project
+runs. Post-restart checks passed: `/readyz`, `/projects` HTTP 200, CLI retrieval
+of the completed WorkQueue run and judge verdict, mocked browser workflow
+coverage, and a live browser visit showing delivery and judge evidence on that
+run. The post-merge [`main` CI run](https://github.com/rzarka1298/harnessflow/actions/runs/38191066102)
+passed, including the browser workflow. The service remains bound to loopback;
+the user chose local-only deployment, so no public/cloud deployment occurred.

@@ -1,8 +1,8 @@
 # Project State
 
 Current phase: 2 — Judge, CLI and agent entry points
-Status: Phase 1 verified; judge, CLI and skills implemented; live Anthropic check deferred
-Branch: feat/project-judge-cli-skills (stacked on feat/prd-project-runs)
+Status: Local release merged and running; Phase 2 GSD metadata not yet reconciled; live Anthropic check deferred
+Branch: main at 2de8167 (release handoff documentation on docs/merged-local-release)
 
 Completed: codebase audit; user decisions; GSD Core 1.16.0 and supplementary skill
 installation; API/contracts/migrations; local launcher/checks; execution engine and
@@ -12,12 +12,10 @@ Additional real-Codex expense and multi-module WorkQueue fixtures delivered
 commit-bound passing checks and Codex judge verdicts. WorkQueue preserved a
 source checkout containing both tracked and untracked local changes.
 
-Next: obtain the human merge decision for green draft PR #2 and stacked PR #3.
-The three-task CLI trial and Codex judge evidence are
-recorded. The independent Anthropic path remains unverified; the user chose to
-defer its live call. Review findings on duplicate resume, complete diff
-delivery, judge heartbeat and large-diff fallback have been fixed. The local
-release does not authorize automatic merge, cloud rollout or deployment.
+Next: reconcile Phase 2 GSD metadata, then decide on protected opt-in real-model
+CI. PRs #2 and #3 are merged; the local
+stack was restarted from merged main and smoke-checked. The independent
+Anthropic path remains unverified by live call; the user chose to defer it.
 Release evidence is recorded in Project-Documentation/projects/acceptance.md.
 An opt-in authenticated CI real-model acceptance job is not yet configured;
 the static fixture tests and linters are part of `make check`.
@@ -30,5 +28,5 @@ these artifacts in subsequent sessions. Preserve already-approved product decisi
 ## Session Continuity
 
 Last session: 2026-10-11
-Stopped at: WorkQueue real-project acceptance, outside verifier, and full `make check` passed; Anthropic live call deferred by user.
+Stopped at: Both release PRs merged, loopback deployment healthy, post-merge main CI passed; user confirmed local-only deployment.
 Resume file: none
