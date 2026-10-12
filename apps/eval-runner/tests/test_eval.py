@@ -3,11 +3,14 @@ The live runner (needs api+worker) is exercised separately."""
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock
+
 import pytest
 
 from harnessflow_eval.dataset import load_cases
 from harnessflow_eval.gate import evaluate_gate, render_gate_markdown
 from harnessflow_eval.report import EvalReport, ScorerAggregate, aggregate
+from harnessflow_eval.runner import EvalRunner
 from harnessflow_eval.scorers import ExactMatch, LLMJudge
 from harnessflow_eval.types import Case, CaseResult, RunOutcome
 
@@ -23,9 +26,8 @@ async def test_exact_match() -> None:
 
 
 @pytest.mark.asyncio
-async def test_llm_judge_mock_is_neutral() -> None:
-    # With no provider keys, build_default_client uses MockProvider whose canned
-    # text has no number, so the judge returns the neutral 0.5.
+async def test_llm_judge_mock_is_neutral(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HARNESSFLOW_MOCK", "1")
     s = LLMJudge()
     score = await s.score(
         Case(id="c", criteria="must mention temporal"),
@@ -50,9 +52,7 @@ async def test_llm_judge_parses_numeric_verdict() -> None:
             )
 
     s = LLMJudge(client=_StubClient())  # type: ignore[arg-type]
-    score = await s.score(
-        Case(id="c", criteria="rubric"), RunOutcome(output="an answer")
-    )
+    score = await s.score(Case(id="c", criteria="rubric"), RunOutcome(output="an answer"))
     assert score == 0.8
 
 
@@ -99,6 +99,11 @@ def _report_with(scores: dict[str, float]) -> EvalReport:
         seeds_per_case=1,
         case_count=1,
         quality=[ScorerAggregate(scorer=k, mean=v) for k, v in scores.items()],
+        case_results=[
+            CaseResult(
+                case_id="c", scores=scores, outcome=RunOutcome(output="answer", status="completed")
+            )
+        ],
     )
 
 
@@ -144,3 +149,81 @@ def test_gate_zero_threshold_forbids_any_drop() -> None:
     g = evaluate_gate(current, baseline, max_regression=0.0)
     assert not g.passed
     assert g.regressions[0].delta == pytest.approx(-0.01)
+
+
+def test_gate_rejects_removed_scorer_even_when_remaining_scores_improve() -> None:
+    baseline = _report_with({"exact_match": 0.8, "llm_judge": 0.7})
+    current = _report_with({"exact_match": 1.0})
+    result = evaluate_gate(current, baseline, 0.05)
+    assert not result.passed
+    assert "missing baseline scorer llm_judge" in " ".join(result.errors)
+    assert "invalid evaluation evidence" in render_gate_markdown(result)
+
+
+@pytest.mark.parametrize("score", [float("nan"), float("inf"), -0.1, 1.1])
+def test_gate_rejects_invalid_scores_without_a_baseline(score: float) -> None:
+    assert not evaluate_gate(_report_with({"x": score}), None, 0.05).passed
+
+
+def test_gate_rejects_missing_case_evidence_and_failed_runs() -> None:
+    report = _report_with({"x": 1.0})
+    report.case_results = []
+    assert not evaluate_gate(report, None, 0.05).passed
+    report = _report_with({"x": 1.0})
+    report.case_results[0].outcome.status = "failed"
+    assert not evaluate_gate(report, None, 0.05).passed
+    report = _report_with({"x": 1.0})
+    report.case_results[0].scores = {}
+    assert not evaluate_gate(report, None, 0.05).passed
+
+
+def test_gate_rejects_noncomparable_reports() -> None:
+    baseline = _report_with({"x": 0.0})
+    current = _report_with({"x": 1.0})
+    current.case_results[0].case_id = "different"
+    assert not evaluate_gate(current, baseline, 0.05).passed
+    current = _report_with({"x": 1.0})
+    current.dataset = "different"
+    assert not evaluate_gate(current, baseline, 0.05).passed
+
+
+def test_gate_rejects_aggregate_without_supporting_case_scores() -> None:
+    report = _report_with({"x": 1.0})
+    report.case_results[0].scores["x"] = 0.0
+    assert not evaluate_gate(report, None, 0.05).passed
+
+
+@pytest.mark.parametrize("threshold", [float("nan"), float("inf"), -1.0, 1.1])
+def test_gate_rejects_invalid_threshold(threshold: float) -> None:
+    with pytest.raises(ValueError, match="max_regression"):
+        evaluate_gate(_report_with({"x": 1.0}), None, threshold)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("text", ["approved", "10", "-0.5", "1.1", "NaN", "inf", "Score: 0.8"])
+async def test_judge_rejects_malformed_or_out_of_range_verdict(text: str) -> None:
+    from harnessflow_worker.llm import LLMResponse
+
+    client = AsyncMock()
+    client.complete.return_value = LLMResponse(
+        model_used="judge",
+        text=text,
+        input_tokens=1,
+        output_tokens=1,
+        cost_usd_cents=0,
+        finish_reason="stop",
+    )
+    with pytest.raises(ValueError, match="judge"):
+        await LLMJudge(client=client).score(
+            Case(id="c", criteria="rubric"), RunOutcome(output="answer")
+        )
+
+
+@pytest.mark.asyncio
+async def test_runner_does_not_score_a_failed_seed(monkeypatch: pytest.MonkeyPatch) -> None:
+    runner = EvalRunner("http://localhost:8080", [])
+    monkeypatch.setattr(
+        runner, "_run_once", AsyncMock(return_value=RunOutcome(output="answer", status="failed"))
+    )
+    with pytest.raises(RuntimeError, match="did not complete"):
+        await runner._run_case(AsyncMock(), "wf", Case(id="c"), 2)

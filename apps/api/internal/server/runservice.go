@@ -128,12 +128,12 @@ func (s *RunService) ApproveRun(
 // --- pagination helpers (shared with WorkflowService) ----------------------
 
 func pageSize(req int32) int32 {
-	const def, max = int32(50), int32(200)
+	const def, maximum = int32(50), int32(200)
 	switch {
 	case req <= 0:
 		return def
-	case req > max:
-		return max
+	case req > maximum:
+		return maximum
 	default:
 		return req
 	}

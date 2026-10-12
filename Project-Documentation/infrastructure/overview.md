@@ -2,13 +2,41 @@
 
 **Locations:** `docker-compose.yml` + `infrastructure/{otel,prometheus,grafana,postgres}/` are the daily driver. `infrastructure/helm/harnessflow/` + `infrastructure/kind/` landed in Week 10. `infrastructure/terraform/` is Week 11.
 
-## Current state (2026-05-15)
+## Local product runtime (2026-10-10)
+
+`make dev` is the local PRD-harness entrypoint. `scripts/local-dev.py` reads
+literal `.env` values, validates tools and Codex authentication, installs frozen
+dependencies, starts only Compose Postgres + Temporal with a 180-second health
+deadline, applies all API migrations, then owns the API, worker, and dashboard
+process groups. Application startup is bounded and any child exit shuts down
+the other owned applications. Ctrl-C leaves database volumes and infrastructure
+available; `make down` stops containers. Logs and the launcher lock live in the
+gitignored `.local/harnessflow/` directory.
+
+The API binds `127.0.0.1:8080` (port configurable), the dashboard binds
+`127.0.0.1:3001`, and all Compose published ports bind loopback. Dashboard origin
+and API URL are set together by the launcher. `.env` uses no shell evaluation;
+exported variables take precedence. An empty `OTEL_EXPORTER_OTLP_ENDPOINT_GRPC`
+disables optional observability. The coding runtime uses Codex CLI authentication;
+API provider keys only serve legacy YAML LLM workflows.
+
+`make demo` uses the same launcher with explicit legacy mock mode, bounded API
+polling, a unique workflow name, and owned cleanup. `make test`, `make lint`,
+`make typecheck`, and `make build` execute real checks. `.github/workflows/ci.yml`
+runs them on pushes/PRs and checks generated proto/schema/sqlc drift. Launcher
+tests cover literal config handling, process ownership, and bounded waits.
+
+The full `make up` infrastructure stack remains optional. Redis, the firehose,
+MinIO, Grafana, Jaeger, and Prometheus are not prerequisites for PRD coding jobs.
+
+## Historical workflow-platform stack
 
 Week 1 Day 3 complete — the docker-compose dev stack is up and verified. `make up` starts the core services (postgres, redis, temporal, temporal-ui, otel-collector, jaeger, prometheus, grafana, minio; Redpanda + console added in Week 11), all healthchecked. Verified: every UI returns 200, Temporal gRPC frontend reports `SERVING`, all 3 Prometheus scrape targets are `up`, Grafana datasources (Prometheus + Jaeger) are provisioned, and an OTLP test span flows app → otel-collector → Jaeger.
 
 Config files: `infrastructure/otel/collector-config.yaml`, `infrastructure/prometheus/prometheus.yml`, `infrastructure/grafana/provisioning/{datasources,dashboards}/`. Makefile targets `up`/`down`/`logs`/`ps`/`restart`/`nuke` are live.
 
-Not yet in compose: `api`, `worker`, `dashboard` — they run on the host against this stack until wired in (api Week 2, worker Week 3, dashboard Week 4). Helm and Terraform are untouched (Weeks 10–11).
+Application services run on the host under `make dev`; Compose owns dependencies.
+Helm and Terraform describe the earlier cloud deployment experiments below.
 
 **Responsibility:** Three deployment surfaces:
 1. **Local development** — `docker-compose up`. Daily driver. Week 1.
@@ -35,7 +63,8 @@ Services in `docker-compose.yml`:
 | worker | (local build) | — | Python Temporal worker |
 | dashboard | (local build) | 3001 | Next.js (port 3001 to avoid Grafana clash) |
 
-Healthchecks on every service. `make up` blocks until everything is healthy.
+Core state services have healthchecks. `make up` starts the full stack in the
+background; `make dev` explicitly waits for its required Postgres/Temporal healthchecks.
 
 ## Event firehose (Week 11 — landed, ADR-0004)
 

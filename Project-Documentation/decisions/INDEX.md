@@ -10,6 +10,7 @@
 | [0006](./0006-custom-eval-runner.md) | Build a custom eval runner instead of using deepeval/ragas | Accepted | 2026-05-14 |
 | [0007](./0007-contextual-bandit-not-deep-rl.md) | Use contextual bandits, not deep RL, for retry-policy learning | Proposed (week 13) | 2026-05-14 |
 | [0008](./0008-autonomous-mutation-safety-model.md) | Autonomous workflow mutation safety model | Proposed (week 14) | 2026-05-14 |
+| [0009](./0009-prd-project-runs.md) | Local PRD-to-verified-branch project runs | Accepted; implementation on feature branch | 2026-10-10 |
 
 ## Conventions
 

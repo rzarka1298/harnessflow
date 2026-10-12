@@ -26,6 +26,7 @@ type EvalService struct {
 
 var _ evalv1connect.EvalServiceHandler = (*EvalService)(nil)
 
+// RunEval directs callers to the external eval runner.
 func (s *EvalService) RunEval(
 	_ context.Context,
 	_ *connect.Request[evalv1.RunEvalRequest],
@@ -36,6 +37,7 @@ func (s *EvalService) RunEval(
 	)
 }
 
+// GetEvalRun returns a stored evaluation and its cases.
 func (s *EvalService) GetEvalRun(
 	ctx context.Context,
 	req *connect.Request[evalv1.GetEvalRunRequest],
@@ -65,6 +67,7 @@ func (s *EvalService) GetEvalRun(
 	}), nil
 }
 
+// ListEvalRuns returns stored evaluations newest first.
 func (s *EvalService) ListEvalRuns(
 	ctx context.Context,
 	req *connect.Request[evalv1.ListEvalRunsRequest],

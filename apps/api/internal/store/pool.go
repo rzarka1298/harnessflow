@@ -1,4 +1,4 @@
-// pool.go: pgx connection-pool helper used by the API to construct a Queries.
+// Package store provides database queries and connection pool helpers.
 package store
 
 import (

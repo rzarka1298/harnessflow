@@ -1,0 +1,1 @@
+ALTER TABLE project_runs ADD COLUMN IF NOT EXISTS control_version BIGINT NOT NULL DEFAULT 0;

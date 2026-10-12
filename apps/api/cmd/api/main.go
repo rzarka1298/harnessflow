@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"connectrpc.com/otelconnect"
+	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/interceptor"
 
 	"github.com/rzarka1298/harnessflow/apps/api/internal/config"
@@ -102,7 +103,18 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("otelconnect: %w", err)
 	}
+	projectService := &server.ProjectService{Pool: pool, Temporal: tc, TaskQueue: cfg.TemporalTaskQueue, Log: log}
+	go projectService.ReconcileProjects(ctx)
 	services := server.Services{
+		Project:       projectService,
+		AllowedOrigin: cfg.AllowedOrigin,
+		Ready: func(ctx context.Context) error {
+			if err := pool.Ping(ctx); err != nil {
+				return err
+			}
+			_, err := tc.CheckHealth(ctx, &client.CheckHealthRequest{})
+			return err
+		},
 		Workflow: &server.WorkflowService{
 			Queries:   queries,
 			Temporal:  tc,
@@ -114,7 +126,7 @@ func run() error {
 	}
 
 	srv := &http.Server{
-		Addr:              fmt.Sprintf(":%d", cfg.APIPort),
+		Addr:              fmt.Sprintf("%s:%d", cfg.APIHost, cfg.APIPort),
 		Handler:           server.New(log, services, connectOTel),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

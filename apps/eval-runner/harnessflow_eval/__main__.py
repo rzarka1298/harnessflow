@@ -111,6 +111,10 @@ async def _amain() -> int:
     md = render_markdown(report, baseline)
     gate_md = ""
     exit_code = 0
+    validation = evaluate_gate(report, None, 0.0)
+    if not validation.passed:
+        gate_md = "\n\n" + render_gate_markdown(validation)
+        exit_code = 1
     if args.gate_max_regression is not None:
         # baseline is guaranteed non-None here by the arg-validation above.
         gate = evaluate_gate(report, baseline, args.gate_max_regression)

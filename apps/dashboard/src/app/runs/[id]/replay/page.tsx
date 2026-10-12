@@ -10,7 +10,7 @@
 // proto already exposes per-step `started_at` / `ended_at`, so no API
 // changes were needed for this view.
 
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
@@ -67,6 +67,16 @@ export default function RunReplayPage({
   // the slider sets it; replaying via the play button steps it forward.
   const [cursorPct, setCursorPct] = useState(100);
   const [isPlaying, setIsPlaying] = useState(false);
+  const animationFrame = useRef<number | null>(null);
+  const playing = useRef(false);
+  useEffect(
+    () => () => {
+      playing.current = false;
+      if (animationFrame.current !== null)
+        cancelAnimationFrame(animationFrame.current);
+    },
+    [],
+  );
 
   const run = detail.data?.run;
   // Stabilize the steps reference so the downstream useMemos don't refire
@@ -201,7 +211,10 @@ export default function RunReplayPage({
           {windows.map((w) => {
             const stateNow = stepStateAt(w, cursorMs);
             return (
-              <div key={w.step.id} className="grid grid-cols-[8rem_1fr] items-center gap-2">
+              <div
+                key={w.step.id}
+                className="grid grid-cols-[8rem_1fr] items-center gap-2"
+              >
                 <div className="truncate text-xs">
                   <span className="font-medium">{w.step.name}</span>
                   <span className="ml-1 text-gray-500">{w.step.type}</span>
@@ -232,10 +245,14 @@ export default function RunReplayPage({
           <button
             onClick={() => {
               if (isPlaying) {
+                playing.current = false;
+                if (animationFrame.current !== null)
+                  cancelAnimationFrame(animationFrame.current);
                 setIsPlaying(false);
                 return;
               }
               setIsPlaying(true);
+              playing.current = true;
               setCursorPct(0);
               const start = Date.now();
               const playMs = Math.min(8000, Math.max(2000, totalMs)); // 2–8s sweep
@@ -243,13 +260,14 @@ export default function RunReplayPage({
                 const elapsed = Date.now() - start;
                 const pct = Math.min(100, (elapsed / playMs) * 100);
                 setCursorPct(pct);
-                if (pct < 100 && isPlaying !== false) {
-                  requestAnimationFrame(tick);
+                if (pct < 100 && playing.current) {
+                  animationFrame.current = requestAnimationFrame(tick);
                 } else {
+                  playing.current = false;
                   setIsPlaying(false);
                 }
               };
-              requestAnimationFrame(tick);
+              animationFrame.current = requestAnimationFrame(tick);
             }}
             className="rounded-md border border-gray-300 bg-white px-3 py-1 text-xs font-medium hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
           >
@@ -262,6 +280,9 @@ export default function RunReplayPage({
             step={0.1}
             value={cursorPct}
             onChange={(e) => {
+              playing.current = false;
+              if (animationFrame.current !== null)
+                cancelAnimationFrame(animationFrame.current);
               setIsPlaying(false);
               setCursorPct(Number(e.target.value));
             }}
@@ -329,7 +350,9 @@ function barColor(actualStatus: number, replayStatus: number): string {
     return "bg-gray-300 dark:bg-gray-700 opacity-50";
   }
   if (actualStatus === STATUS_FAILED) {
-    return replayStatus === STATUS_RUNNING ? "bg-red-400 animate-pulse" : "bg-red-500";
+    return replayStatus === STATUS_RUNNING
+      ? "bg-red-400 animate-pulse"
+      : "bg-red-500";
   }
   if (actualStatus === STATUS_SKIPPED) {
     return "bg-gray-400 dark:bg-gray-600";
@@ -341,26 +364,34 @@ function barColor(actualStatus: number, replayStatus: number): string {
 }
 
 function statusLabel(status: number): string {
-  return ({
-    0: "UNSPECIFIED",
-    1: "PENDING",
-    2: "RUNNING",
-    3: "COMPLETED",
-    4: "FAILED",
-    5: "WAITING_APPROVAL",
-    6: "CANCELED",
-  } as Record<number, string>)[status] ?? "UNSPECIFIED";
+  return (
+    (
+      {
+        0: "UNSPECIFIED",
+        1: "PENDING",
+        2: "RUNNING",
+        3: "COMPLETED",
+        4: "FAILED",
+        5: "WAITING_APPROVAL",
+        6: "CANCELED",
+      } as Record<number, string>
+    )[status] ?? "UNSPECIFIED"
+  );
 }
 
 function stepStatusLabel(status: number): string {
-  return ({
-    0: "UNSPECIFIED",
-    1: "PENDING",
-    2: "RUNNING",
-    3: "COMPLETED",
-    4: "FAILED",
-    5: "SKIPPED",
-  } as Record<number, string>)[status] ?? "UNSPECIFIED";
+  return (
+    (
+      {
+        0: "UNSPECIFIED",
+        1: "PENDING",
+        2: "RUNNING",
+        3: "COMPLETED",
+        4: "FAILED",
+        5: "SKIPPED",
+      } as Record<number, string>
+    )[status] ?? "UNSPECIFIED"
+  );
 }
 
 function Field({

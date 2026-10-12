@@ -34,6 +34,7 @@ from harnessflow_worker.events import build_emitter
 from harnessflow_worker.llm import build_default_client
 from harnessflow_worker.metrics import setup_metrics
 from harnessflow_worker.otel import setup_otel
+from harnessflow_worker.projects.activities import make_project_tick
 
 log = structlog.get_logger()
 
@@ -77,6 +78,7 @@ async def _amain() -> None:
             make_tool_call(deps),
             make_verify(deps),
             make_record_run_status(deps),
+            make_project_tick(pool),
         ],
         interceptors=[TracingInterceptor()],
     )
@@ -113,6 +115,8 @@ async def _amain() -> None:
         meter_provider.force_flush(timeout_millis=5000)
         meter_provider.shutdown()
     log.info("worker stopped")
+    if worker_task in done:
+        worker_task.result()
 
 
 def main() -> None:

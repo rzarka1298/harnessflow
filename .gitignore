@@ -81,3 +81,6 @@ infrastructure/helm/*/charts/*.tgz
 
 # --- Local-only Claude session files ---
 .claude/settings.local.json
+
+# Local launcher binaries, logs, and process lock.
+.local/

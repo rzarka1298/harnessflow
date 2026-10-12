@@ -1,5 +1,20 @@
 # Evals — Overview
 
+## Verification hardening (2026-10-10)
+
+The legacy workflow gate now fails closed on missing baseline scorers, empty or
+incomplete case evidence, failed runs, nonfinite/out-of-range scores, aggregate
+means that disagree with cases, mismatched datasets/case IDs/seed counts, and
+invalid thresholds. New workflows without baselines still require valid evidence.
+The CLI also validates evidence when regression comparison is not requested.
+
+The runner stops on any failed/canceled/timed-out seed rather than scoring its
+partial output. Real LLM judge responses must be a complete numeric value in
+`[0, 1]`; prose, malformed output, NaN, infinity, and out-of-range values raise an
+error. The deterministic `0.5` demo score is only available when mock mode is
+explicitly enabled with `HARNESSFLOW_MOCK=1`. These are legacy workflow checks;
+PRD coding jobs use their own frozen acceptance-command evidence.
+
 > **Status (Week 8, complete).** Eval runner + persistence + dashboard pages +
 > CI eval-gate are all in. `apps/eval-runner/` has three quality scorers,
 > the `research-assistant.jsonl` dataset, the httpx-based runner,

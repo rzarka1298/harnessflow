@@ -10,12 +10,12 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 import { WorkflowService } from "@/gen/workflow/v1/workflow_pb";
 import { RunService } from "@/gen/run/v1/run_pb";
 import { EvalService } from "@/gen/eval/v1/eval_pb";
+import { ProjectService } from "@/gen/project/v1/project_pb";
 
 // The dashboard runs on http://localhost:3000 by default (Next dev server)
 // while the API listens on 8080. Override via NEXT_PUBLIC_API_BASE_URL for
 // deployed environments.
-const baseUrl =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 const transport = createConnectTransport({
   baseUrl,
@@ -27,3 +27,4 @@ const transport = createConnectTransport({
 export const workflowClient = createClient(WorkflowService, transport);
 export const runClient = createClient(RunService, transport);
 export const evalClient = createClient(EvalService, transport);
+export const projectClient = createClient(ProjectService, transport);

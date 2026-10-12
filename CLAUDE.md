@@ -4,25 +4,27 @@
 
 ## 1. What this project is
 
-HarnessFlow is an open-source AI workflow orchestration + observability + CI/CD + evaluation platform for AI agents — "GitHub Actions + Temporal + Datadog for AI agents." Built as a **portfolio + learning project** by [rzarka1298](https://github.com/rzarka1298) over 14 weeks, full-time, to demonstrate AI-infra / platform-engineering depth to recruiters at AI-infra-leaning companies.
+HarnessFlow is a local PRD-to-verified-branch coding harness. Users select a new or existing Git repository and submit a PRD; durable runs plan, implement with Codex, execute frozen acceptance commands, repair failures, and independently review the result. Completion requires evidence tied to the delivered commit. Runs pause for missing authority or exhausted limits, and resume from saved state.
 
-Two motivations, in priority order: (1) **learn** modern AI infra (Temporal, OTel, agent runtimes, eval systems, K8s); (2) **stand out** as a portfolio piece. Optimize accordingly — depth of understanding > shipping features fast.
+The earlier YAML workflow orchestration, observability and evaluation platform remains available as a legacy surface. The approved local-product direction in ADR-0009 supersedes the original 14-week rollout schedule; cloud deployment and research extensions are deferred.
 
 ## 2. Where the source of truth lives
 
 | Question | File |
 | --- | --- |
 | "What's the current state of the project?" | `Project-Documentation/STATUS.md` — **read this FIRST every session** |
-| "What's the plan?" | `Project-Documentation/ROADMAP.md` — the 14-week breakdown |
+| "What's the plan?" | `.planning/ROADMAP.md` — active local-product milestones; `Project-Documentation/ROADMAP.md` preserves the historical schedule |
 | "Why was X built this way?" | `Project-Documentation/decisions/INDEX.md` then the relevant ADR |
 | "How does <subsystem> work?" | `Project-Documentation/<subsystem>/overview.md` |
 | "How do I use HarnessFlow?" | `docs/` — public-facing docs |
 | "What was the original spec?" | `Harness PRD.md` — aspirational; ROADMAP.md is the actual build plan |
-| "Master plan with all rationale?" | `~/.claude/plans/i-am-developing-a-serialized-codd.md` (approved 14-week plan) |
+| "What do project/run/completion mean?" | `CONTEXT.md` — product vocabulary |
+| "How are project runs isolated and recovered?" | `Project-Documentation/projects/overview.md` and ADR-0009 |
+| "Which installed skills apply?" | `Project-Documentation/skills.md` — GSD and supplementary skill provenance and limits |
 
 ## 3. Architecture in one paragraph
 
-A Go orchestrator (`apps/api`, Connect-Go + Temporal Go SDK + sqlc) accepts workflow YAML, validates against JSON Schema, persists to Postgres, and compiles the YAML into deterministic Temporal Workflow functions. Python workers (`apps/worker`, Temporal Python SDK) register against the same Temporal cluster and run activities — `llm_call`, `retrieve`, `tool_call`, `verify` — that call OpenAI/Anthropic via a thin in-house `LLMClient` (no LangChain). Everything is instrumented with OpenTelemetry; trace context propagates Go → Temporal → Python → LLM-call as a single trace ID in Jaeger. A Next.js dashboard (`apps/dashboard`) consumes the same Connect services as a typed client via Connect-ES. Eval framework (`apps/eval-runner`) gates PRs that modify workflows; weeks 13–14 add a contextual-bandit retry policy learner and an autonomous YAML mutation agent.
+The loopback Go API persists projects, runs and versioned controls in Postgres and schedules bounded Temporal project ticks. The Python worker owns isolated Git worktrees, repository locks, supervised Codex subprocesses and command-based verification. The Next.js dashboard consumes generated Connect contracts for intake, progress, controls and evidence. `make dev` runs these three host processes with local Postgres and Temporal; the host is needed for Codex login and local repository access. The original YAML workflow engine still uses the in-house provider client and optional OTel/event infrastructure.
 
 ## 4. Repo map
 
@@ -65,7 +67,7 @@ A Go orchestrator (`apps/api`, Connect-Go + Temporal Go SDK + sqlc) accepts work
 - If you make a non-trivial decision, write an ADR in the same PR (`Project-Documentation/decisions/NNNN-slug.md`).
 
 ### Checkpoint protocol — **MANDATORY**
-1. At end of every working session: update `Project-Documentation/STATUS.md`.
+1. At end of every working session: update `Project-Documentation/STATUS.md` and active `.planning/STATE.md` with verified results and remaining work.
 2. Commit + push to `origin/main` (or the active feature branch).
 3. End-of-feature: open a PR (or fast-forward if working solo on a feature branch), update `decisions/INDEX.md` if any ADRs were added.
 4. Tag releases at milestones — see `ROADMAP.md` for the planned tags (`v0.1.0-thin-slice`, `v0.5.0-cicd`, `v1.0.0`, `v1.1.0-research`).

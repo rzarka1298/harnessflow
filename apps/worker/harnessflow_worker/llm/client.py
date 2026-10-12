@@ -206,8 +206,8 @@ class LLMClient:
     """Calls a Provider with the right model, walking the YAML-declared fallback graph."""
 
     def __init__(self, providers: dict[str, Provider]) -> None:
-        if not providers:
-            raise ValueError("LLMClient: at least one provider required")
+        # A Codex-only worker needs no legacy LLM credentials. Calls through an
+        # unconfigured provider fail explicitly in complete(), never use fake output.
         self._providers = providers
 
     async def complete(self, req: LLMRequest) -> LLMResponse:
@@ -330,10 +330,13 @@ def build_default_client() -> LLMClient:
     OPENAI_API_KEY        — enables OpenAI models
     ANTHROPIC_API_KEY     — enables Anthropic models
 
-    If neither is set, MockProvider handles everything and the pipeline still
-    runs end-to-end — useful for CI and for first-time local setup.
+    HARNESSFLOW_MOCK=1 explicitly selects a deterministic demo provider.
+    Missing credentials never silently replace a real provider with mock output.
     """
-    providers: dict[str, Provider] = {"mock": MockProvider()}
+    if os.getenv("HARNESSFLOW_MOCK") == "1":
+        log.warning("explicit demo mode — MockProvider enabled")
+        return LLMClient(providers={"mock": MockProvider()})
+    providers: dict[str, Provider] = {}
 
     openai_key = os.getenv("OPENAI_API_KEY")
     if openai_key:
@@ -349,8 +352,8 @@ def build_default_client() -> LLMClient:
         providers["anthropic"] = AnthropicProvider(AsyncAnthropic(api_key=anthropic_key))
         log.info("llm provider configured", provider="anthropic")
 
-    if len(providers) == 1:
-        log.warning("no LLM keys set — using MockProvider for all models")
+    if not providers:
+        log.info("no legacy LLM providers configured; Codex project execution remains available")
 
     return LLMClient(providers=providers)
 
