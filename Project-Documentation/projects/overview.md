@@ -96,7 +96,15 @@ repositories and JSON evidence and independently execute behavioral assertions a
 completion. These cost time/model usage and are deliberately not run in ordinary CI.
 The completed release run and its exact commits are recorded in
 [acceptance](acceptance.md).
-Hosted real-model CI remains off until model credentials are isolated from the
-worker and agent-executed code. Routine repository and check subprocesses now
-omit model keys; the remaining proxy boundary and opt-in workflow are tracked in
-[ADR-0011](../decisions/0011-real-model-ci-credential-boundary.md).
+The manual `real-model-acceptance` GitHub Actions workflow runs both greeting
+fixtures on `main` only. It requires a protected environment named
+`real-model-acceptance` with an `OPENAI_API_KEY` secret and an explicitly chosen
+Responses API model. Ordinary PR checks remain keyless. A dedicated unprivileged
+worker user has no model key or Docker socket access; Codex gets a fresh home and
+talks to a bounded, loopback-only gateway in a separate container. The gateway
+holds the key, allows only `/v1/responses` for the selected model, and caps
+requests and lifetime. This limits credential exposure but is not a monetary
+spend cap or a multi-tenant security boundary. Keep environment approvals and
+provider account spending limits in place. The hosted credentialed run has not
+yet been executed; configure the environment and dispatch it manually before
+claiming live CI acceptance. See [ADR-0011](../decisions/0011-real-model-ci-credential-boundary.md).

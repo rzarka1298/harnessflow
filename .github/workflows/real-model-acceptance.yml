@@ -1,0 +1,142 @@
+# Manual, fixed-fixture acceptance only. Configure the protected
+# real-model-acceptance environment and its OPENAI_API_KEY secret before use.
+name: real-model-acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: OpenAI API model enabled for this key (Responses API)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-model-acceptance
+  cancel-in-progress: false
+
+jobs:
+  greeting-fixtures:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    environment: real-model-acceptance
+    env:
+      DATABASE_URL: postgres://harnessflow:harnessflow@127.0.0.1:5432/harnessflow
+      HARNESSFLOW_API_BASE_URL: http://127.0.0.1:8080
+      HARNESSFLOW_CODEX_GATEWAY_URL: http://127.0.0.1:8765/v1
+      MODEL: ${{ inputs.model }}
+      PYTHONDONTWRITEBYTECODE: "1"
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: apps/api/go.mod
+          cache-dependency-path: |
+            apps/api/go.sum
+            packages/sdk/gen/go/go.sum
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate fixed-run inputs and install tools
+        run: |
+          [[ "$MODEL" =~ ^[a-zA-Z0-9._:-]+$ ]] || { echo "Invalid model name" >&2; exit 1; }
+          npm install --global @openai/codex@0.162.1
+          codex --version
+          uv sync --frozen --directory apps/worker
+          go build -o /tmp/harnessflow-api ./apps/api/cmd/api
+          sudo useradd --create-home --shell /usr/sbin/nologin harnessflowci
+          sudo install -d -m 0700 -o harnessflowci -g harnessflowci /tmp/harnessflow-ci
+          test "$(sudo -u harnessflowci id -u)" != "$(id -u)"
+          ! sudo -u harnessflowci test -r /var/run/docker.sock
+
+      - name: Start database and workflow engine
+        run: |
+          docker compose up -d postgres temporal
+          for svc in postgres temporal; do
+            ready=false
+            for attempt in $(seq 1 90); do
+              status=$(docker compose ps --format json "$svc" | python3 -c 'import json,sys; d=json.load(sys.stdin); print((d[0] if isinstance(d, list) else d).get("Health", ""))' 2>/dev/null || true)
+              if [ "$status" = healthy ]; then ready=true; break; fi
+              sleep 2
+            done
+            if [ "$ready" != true ]; then docker compose logs "$svc"; exit 1; fi
+          done
+          for migration in apps/api/migrations/*.up.sql; do
+            docker compose exec -T postgres psql -U harnessflow -d harnessflow -v ON_ERROR_STOP=1 < "$migration"
+          done
+
+      - name: Start keyless API and worker under dedicated user
+        run: |
+          codex_bin=$(command -v codex)
+          sudo -u harnessflowci -- env -i HOME=/home/harnessflowci PATH="$PATH" \
+            DATABASE_URL="$DATABASE_URL" API_HOST=127.0.0.1 \
+            OTEL_EXPORTER_OTLP_ENDPOINT_GRPC= \
+            sh -c 'exec "$@" > /tmp/harnessflow-ci/api.log 2>&1' sh \
+            /tmp/harnessflow-api &
+          sudo -u harnessflowci -- env -i HOME=/home/harnessflowci PATH="$PATH" \
+            DATABASE_URL="$DATABASE_URL" TEMPORAL_HOST=127.0.0.1:7233 \
+            OTEL_EXPORTER_OTLP_ENDPOINT_GRPC= PYTHONDONTWRITEBYTECODE=1 \
+            HARNESSFLOW_MOCK=1 \
+            HARNESSFLOW_CODEX_BIN="$codex_bin" \
+            HARNESSFLOW_CODEX_GATEWAY_URL="$HARNESSFLOW_CODEX_GATEWAY_URL" \
+            sh -c 'exec "$@" > /tmp/harnessflow-ci/worker.log 2>&1' sh \
+            "$GITHUB_WORKSPACE/apps/worker/.venv/bin/python" -m harnessflow_worker &
+          for attempt in $(seq 1 60); do
+            if curl -fsS "$HARNESSFLOW_API_BASE_URL/readyz" > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          tail -100 /tmp/harnessflow-ci/api.log /tmp/harnessflow-ci/worker.log
+          exit 1
+
+      # Only this step receives the real key. The isolated worker user cannot
+      # inspect Docker, runner-owned processes, or this container's environment.
+      - name: Start bounded Responses gateway
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          test -n "$OPENAI_API_KEY" || { echo "Protected environment needs OPENAI_API_KEY" >&2; exit 1; }
+          docker run --detach --name harnessflow-model-gateway --rm \
+            --network host --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --pids-limit 64 --memory 256m \
+            --user 65534:65534 -e OPENAI_API_KEY \
+            -v "$GITHUB_WORKSPACE/scripts/ci-model-gateway.py:/gateway.py:ro" \
+            python:3.12-alpine python -B /gateway.py \
+            --model "$MODEL" --max-requests 160 --max-duration-seconds 3600
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/healthz > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          docker logs harnessflow-model-gateway
+          exit 1
+
+      - name: Run real-model new and existing repository fixtures
+        run: |
+          for kind in new existing; do
+            sudo -u harnessflowci -- env -i HOME=/home/harnessflowci PATH="$PATH" \
+              PYTHONDONTWRITEBYTECODE=1 \
+              python3 "$GITHUB_WORKSPACE/scripts/project-smoke.py" \
+              --api "$HARNESSFLOW_API_BASE_URL" --kind "$kind" --model "$MODEL"
+          done
+
+      - name: Show keyless service logs on failure
+        if: failure()
+        run: |
+          sudo tail -100 /tmp/harnessflow-ci/api.log /tmp/harnessflow-ci/worker.log 2>/dev/null || true
+
+      - name: Stop isolated services
+        if: always()
+        run: |
+          sudo pkill -TERM -u harnessflowci 2>/dev/null || true
+          docker stop harnessflow-model-gateway 2>/dev/null || true
+          docker compose down 2>/dev/null || true

@@ -51,6 +51,20 @@ class EnvironmentTests(unittest.TestCase):
 
 
 class ProcessTests(unittest.TestCase):
+    def test_gateway_preflight_does_not_require_local_codex_login(self):
+        env = {
+            "API_PORT": "18080",
+            "HARNESSFLOW_CODEX_GATEWAY_URL": "http://127.0.0.1:8765/v1",
+        }
+        with (
+            patch.object(launcher.shutil, "which", return_value="/bin/tool"),
+            patch.object(launcher, "check_port_available"),
+            patch.object(launcher.subprocess, "run") as run,
+        ):
+            launcher.preflight(env)
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.args[0], ["docker", "compose", "version"])
+
     def test_port_probe_accepts_recently_closed_server_connection(self):
         with socket.socket() as server:
             server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

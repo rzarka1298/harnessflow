@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-10-12 — local release merged and running; real-model CI credential isolation is in progress. Cloud deployment waits until the other tasks are finished._
+_Last updated: 2026-10-12 — local release merged and running; protected real-model CI is staged but not credentialed or live-validated. Cloud deployment waits until the other tasks are finished._
 
 ## DONE
 
@@ -21,6 +21,7 @@ _Last updated: 2026-10-12 — local release merged and running; real-model CI cr
 | 2026-10-11 | Multi-module WorkQueue fixture: real PRD run delivered three tasks with four frozen checks, seven passing Codex judge verdicts, 15 delivered tests, independent CLI/text/JSON/legacy-data verification, and an unchanged checkout with tracked and untracked local changes. | run 23646454; [acceptance](projects/acceptance.md) |
 | 2026-10-11 | PR #2 and stacked PR #3 merged with merge commits, after all PR checks passed. Fast-forwarded local `main`, restarted the loopback stack, and verified API readiness, dashboard, CLI evidence, browser workflow, and live completed-run UI. Post-merge `main` CI passed. | bccb8d7, 2de8167; [acceptance](projects/acceptance.md) |
 | 2026-10-11 | PR #4 merged release handoff and local acceptance documentation. GSD Phase 2 was reconciled retrospectively with an explicit live-Anthropic caveat; GSD config and progress metadata now identify the local milestone as complete. | c64e356; [.planning](../.planning/ROADMAP.md) |
+| 2026-10-12 | PR #6 merged routine subprocess credential stripping; model keys are no longer inherited by Git, publication, or frozen-check commands. | d32e325; [ADR-0011](decisions/0011-real-model-ci-credential-boundary.md) |
 | 2026-05-14 | Approved 14-week project plan written and saved to `~/.claude/plans/i-am-developing-a-serialized-codd.md` | (pre-repo) |
 | 2026-05-14 | Repo scaffold: LICENSE, README, ARCHITECTURE, CLAUDE.md, Makefile, .gitignore, .env.example, .envrc.example | 92b178c |
 | 2026-05-14 | Project-Documentation skeleton — all 10 subfolders, all overview stubs, README, STATUS, ROADMAP | 92b178c |
@@ -87,15 +88,16 @@ deferred a credentialed Anthropic judge call, so that path is unit-tested but
 not release-proven against Anthropic. It would send the PRD, plan, diff and
 evidence to that provider. Frozen deterministic checks remain required with
 either judge. See [ADR-0010](decisions/0010-project-judge-and-cli.md).
-Routine Git, publication and frozen-check subprocesses are being hardened so
-they do not inherit model API keys. This is a prerequisite, not a complete CI
-secret boundary; [ADR-0011](decisions/0011-real-model-ci-credential-boundary.md)
-records why the hosted live job stays disabled pending an isolated credential
-proxy and protected, fixed-input workflow.
+Routine Git, publication and frozen-check subprocesses no longer inherit model
+API keys. The fixed-fixture, manual real-model CI job is staged with a
+container-isolated credential gateway and a separate unprivileged worker user.
+Unit tests and a keyless Codex wire check pass; no hosted credentialed run has
+been performed yet. [ADR-0011](decisions/0011-real-model-ci-credential-boundary.md)
+defines this trust boundary.
 
 ## NEXT
 
-1. Isolate the model credential from worker and agent-executed code, then add a protected, manual real-model CI acceptance job with fixed fixtures. Static fixture starters and verifier tests already run in `make check`; real Codex runs remain local until the hosted boundary is verified.
+1. Configure a protected `real-model-acceptance` GitHub environment with `OPENAI_API_KEY`, manually dispatch the fixed-fixture job with an enabled Responses API model, and inspect the result before calling hosted acceptance proven. Ordinary PR checks remain keyless.
 2. Validate the Anthropic live judge path if the user later opts in; the current release uses the Codex fallback.
 3. Consider cloud deployment only after the remaining local tasks are complete; do not provision a hosted environment yet.
 
