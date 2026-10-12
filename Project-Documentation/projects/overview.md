@@ -96,3 +96,7 @@ repositories and JSON evidence and independently execute behavioral assertions a
 completion. These cost time/model usage and are deliberately not run in ordinary CI.
 The completed release run and its exact commits are recorded in
 [acceptance](acceptance.md).
+Hosted real-model CI remains off until model credentials are isolated from the
+worker and agent-executed code. Routine repository and check subprocesses now
+omit model keys; the remaining proxy boundary and opt-in workflow are tracked in
+[ADR-0011](../decisions/0011-real-model-ci-credential-boundary.md).

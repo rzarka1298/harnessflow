@@ -27,8 +27,8 @@ class Result:
     stderr: str
 
 
-def process_environment() -> dict[str, str]:
-    """Only credentials intentionally needed by Codex are inherited."""
+def process_environment(*, include_model_credentials: bool = False) -> dict[str, str]:
+    """Keep model credentials out of repository commands unless explicitly needed."""
     names = {
         "PATH",
         "HOME",
@@ -37,12 +37,16 @@ def process_environment() -> dict[str, str]:
         "LANG",
         "LC_ALL",
         "CODEX_HOME",
-        "CODEX_API_KEY",
-        "OPENAI_API_KEY",
         "SSL_CERT_FILE",
         "SSL_CERT_DIR",
     }
     env = {key: value for key, value in os.environ.items() if key in names}
+    if include_model_credentials:
+        # Codex prefers CODEX_API_KEY; do not pass a second, unused API key.
+        if os.environ.get("CODEX_API_KEY"):
+            env["CODEX_API_KEY"] = os.environ["CODEX_API_KEY"]
+        elif os.environ.get("OPENAI_API_KEY"):
+            env["OPENAI_API_KEY"] = os.environ["OPENAI_API_KEY"]
     env.update({"GIT_TERMINAL_PROMPT": "0", "NO_COLOR": "1"})
     # A user's global fsmonitor setting can launch a detached Git daemon.
     # Disable it in all descendant Git invocations, including agent tool calls.

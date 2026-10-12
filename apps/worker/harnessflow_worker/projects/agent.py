@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from harnessflow_worker.projects.process import Result, run_process
+from harnessflow_worker.projects.process import Result, process_environment, run_process
 from harnessflow_worker.projects.workspace import Workspace
 
 
@@ -69,6 +69,7 @@ class CodexAgent:
             stdin=prompt,
             lock_fd=self.workspace.lock_fd,
             log_path=root / f"{name}.log",
+            env=process_environment(include_model_credentials=True),
         )
         if result.exit_code:
             raise RuntimeError(f"Codex exited {result.exit_code}: {result.stderr[-2000:]}")
