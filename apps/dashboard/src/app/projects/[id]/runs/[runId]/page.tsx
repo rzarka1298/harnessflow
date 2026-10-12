@@ -25,6 +25,7 @@ const PHASES = [
   "implement",
   "verify",
   "review",
+  "judge",
   "repair",
   "deliver",
 ];
@@ -551,6 +552,65 @@ export default function ProjectRunPage({
                   No findings reported.
                 </p>
               ) : null}
+            </Section>
+          ) : null}
+          {snapshot.judge ? (
+            <Section
+              title="Judge evidence"
+              hint="The judge evaluates each requirement against the verified commit."
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <StatusBadge
+                  status={snapshot.judge.passed ? "completed" : "failed"}
+                />
+                <span className="text-xs text-gray-500">
+                  {snapshot.judge.provider} · {snapshot.judge.model}
+                </span>
+              </div>
+              <p className="mt-3 break-all font-mono text-[11px] text-gray-500">
+                Commit {snapshot.judge.commit || "unknown"}
+              </p>
+              <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Requirement verdicts
+              </h3>
+              {snapshot.judge.requirement_verdicts.length ? (
+                <ul className="mt-2 space-y-3">
+                  {snapshot.judge.requirement_verdicts.map((verdict) => (
+                    <li
+                      key={verdict.requirement_id}
+                      className="rounded-lg border border-gray-200 p-3 dark:border-gray-800"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-mono text-xs">
+                          {verdict.requirement_id}
+                        </span>
+                        <StatusBadge
+                          status={verdict.passed ? "completed" : "failed"}
+                        />
+                      </div>
+                      <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+                        {verdict.reason}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-gray-500">
+                  No per-requirement verdicts recorded.
+                </p>
+              )}
+              <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Findings
+              </h3>
+              {snapshot.judge.findings.length ? (
+                <ul className="mt-2 list-disc space-y-2 pl-5 text-sm">
+                  {snapshot.judge.findings.map((finding, index) => (
+                    <li key={index}>{finding}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-gray-500">No findings.</p>
+              )}
             </Section>
           ) : null}
           <Section

@@ -2,14 +2,24 @@
 
 ## Active direction — local PRD-to-verified-branch harness
 
-The October 2026 approved product plan supersedes the schedule below. See
-[ADR-0009](decisions/0009-prd-project-runs.md), the active
+The October 2026 approved product plan supersedes the schedule below. The PRD
+coding harness is the primary product; the YAML workflow platform remains a
+maintained foundation and demo. See [ADR-0009](decisions/0009-prd-project-runs.md),
+[ADR-0010](decisions/0010-project-judge-and-cli.md), the active
 [phase roadmap](../.planning/ROADMAP.md), and [STATUS](STATUS.md).
 
 The release bar is a usable local launcher, durable project runs, isolated Codex
 execution, independent command-based acceptance and review, explicit controls and
-limits, a working project dashboard, and real new/existing repository demonstrations.
-AWS deployment, tenancy, additional coding providers and research extensions are deferred.
+limits, a working project dashboard and CLI, repo-local Codex/Claude Code skills,
+and real new/existing repository demonstrations. An explicit independent judge uses
+Anthropic when configured and read-only Codex otherwise; frozen deterministic
+acceptance commands remain required. AWS deployment, tenancy, additional coding
+providers and research extensions are deferred.
+
+The CLI, local skills and provider-aware judge are the current follow-up milestone.
+The CLI and Codex judge fallback passed end-to-end trials; the Anthropic path awaits
+a credentialed live call. See [STATUS](STATUS.md). When Anthropic is configured, the judge receives the PRD, diff,
+plan and verification evidence, which are therefore sent to that external provider.
 
 ## Historical plan — 14 weeks to v1.1.0
 

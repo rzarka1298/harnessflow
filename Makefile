@@ -1,7 +1,7 @@
 # HarnessFlow developer Makefile
 # Targets are scaffolded; bodies will be implemented as the corresponding code lands.
 
-.PHONY: help dev setup up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval eval-gate events-consume demo-bandit test lint typecheck build check fmt clean tools-check helm-sync-migrations helm-deps helm-lint helm-template kind-up kind-down kind-load
+.PHONY: help dev setup install-skills up down logs ps restart nuke proto sqlc migrate-up migrate-down migrate-status demo eval eval-gate events-consume demo-bandit test lint typecheck build check fmt clean tools-check helm-sync-migrations helm-deps helm-lint helm-template kind-up kind-down kind-load
 
 COMPOSE := docker compose
 .DEFAULT_GOAL := help
@@ -13,6 +13,9 @@ dev: ## Start local PRD harness (frozen dependencies, DB, migrations, API, worke
 setup: ## Install application dependencies from committed lockfiles.
 	@set -e; for app in $(PYTHON_APPS); do uv sync --frozen --directory apps/$$app; done
 	pnpm --dir apps/dashboard install --frozen-lockfile
+
+install-skills: ## Install Codex/Claude Code entry-point skills for all workspaces.
+	python3 scripts/install-agent-skills.py
 
 help: ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -147,12 +150,21 @@ demo-bandit: ## (Week 13) A/B compare learned-retry vs static-retry policies.
 
 test: ## Run launcher, Go, and Python unit tests (browser checks run separately in CI).
 	python3 -m unittest discover -s scripts/tests -v
+	python3 -m unittest discover -s apps/cli/tests -v
+	cd Project-Documentation/projects/fixtures/expense-starter && python3 -m unittest discover -s tests -v
+	cd Project-Documentation/projects/fixtures/ticket-starter && python3 -m unittest discover -s tests -v
 	go test ./apps/api/...
 	@set -e; for app in $(PYTHON_APPS); do uv run --frozen --directory apps/$$app pytest; done
 
 lint: ## Run linters across all apps.
-	uv run --frozen --directory apps/worker ruff check $(CURDIR)/scripts/local-dev.py $(CURDIR)/scripts/project-smoke.py $(CURDIR)/scripts/tests
-	uv run --frozen --directory apps/worker ruff format --check $(CURDIR)/scripts/local-dev.py $(CURDIR)/scripts/project-smoke.py $(CURDIR)/scripts/tests
+	uv run --frozen --directory apps/worker ruff check $(CURDIR)/scripts/local-dev.py $(CURDIR)/scripts/project-smoke.py $(CURDIR)/scripts/expense-acceptance.py $(CURDIR)/scripts/ticket-acceptance.py $(CURDIR)/scripts/tests
+	uv run --frozen --directory apps/worker ruff format --check $(CURDIR)/scripts/local-dev.py $(CURDIR)/scripts/project-smoke.py $(CURDIR)/scripts/expense-acceptance.py $(CURDIR)/scripts/ticket-acceptance.py $(CURDIR)/scripts/tests
+	uv run --frozen --directory apps/worker ruff check $(CURDIR)/Project-Documentation/projects/fixtures/expense-starter $(CURDIR)/Project-Documentation/projects/fixtures/ticket-starter
+	uv run --frozen --directory apps/worker ruff format --check $(CURDIR)/Project-Documentation/projects/fixtures/expense-starter $(CURDIR)/Project-Documentation/projects/fixtures/ticket-starter
+	uv run --frozen --directory apps/worker ruff check $(CURDIR)/scripts/install-agent-skills.py
+	uv run --frozen --directory apps/worker ruff format --check $(CURDIR)/scripts/install-agent-skills.py
+	uv run --frozen --directory apps/worker ruff check $(CURDIR)/apps/cli
+	uv run --frozen --directory apps/worker ruff format --check $(CURDIR)/apps/cli
 	cd apps/api && golangci-lint run
 	@set -e; for app in $(PYTHON_APPS); do uv run --frozen --directory apps/$$app ruff check .; uv run --frozen --directory apps/$$app ruff format --check .; done
 	cd apps/dashboard && ./node_modules/.bin/eslint

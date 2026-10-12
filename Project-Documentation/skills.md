@@ -1,5 +1,23 @@
 # Development skills
 
+## Repo-local product skills
+
+The PRD coding harness is the primary product. It includes an invocation skill for
+Codex at [`.agents/skills/harnessflow-project/SKILL.md`](../.agents/skills/harnessflow-project/SKILL.md)
+and Claude Code at [`.claude/skills/harnessflow-project/SKILL.md`](../.claude/skills/harnessflow-project/SKILL.md).
+Both route new requests and run controls through the `harnessflow` CLI; install the
+CLI with `uv tool install --editable apps/cli`. The skill is a thin entry point, while
+the local API and Temporal workflow own durable execution.
+Run `make install-skills` to copy both skills into user-level discovery directories
+for use from any workspace; the installer refuses to overwrite a different skill.
+
+The final acceptance judge uses Anthropic when `ANTHROPIC_API_KEY` is configured and
+falls back to a separate read-only Codex run otherwise. In the Anthropic path, the
+service receives the PRD, frozen plan, actual diff, acceptance evidence, and
+independent review findings. Those artifacts leave the local machine for Anthropic.
+The judge is an additional semantic review; the frozen deterministic acceptance
+commands must still pass on the delivered commit.
+
 Installed 2026-10-10:
 
 | Skill | Source | Use |

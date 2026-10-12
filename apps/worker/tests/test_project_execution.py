@@ -14,7 +14,7 @@ import pytest
 
 from harnessflow_worker.projects.agent import CodexAgent
 from harnessflow_worker.projects.engine import tick
-from harnessflow_worker.projects.models import AgentResult, Plan
+from harnessflow_worker.projects.models import AgentResult, JudgeVerdict, Plan
 from harnessflow_worker.projects.process import run_process
 from harnessflow_worker.projects.workspace import repository_lock_name
 
@@ -88,6 +88,14 @@ class FixtureAgent(CodexAgent):
             target = self.workspace.path / "greeting.txt"
             target.write_text("hello" if target.exists() else "wrong")
             return {"summary": "Created greeting", "blocked_reason": ""}, {"input": 1, "output": 1}
+        if contract is JudgeVerdict:
+            return {
+                "passed": True,
+                "findings": [],
+                "requirement_verdicts": [
+                    {"requirement_id": "R1", "passed": True, "reason": "Greeting behavior verified"}
+                ],
+            }, {"input": 1, "output": 1}
         return {"passed": True, "findings": []}, {"input": 1, "output": 1}
 
     async def verify_command(self, argv, name, poll, timeout):
@@ -107,7 +115,7 @@ async def test_new_project_repairs_failed_check_and_delivers_exact_verified_comm
     repo: Path, tmp_path: Path
 ) -> None:
     store = MemoryStore(repo)
-    for _ in range(15):
+    for _ in range(18):
         result = await tick(store, tmp_path / "data", agent_factory=FixtureAgent)
         if result["status"] in {"completed", "blocked", "failed"}:
             break
@@ -116,6 +124,8 @@ async def test_new_project_repairs_failed_check_and_delivers_exact_verified_comm
     assert state["attempts"] == 2
     assert state["evidence"][0]["passed"] is True
     assert state["evidence"][0]["commit"] == state["head_commit"]
+    assert state["judge"]["passed"] is True
+    assert state["judge"]["commit"] == state["head_commit"]
     assert not (repo / "greeting.txt").exists()
     assert (
         subprocess.run(
@@ -128,6 +138,42 @@ async def test_new_project_repairs_failed_check_and_delivers_exact_verified_comm
         "changes.diff",
         "acceptance.json",
     }
+
+
+@pytest.mark.asyncio
+async def test_judge_findings_route_through_repair_before_delivery(
+    repo: Path, tmp_path: Path
+) -> None:
+    calls = 0
+
+    class FailingJudgeOnce(FixtureAgent):
+        async def run(self, prompt, contract, name, poll, timeout, writable=False):
+            nonlocal calls
+            if contract is JudgeVerdict:
+                calls += 1
+                if calls == 1:
+                    await poll()
+                    return {
+                        "passed": False,
+                        "findings": ["Greeting needs another acceptance review"],
+                        "requirement_verdicts": [
+                            {"requirement_id": "R1", "passed": False, "reason": "Review again"}
+                        ],
+                    }, {"input": 1, "output": 1}
+            return await super().run(prompt, contract, name, poll, timeout, writable)
+
+    store = MemoryStore(repo)
+    for _ in range(22):
+        result = await tick(store, tmp_path / "data", agent_factory=FailingJudgeOnce)
+        if result["status"] in {"completed", "blocked", "failed", "exhausted"}:
+            break
+    assert result["status"] == "completed", result
+    assert calls == 2
+    assert store.row["state"]["attempts"] == 3
+    assert any(
+        "judge found acceptance gaps" in item["message"].lower()
+        for item in store.row["state"]["events"]
+    )
 
 
 @pytest.mark.asyncio
@@ -190,7 +236,7 @@ async def test_attempt_exhaustion_preserves_work_and_resumes_after_explicit_exte
     )
     store.row["max_attempts"] += 1
     store.row["control"] = "resume"
-    for _ in range(6):
+    for _ in range(8):
         result = await tick(store, tmp_path / "data", agent_factory=FixtureAgent)
         if result["status"] == "completed":
             break
@@ -259,7 +305,7 @@ async def test_tick_reports_store_resolved_final_status(repo: Path, tmp_path: Pa
             return await super().save(state, status, reason)
 
     store = CancelAtDelivery(repo)
-    for _ in range(15):
+    for _ in range(18):
         result = await tick(store, tmp_path / "data", agent_factory=FixtureAgent)
         if result["status"] == "canceled":
             break

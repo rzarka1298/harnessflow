@@ -89,15 +89,51 @@ class Review(Contract):
     )
 
 
+class RequirementVerdict(Contract):
+    requirement_id: str = Field(min_length=1)
+    passed: bool
+    reason: str = Field(min_length=1)
+
+
+class JudgeVerdict(Contract):
+    passed: bool
+    findings: list[str]
+    requirement_verdicts: list[RequirementVerdict] = Field(min_length=1)
+
+
+def judge_ready(plan: Plan, judge: dict[str, Any], commit: str) -> bool:
+    """A judge must explicitly pass every frozen requirement at this revision."""
+    if not judge.get("passed") or judge.get("findings") or judge.get("commit") != commit:
+        return False
+    try:
+        verdict = JudgeVerdict.model_validate(
+            {key: judge.get(key) for key in ["passed", "findings", "requirement_verdicts"]}
+        )
+    except ValueError:
+        return False
+    by_id = {item.requirement_id: item for item in verdict.requirement_verdicts}
+    return (
+        len(by_id) == len(verdict.requirement_verdicts)
+        and set(by_id) == {item.id for item in plan.requirements}
+        and all(item.passed for item in by_id.values())
+    )
+
+
 def completion_ready(
     plan: Plan,
     completed: list[str],
     evidence: list[dict[str, Any]],
     commit: str,
     review_passed: bool,
+    judge: dict[str, Any] | None = None,
 ) -> bool:
     """All required checks must pass against the exact delivered revision."""
-    if not commit or not review_passed or set(completed) != {t.id for t in plan.tasks}:
+    if (
+        not commit
+        or not review_passed
+        or not judge_ready(plan, judge or {}, commit)
+        or set(completed) != {t.id for t in plan.tasks}
+    ):
         return False
     by_check = {e.get("check_id"): e for e in evidence}
     return all(
