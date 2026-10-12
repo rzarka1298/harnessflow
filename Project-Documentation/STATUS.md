@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-10-11 — PRs #2 and #3 merged; the local stack runs merged `main`._
+_Last updated: 2026-10-11 — local release merged and running; Phase 2 GSD metadata reconciled. Cloud deployment waits until the other tasks are finished._
 
 ## DONE
 
@@ -20,6 +20,7 @@ _Last updated: 2026-10-11 — PRs #2 and #3 merged; the local stack runs merged 
 | 2026-10-11 | Existing Python expense-CLI fixture: real PRD run delivered three tasks with four frozen checks, five passing Codex judge verdicts, 11 delivered tests, independent CLI/Decimal/isolation verification, and an unchanged original checkout. Full `make check` passed. | run cffef0d9; [acceptance](projects/acceptance.md) |
 | 2026-10-11 | Multi-module WorkQueue fixture: real PRD run delivered three tasks with four frozen checks, seven passing Codex judge verdicts, 15 delivered tests, independent CLI/text/JSON/legacy-data verification, and an unchanged checkout with tracked and untracked local changes. | run 23646454; [acceptance](projects/acceptance.md) |
 | 2026-10-11 | PR #2 and stacked PR #3 merged with merge commits, after all PR checks passed. Fast-forwarded local `main`, restarted the loopback stack, and verified API readiness, dashboard, CLI evidence, browser workflow, and live completed-run UI. Post-merge `main` CI passed. | bccb8d7, 2de8167; [acceptance](projects/acceptance.md) |
+| 2026-10-11 | PR #4 merged release handoff and local acceptance documentation. GSD Phase 2 was reconciled retrospectively with an explicit live-Anthropic caveat; GSD config and progress metadata now identify the local milestone as complete. | c64e356; [.planning](../.planning/ROADMAP.md) |
 | 2026-05-14 | Approved 14-week project plan written and saved to `~/.claude/plans/i-am-developing-a-serialized-codd.md` | (pre-repo) |
 | 2026-05-14 | Repo scaffold: LICENSE, README, ARCHITECTURE, CLAUDE.md, Makefile, .gitignore, .env.example, .envrc.example | 92b178c |
 | 2026-05-14 | Project-Documentation skeleton — all 10 subfolders, all overview stubs, README, STATUS, ROADMAP | 92b178c |
@@ -78,7 +79,8 @@ requirement-level judge, CLI and Codex/Claude Code entry-point skills are on
 and [PR #3](https://github.com/rzarka1298/harnessflow/pull/3). The local stack
 was restarted from merged `main` and is serving the dashboard at
 `http://127.0.0.1:3001/projects`. Post-merge `main` CI passed.
-The user confirmed local-only deployment; no hosted or public service is planned.
+The user chose to postpone cloud deployment until the other tasks are complete;
+the current service remains local and loopback-only.
 
 The Codex fallback judge and CLI are validated by real project runs. The user
 deferred a credentialed Anthropic judge call, so that path is unit-tested but
@@ -88,9 +90,9 @@ either judge. See [ADR-0010](decisions/0010-project-judge-and-cli.md).
 
 ## NEXT
 
-1. Reconcile GSD Phase 2 planning/verification metadata so the smart-entry router recognizes the completed phase.
-2. Decide whether to add a protected, opt-in real-model acceptance job in CI. Static fixture starters and verifier tests already run in `make check`; real Codex runs remain local until CI has safe model access.
-3. Validate the Anthropic live judge path if the user later opts in; the current release uses the Codex fallback.
+1. Decide whether to add a protected, opt-in real-model acceptance job in CI. Static fixture starters and verifier tests already run in `make check`; real Codex runs remain local until CI has safe model access.
+2. Validate the Anthropic live judge path if the user later opts in; the current release uses the Codex fallback.
+3. Consider cloud deployment only after the remaining local tasks are complete; do not provision a hosted environment yet.
 
 ## Releases
 

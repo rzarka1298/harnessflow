@@ -11,6 +11,16 @@
 - UI-01: Provide project intake, progress, controls and downloadable evidence.
 - OPS-01: One documented local start command, genuine checks and general CI.
 - SKILLS-01: Install pinned GSD plus browser-testing and React guidance.
+- JUDGE-01: Record explicit requirement-level, read-only semantic judge evidence
+  after independent review; preserve deterministic, commit-bound completion gates.
+- JUDGE-02: Prefer Anthropic when configured and within the request bound; use a
+  visibly attributed read-only Codex fallback otherwise.
+- CLI-01: Launch and inspect durable runs from a local PRD file through an
+  installable CLI.
+- SKILLS-02: Provide thin Codex and Claude Code entry-point skills that invoke
+  the CLI from a user's repository without owning execution themselves.
 
 Release acceptance: demonstrate both a new project and an existing-project feature
 with real Codex, in addition to deterministic lifecycle and browser tests.
+The local release proves JUDGE-01, the Codex fallback of JUDGE-02, CLI-01 and
+SKILLS-02. Anthropic behavior has mocked tests, but no live credentialed run.

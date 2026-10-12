@@ -1,8 +1,9 @@
 # Project State
 
 Current phase: 2 — Judge, CLI and agent entry points
-Status: Local release merged and running; Phase 2 GSD metadata not yet reconciled; live Anthropic check deferred
-Branch: main at 2de8167 (release handoff documentation on docs/merged-local-release)
+Total Phases: 2
+Status: Local-release milestone complete; both phases verified for their release scope
+Branch: main at c64e356 (GSD metadata reconciliation on docs/gsd-phase2-reconciliation)
 
 Completed: codebase audit; user decisions; GSD Core 1.16.0 and supplementary skill
 installation; API/contracts/migrations; local launcher/checks; execution engine and
@@ -12,8 +13,7 @@ Additional real-Codex expense and multi-module WorkQueue fixtures delivered
 commit-bound passing checks and Codex judge verdicts. WorkQueue preserved a
 source checkout containing both tracked and untracked local changes.
 
-Next: reconcile Phase 2 GSD metadata, then decide on protected opt-in real-model
-CI. PRs #2 and #3 are merged; the local
+Next: decide on protected opt-in real-model CI. PRs #2, #3 and #4 are merged; the local
 stack was restarted from merged main and smoke-checked. The independent
 Anthropic path remains unverified by live call; the user chose to defer it.
 Release evidence is recorded in Project-Documentation/projects/acceptance.md.
@@ -28,5 +28,5 @@ these artifacts in subsequent sessions. Preserve already-approved product decisi
 ## Session Continuity
 
 Last session: 2026-10-11
-Stopped at: Both release PRs merged, loopback deployment healthy, post-merge main CI passed; user confirmed local-only deployment.
+Stopped at: Release PRs merged, loopback deployment healthy, GSD Phase 2 metadata reconciled; cloud deployment deferred until the other tasks are finished.
 Resume file: none
