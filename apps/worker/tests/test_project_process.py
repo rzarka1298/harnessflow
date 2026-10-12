@@ -5,16 +5,86 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import fcntl
+import json
 import os
 import signal
 import subprocess
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
+from pydantic import BaseModel
 
-from harnessflow_worker.projects.process import RunInterruptedError, run_process
+from harnessflow_worker.projects.agent import CodexAgent
+from harnessflow_worker.projects.process import (
+    Result,
+    RunInterruptedError,
+    process_environment,
+    run_process,
+)
+
+
+@pytest.mark.asyncio
+async def test_repository_commands_do_not_inherit_model_credentials(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("CODEX_API_KEY", "codex-test-secret")
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-test-secret")
+    result = await run_process(
+        [
+            sys.executable,
+            "-c",
+            "import json,os;print(json.dumps({k:os.environ.get(k) for k in "
+            "('CODEX_API_KEY','OPENAI_API_KEY')}))",
+        ],
+        tmp_path,
+    )
+    assert result.exit_code == 0
+    assert result.stdout.strip() == '{"CODEX_API_KEY": null, "OPENAI_API_KEY": null}'
+    codex_env = process_environment(include_model_credentials=True)
+    assert codex_env["CODEX_API_KEY"] == "codex-test-secret"
+    assert "OPENAI_API_KEY" not in codex_env
+    monkeypatch.delenv("CODEX_API_KEY")
+    assert process_environment(include_model_credentials=True)["OPENAI_API_KEY"] == (
+        "openai-test-secret"
+    )
+
+
+@pytest.mark.asyncio
+async def test_only_model_attempt_receives_model_credentials(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class Answer(BaseModel):
+        ok: bool
+
+    workspace_path = tmp_path / "workspace"
+    workspace_path.mkdir()
+    workspace = SimpleNamespace(root=tmp_path, path=workspace_path, lock_fd=None)
+    agent = CodexAgent(workspace)
+    monkeypatch.setenv("CODEX_API_KEY", "codex-test-secret")
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-test-secret")
+    observed: list[dict[str, str]] = []
+
+    async def fake_run_process(argv: list[str], cwd: Path, **kwargs: object) -> Result:
+        assert argv[:2] == [agent.binary, "exec"]
+        assert cwd == workspace_path
+        env = kwargs["env"]
+        assert isinstance(env, dict)
+        observed.append(env)
+        output = Path(argv[argv.index("--output-last-message") + 1])
+        output.write_text(json.dumps({"ok": True}))
+        return Result(0, "", "")
+
+    async def poll() -> None:
+        return None
+
+    monkeypatch.setattr("harnessflow_worker.projects.agent.run_process", fake_run_process)
+    answer, _ = await agent.run("test", Answer, "credential-test", poll, 10)
+    assert answer == {"ok": True}
+    assert observed[0]["CODEX_API_KEY"] == "codex-test-secret"
+    assert "OPENAI_API_KEY" not in observed[0]
 
 
 def sleeping_command(marker: Path) -> list[str]:
