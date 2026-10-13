@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-10-12 — local release merged and running; protected real-model CI is staged but not credentialed or live-validated. Cloud deployment waits until the other tasks are finished._
+_Last updated: 2026-10-12 — protected real-model CI infrastructure passed a no-key GitHub dry run; credentialed acceptance remains pending. Cloud deployment waits until the other tasks are finished._
 
 ## DONE
 
@@ -91,13 +91,16 @@ either judge. See [ADR-0010](decisions/0010-project-judge-and-cli.md).
 Routine Git, publication and frozen-check subprocesses no longer inherit model
 API keys. The fixed-fixture, manual real-model CI job is staged with a
 container-isolated credential gateway and a separate unprivileged worker user.
-Unit tests and a keyless Codex wire check pass; no hosted credentialed run has
-been performed yet. [ADR-0011](decisions/0011-real-model-ci-credential-boundary.md)
-defines this trust boundary.
+Its `real-model-acceptance` GitHub environment is restricted to `main`. A no-key
+[GitHub dry run](https://github.com/rzarka1298/harnessflow/actions/runs/38340312993)
+passed tool and dependency installation, Postgres/Temporal startup, and keyless
+API/worker startup, then failed at the expected missing-secret check. No hosted
+credentialed run has been performed yet. [ADR-0011](decisions/0011-real-model-ci-credential-boundary.md)
+defines the trust boundary.
 
 ## NEXT
 
-1. Configure a protected `real-model-acceptance` GitHub environment with `OPENAI_API_KEY`, manually dispatch the fixed-fixture job with an enabled Responses API model, and inspect the result before calling hosted acceptance proven. Ordinary PR checks remain keyless.
+1. Set the `OPENAI_API_KEY` environment secret in the existing `real-model-acceptance` GitHub environment, manually dispatch the fixed-fixture job with an enabled Responses API model, and inspect the result before calling hosted acceptance proven. Ordinary PR checks remain keyless.
 2. Validate the Anthropic live judge path if the user later opts in; the current release uses the Codex fallback.
 3. Consider cloud deployment only after the remaining local tasks are complete; do not provision a hosted environment yet.
 

@@ -97,14 +97,25 @@ completion. These cost time/model usage and are deliberately not run in ordinary
 The completed release run and its exact commits are recorded in
 [acceptance](acceptance.md).
 The manual `real-model-acceptance` GitHub Actions workflow runs both greeting
-fixtures on `main` only. It requires a protected environment named
-`real-model-acceptance` with an `OPENAI_API_KEY` secret and an explicitly chosen
-Responses API model. Ordinary PR checks remain keyless. A dedicated unprivileged
+fixtures on `main` only. Its GitHub environment exists with a `main`-only branch
+policy; it still needs an environment-level `OPENAI_API_KEY` secret and an
+explicitly chosen Responses API model. Ordinary PR checks remain keyless. A dedicated unprivileged
 worker user has no model key or Docker socket access; Codex gets a fresh home and
 talks to a bounded, loopback-only gateway in a separate container. The gateway
 holds the key, allows only `/v1/responses` for the selected model, and caps
 requests and lifetime. This limits credential exposure but is not a monetary
-spend cap or a multi-tenant security boundary. Keep environment approvals and
-provider account spending limits in place. The hosted credentialed run has not
-yet been executed; configure the environment and dispatch it manually before
-claiming live CI acceptance. See [ADR-0011](../decisions/0011-real-model-ci-credential-boundary.md).
+spend cap or a multi-tenant security boundary. The environment has no reviewer
+approval gate; use provider account spending limits. A no-key GitHub dry run
+([run 38340312993](https://github.com/rzarka1298/harnessflow/actions/runs/38340312993))
+passed tool installation, Postgres/Temporal startup, and keyless API/worker startup,
+then stopped at the expected missing-secret check without a model call. The hosted
+credentialed run has not yet been executed. To enable it, set the secret without
+printing it in a shell command, then dispatch with an API-enabled model:
+
+```bash
+gh secret set OPENAI_API_KEY --repo rzarka1298/harnessflow --env real-model-acceptance
+gh workflow run real-model-acceptance.yml --repo rzarka1298/harnessflow --ref main -f model=YOUR_MODEL
+```
+
+Inspect the resulting run before claiming live CI acceptance. See
+[ADR-0011](../decisions/0011-real-model-ci-credential-boundary.md).
