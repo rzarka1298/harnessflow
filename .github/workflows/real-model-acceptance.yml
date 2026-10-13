@@ -99,6 +99,30 @@ jobs:
           tail -100 /tmp/harnessflow-ci/api.log /tmp/harnessflow-ci/worker.log
           exit 1
 
+      - name: Preflight gateway isolation without a real key
+        run: |
+          trap 'docker stop harnessflow-model-gateway-preflight >/dev/null 2>&1 || true' EXIT
+          docker run --detach --name harnessflow-model-gateway-preflight --rm \
+            --network host --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --pids-limit 64 --memory 256m \
+            --user 65534:65534 -e OPENAI_API_KEY=ci-preflight-not-a-key \
+            -v "$GITHUB_WORKSPACE/scripts/ci-model-gateway.py:/gateway.py:ro" \
+            python:3.12-alpine python -B /gateway.py \
+            --model "$MODEL" --max-requests 1 --max-duration-seconds 120
+          ready=false
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/healthz > /dev/null; then ready=true; break; fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then docker logs harnessflow-model-gateway-preflight; exit 1; fi
+          denied=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            -H 'Content-Type: application/json' -d "{\"model\":\"not-$MODEL\"}" \
+            http://127.0.0.1:8765/v1/responses)
+          test "$denied" = 403
+          gateway_pid=$(docker inspect --format '{{.State.Pid}}' harnessflow-model-gateway-preflight)
+          test "$gateway_pid" -gt 0
+          sudo -u harnessflowci -- test ! -r "/proc/$gateway_pid/environ"
+
       # Only this step receives the real key. The isolated worker user cannot
       # inspect Docker, runner-owned processes, or this container's environment.
       - name: Start bounded Responses gateway
