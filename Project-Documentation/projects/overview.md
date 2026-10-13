@@ -109,6 +109,10 @@ approval gate; use provider account spending limits. A no-key GitHub dry run
 ([run 38340312993](https://github.com/rzarka1298/harnessflow/actions/runs/38340312993))
 passed tool installation, Postgres/Temporal startup, and keyless API/worker startup,
 then stopped at the expected missing-secret check without a model call. The hosted
+gateway preflight also passed in
+[run 38479293963](https://github.com/rzarka1298/harnessflow/actions/runs/38479293963):
+loopback health, fixed-model denial, and worker-user process-environment isolation.
+That run likewise stopped at the missing-secret check without a model call. A
 credentialed run has not yet been executed. To enable it, set the secret without
 printing it in a shell command, then dispatch with an API-enabled model:
 

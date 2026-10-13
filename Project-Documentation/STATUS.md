@@ -2,7 +2,7 @@
 
 > **Read this first when resuming work.** Three sections only: DONE / IN FLIGHT / NEXT. Updated at the end of every working session.
 
-_Last updated: 2026-10-12 — protected real-model CI infrastructure passed a no-key GitHub dry run; credentialed acceptance remains pending. Cloud deployment waits until the other tasks are finished._
+_Last updated: 2026-10-13 — protected real-model CI infrastructure and gateway isolation passed no-key GitHub dry runs; credentialed acceptance remains pending. Cloud deployment waits until the other tasks are finished._
 
 ## DONE
 
@@ -95,7 +95,11 @@ Its `real-model-acceptance` GitHub environment is restricted to `main`. A no-key
 [GitHub dry run](https://github.com/rzarka1298/harnessflow/actions/runs/38340312993)
 passed tool and dependency installation, Postgres/Temporal startup, and keyless
 API/worker startup, then failed at the expected missing-secret check. No hosted
-credentialed run has been performed yet. [ADR-0011](decisions/0011-real-model-ci-credential-boundary.md)
+credentialed run has been performed yet. A second
+[keyless run](https://github.com/rzarka1298/harnessflow/actions/runs/38479293963)
+also passed gateway container health, model-denial, and worker-user
+process-environment isolation before reaching the same secret check.
+[ADR-0011](decisions/0011-real-model-ci-credential-boundary.md)
 defines the trust boundary.
 
 ## NEXT
