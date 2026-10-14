@@ -18,7 +18,6 @@ terraform {
     }
   }
 
-  # Backend intentionally left local for the demo. A real deployment would use
-  # an S3 backend + DynamoDB lock table; documented in the env README so the
-  # omission is a choice, not an oversight.
+  # Template only. Bootstrap an encrypted, versioned S3 backend with S3
+  # lockfiles before applying. The local backend contains the DB password.
 }

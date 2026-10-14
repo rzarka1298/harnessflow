@@ -107,6 +107,19 @@ app.kubernetes.io/component: {{ .component }}
 {{- end -}}
 {{- end -}}
 
+{{/* Bundled Postgres has no TLS; managed Postgres must use TLS. */}}
+{{- define "harnessflow.postgresSSLMode" -}}
+{{- if .Values.postgresql.enabled -}}
+disable
+{{- else -}}
+{{- $mode := required "externalPostgres.sslMode is required when postgresql.enabled=false" .Values.externalPostgres.sslMode -}}
+{{- if not (has $mode (list "require" "verify-ca" "verify-full")) -}}
+{{- fail "externalPostgres.sslMode must be require, verify-ca, or verify-full" -}}
+{{- end -}}
+{{- $mode -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Temporal host. Bundled Temporal subchart names its frontend service
      `<release>-temporal-frontend`. */}}
 {{- define "harnessflow.temporalHost" -}}
