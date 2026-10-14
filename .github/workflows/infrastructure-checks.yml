@@ -53,6 +53,8 @@ jobs:
             --set externalTemporal.host=temporal.example.internal \
             > /tmp/harnessflow-local.yaml
           grep -Fq 'POSTGRES_SSL_MODE: "disable"' /tmp/harnessflow-local.yaml
+          grep -Fq 'value: "$(TEMPORAL_HOSTNAME):$(TEMPORAL_PORT)"' /tmp/harnessflow-local.yaml
+          grep -Fq 'value: "0.0.0.0"' /tmp/harnessflow-local.yaml
           helm template hf infrastructure/helm/harnessflow \
             --set temporal.enabled=false \
             --set externalTemporal.host=temporal.example.internal \

@@ -16,9 +16,10 @@ platform remains a maintained foundation/demo.
   project owner.
 - The Helm chart and Terraform template pass syntax/render validation. External
   Postgres now defaults to TLS (`sslmode=require`), while bundled local
-  Postgres retains `disable`. The EKS template now defaults to a version in
-  standard support as of this assessment. CI checks these contracts without
-  AWS credentials.
+  Postgres retains `disable`. The API pod binds its Service interface and
+  both API and worker receive the complete Temporal `host:port` endpoint.
+  The EKS template now defaults to a version in standard support as of this
+  assessment. CI checks these contracts without AWS credentials.
 
 ## Gaps before a useful cloud deployment
 
