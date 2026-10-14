@@ -5,10 +5,12 @@ onto: VPC, EKS, RDS Postgres, ElastiCache Redis, an S3 events bucket, and the
 IRSA role the event-consumer uses to write to it. The Week-11 deliverable per
 `Project-Documentation/ROADMAP.md`.
 
-**Status: `plan`-only.** Per the ROADMAP, nothing is applied until Week 12.
-The config is validated (`terraform init` + `terraform validate` pass against
-the real AWS provider + community modules); a `plan`/`apply` needs AWS
-credentials.
+**Status: template only, not approved for apply.** Static validation does not
+prove that this deployment can run the primary PRD coding product. The
+current chart lacks cloud repository intake, durable per-run workspaces,
+Codex in the worker image, and the gateway credential boundary used in CI.
+See [cloud readiness](../../Project-Documentation/infrastructure/cloud-readiness.md)
+before provisioning anything.
 
 ## Layout
 
@@ -31,9 +33,9 @@ credentials.
 ```bash
 cd infrastructure/terraform/envs/demo
 terraform init
-terraform validate            # offline; no creds needed
-terraform plan                # needs AWS creds
-terraform apply               # Week 12 only
+terraform validate            # no AWS credentials needed after init
+terraform plan                # needs AWS creds; review all resources/costs
+terraform apply               # do not run until readiness gates are met
 ```
 
 After `apply`, wire the Helm chart to the managed services using the outputs:
@@ -49,9 +51,10 @@ helm install hf ../../helm/harnessflow -n harnessflow --create-namespace \
 
 ## Deliberate scoping choices
 
-- **Local backend.** State is local for the demo. A real deployment uses an
-  S3 backend + DynamoDB lock table — the right place for the secrets that
-  inevitably land in state. Left as a one-block change in `versions.tf`.
+- **Local backend.** State is local for this template and includes the generated
+  DB password. Bootstrap a restricted, encrypted, versioned S3 backend with
+  S3 lockfiles before any cloud apply. New DynamoDB locking is deprecated by
+  Terraform; see [S3 backend guidance](https://developer.hashicorp.com/terraform/language/backend/s3).
 - **`.terraform.lock.hcl` not committed.** Follows the repo's existing
   `.gitignore`. For a team/prod repo you'd commit it to pin provider hashes;
   `versions.tf` pins the version ranges either way.

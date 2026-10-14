@@ -1,0 +1,73 @@
+name: infrastructure checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/infrastructure-checks.yml
+      - infrastructure/**
+      - apps/api/migrations/**
+  pull_request:
+    paths:
+      - .github/workflows/infrastructure-checks.yml
+      - infrastructure/**
+      - apps/api/migrations/**
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/setup-helm@v5
+        with:
+          version: v4.2.0
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.15.3
+          terraform_wrapper: false
+      - name: Terraform syntax and provider validation (no AWS credentials)
+        run: |
+          terraform -chdir=infrastructure/terraform/envs/demo fmt -check
+          terraform -chdir=infrastructure/terraform/envs/demo init -backend=false -input=false
+          terraform -chdir=infrastructure/terraform/envs/demo validate
+      - name: Chart lint and migration parity
+        run: |
+          helm lint infrastructure/helm/harnessflow \
+            --set temporal.enabled=false \
+            --set externalTemporal.host=temporal.example.internal
+          for source in apps/api/migrations/*.up.sql; do
+            cmp "$source" "infrastructure/helm/harnessflow/files/migrations/${source##*/}"
+          done
+          test "$(find apps/api/migrations -name '*.up.sql' | wc -l)" -eq \
+            "$(find infrastructure/helm/harnessflow/files/migrations -name '*.up.sql' | wc -l)"
+      - name: Bundled database stays local-only; external database requires TLS
+        run: |
+          helm template hf infrastructure/helm/harnessflow \
+            --set temporal.enabled=false \
+            --set externalTemporal.host=temporal.example.internal \
+            > /tmp/harnessflow-local.yaml
+          rg -q 'POSTGRES_SSL_MODE: "disable"' /tmp/harnessflow-local.yaml
+          helm template hf infrastructure/helm/harnessflow \
+            --set temporal.enabled=false \
+            --set externalTemporal.host=temporal.example.internal \
+            --set postgresql.enabled=false \
+            --set externalPostgres.host=db.example.internal \
+            --set externalPostgres.existingSecret=db-password \
+            > /tmp/harnessflow-external.yaml
+          rg -q 'POSTGRES_SSL_MODE: "require"' /tmp/harnessflow-external.yaml
+          test "$(rg -c 'sslmode=\$\(POSTGRES_SSL_MODE\)' /tmp/harnessflow-external.yaml)" -eq 2
+          rg -q 'sslmode=\$POSTGRES_SSL_MODE' /tmp/harnessflow-external.yaml
+          if helm template hf infrastructure/helm/harnessflow \
+            --set temporal.enabled=false \
+            --set externalTemporal.host=temporal.example.internal \
+            --set postgresql.enabled=false \
+            --set externalPostgres.host=db.example.internal \
+            --set externalPostgres.existingSecret=db-password \
+            --set externalPostgres.sslMode=disable > /dev/null 2>&1; then
+            echo 'External Postgres accepted an unencrypted connection' >&2
+            exit 1
+          fi

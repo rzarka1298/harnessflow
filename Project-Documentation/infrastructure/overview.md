@@ -1,5 +1,10 @@
 # Infrastructure — Overview
 
+**Current cloud status:** the Helm/Terraform stack is a historical demo
+template, not a deployable PRD coding service. See [cloud readiness](cloud-readiness.md)
+for the repository/workspace/security gaps and the pre-apply gates. No AWS
+resources were provisioned by this audit.
+
 **Locations:** `docker-compose.yml` + `infrastructure/{otel,prometheus,grafana,postgres}/` are the daily driver. `infrastructure/helm/harnessflow/` + `infrastructure/kind/` landed in Week 10. `infrastructure/terraform/` is Week 11.
 
 ## Local product runtime (2026-10-10)
@@ -41,7 +46,7 @@ Helm and Terraform describe the earlier cloud deployment experiments below.
 **Responsibility:** Three deployment surfaces:
 1. **Local development** — `docker-compose up`. Daily driver. Week 1.
 2. **Local Kubernetes (kind)** — `helm install harnessflow ./infrastructure/helm/harnessflow`. Week 10.
-3. **Production AWS EKS** — `terraform apply && helm install ...`. Week 12 demo only.
+3. **AWS EKS template** — static checks only; do not apply until the cloud-readiness gates are met.
 
 ## docker-compose stack
 
@@ -174,9 +179,10 @@ deploys onto. **`plan`-only**: validated via `terraform init` +
 nothing is applied until Week 12 (per the ROADMAP).
 
 - `versions.tf` / `providers.tf` — version pins, AWS provider, default tags,
-  AZ-slice locals. Local backend for the demo (S3+DynamoDB noted as the prod
-  change).
-- `variables.tf` — all inputs, defaulted to the <$10/day sizing.
+  AZ-slice locals. Local backend for the template; encrypted S3 state with
+  lockfiles is required before apply.
+- `variables.tf` — all inputs, including an EKS version in standard support
+  as of 2026-10-13; historical cost assumptions need repricing.
 - `vpc.tf` — `terraform-aws-modules/vpc`, 2 AZs, **single NAT** (the big cost cut).
 - `eks.tf` — `terraform-aws-modules/eks`, one managed node group (t3.medium),
   `enable_irsa`, core add-ons + EBS CSI driver (so PVCs bind gp3).
@@ -194,8 +200,8 @@ chart's *bundled* Postgres / Redis / MinIO: install on EKS with
 `postgresql.enabled=false redis.enabled=false` and point the `external*`
 blocks at the Terraform outputs.
 
-Cost target: <$10/day when running (~$7 estimated); `terraform destroy`
-returns to ~$0. Full breakdown + the deliberate cost cuts in
+The historical ~$7/day estimate is not a current quote. Reprice the full
+stack, including model usage, before any deployment; see
 `infrastructure/terraform/COST.md`.
 
 ## Related ADRs

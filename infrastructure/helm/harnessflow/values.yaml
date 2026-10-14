@@ -169,6 +169,10 @@ externalPostgres:
   database: harnessflow
   user: harnessflow
   existingSecret: ""    # k8s Secret with key `postgres-password`
+  # RDS PostgreSQL 15+ requires encrypted connections by default. `require`
+  # encrypts the connection; use `verify-full` with a trusted CA in a
+  # hardened deployment. The bundled local Postgres uses `disable`.
+  sslMode: require
 
 # Bundled Redis — first-party plain Deployment on the official redis
 # image. Ephemeral (no persistence); HarnessFlow uses Redis only for

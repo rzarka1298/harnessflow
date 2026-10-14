@@ -1,9 +1,18 @@
 # Cost notes — demo environment
 
-Target: **< $10/day** while running, and `terraform destroy` brings it to ~$0.
-The demo is meant to stand up for a recording session, then be torn down.
+Historical target: **< $10/day** while running. This is not a current quote or
+an authorization to apply the stack. The demo is meant to stand up for a
+recording session, then be torn down.
 
-## Rough daily estimate (us-east-1, on-demand)
+## Historical daily estimate (us-east-1, on-demand)
+
+The table below is the original sizing estimate, **not a verified October
+2026 price estimate**. The template now defaults to EKS Kubernetes 1.35,
+which [AWS lists in standard support](https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html).
+The previous 1.31 default is in extended support: [EKS pricing](https://aws.amazon.com/eks/pricing/)
+lists $0.60/hour for extended support versus $0.10/hour for standard support,
+making the control plane alone $14.40/day on 1.31 instead of $2.40/day.
+Recalculate all line items, data transfer, and model usage before any apply.
 
 | Resource | Spec | ~$/day |
 | --- | --- | --- |
@@ -16,8 +25,8 @@ The demo is meant to stand up for a recording session, then be torn down.
 | S3 + Secrets Manager | trivial at demo volume | ~$0.05 |
 | **Total** | | **~$7/day** |
 
-Estimates are list price and approximate; the point is the order of magnitude
-and which knobs move it, not penny accuracy.
+The non-EKS prices above have not been revalidated. Do not treat the total as
+a spending cap.
 
 ## The cost cuts (and what production would flip)
 

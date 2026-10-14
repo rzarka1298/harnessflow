@@ -13,6 +13,7 @@ data:
   POSTGRES_PORT: {{ include "harnessflow.postgresPort" . | quote }}
   POSTGRES_DB: {{ include "harnessflow.postgresDatabase" . | quote }}
   POSTGRES_USER: {{ include "harnessflow.postgresUser" . | quote }}
+  POSTGRES_SSL_MODE: {{ include "harnessflow.postgresSSLMode" . | quote }}
   TEMPORAL_HOST: {{ include "harnessflow.temporalHost" . | quote }}
   TEMPORAL_PORT: {{ include "harnessflow.temporalPort" . | quote }}
   TEMPORAL_NAMESPACE: {{ default "default" .Values.externalTemporal.namespace | quote }}

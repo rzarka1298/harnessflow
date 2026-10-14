@@ -100,11 +100,21 @@ externalPostgres:
   database: harnessflow
   user: harnessflow
   existingSecret: hf-rds-password   # k8s Secret with key `postgres-password`
+  sslMode: require                   # encrypted; verify-full needs a trusted CA
 ```
 
 The chart's helpers (`_helpers.tpl`) switch the rendered hostnames at
 template time, so the api + worker pods see the same env vars
 regardless of which path is taken.
+
+Bundled Postgres uses `sslmode=disable` because it has no TLS listener.
+External Postgres defaults to `sslmode=require`; the chart rejects `disable`
+for an external database. This makes the API, worker, and migration Job
+compatible with RDS PostgreSQL 15+ default TLS enforcement. `require`
+encrypts traffic but does not, by itself, establish a verified server
+identity. Before exposing a production service, provide a trusted CA to
+all three clients and use `verify-full`. The chart does not yet mount that
+CA automatically.
 
 ## HPA on Temporal queue depth
 
