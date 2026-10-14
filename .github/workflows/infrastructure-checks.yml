@@ -36,6 +36,7 @@ jobs:
           terraform -chdir=infrastructure/terraform/envs/demo validate
       - name: Chart lint and migration parity
         run: |
+          helm dependency build infrastructure/helm/harnessflow
           helm lint infrastructure/helm/harnessflow \
             --set temporal.enabled=false \
             --set externalTemporal.host=temporal.example.internal
