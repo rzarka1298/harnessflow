@@ -52,7 +52,7 @@ jobs:
             --set temporal.enabled=false \
             --set externalTemporal.host=temporal.example.internal \
             > /tmp/harnessflow-local.yaml
-          rg -q 'POSTGRES_SSL_MODE: "disable"' /tmp/harnessflow-local.yaml
+          grep -Fq 'POSTGRES_SSL_MODE: "disable"' /tmp/harnessflow-local.yaml
           helm template hf infrastructure/helm/harnessflow \
             --set temporal.enabled=false \
             --set externalTemporal.host=temporal.example.internal \
@@ -60,9 +60,9 @@ jobs:
             --set externalPostgres.host=db.example.internal \
             --set externalPostgres.existingSecret=db-password \
             > /tmp/harnessflow-external.yaml
-          rg -q 'POSTGRES_SSL_MODE: "require"' /tmp/harnessflow-external.yaml
-          test "$(rg -c 'sslmode=\$\(POSTGRES_SSL_MODE\)' /tmp/harnessflow-external.yaml)" -eq 2
-          rg -q 'sslmode=\$POSTGRES_SSL_MODE' /tmp/harnessflow-external.yaml
+          grep -Fq 'POSTGRES_SSL_MODE: "require"' /tmp/harnessflow-external.yaml
+          test "$(grep -Fc 'sslmode=$(POSTGRES_SSL_MODE)' /tmp/harnessflow-external.yaml)" -eq 2
+          grep -Fq 'sslmode=$POSTGRES_SSL_MODE' /tmp/harnessflow-external.yaml
           if helm template hf infrastructure/helm/harnessflow \
             --set temporal.enabled=false \
             --set externalTemporal.host=temporal.example.internal \
