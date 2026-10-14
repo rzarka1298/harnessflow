@@ -46,8 +46,8 @@ spec:
                   key: postgres-password
             - name: DATABASE_URL
               value: "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=$(POSTGRES_SSL_MODE)"
-            - name: TEMPORAL_HOST_PORT
-              value: "$(TEMPORAL_HOST):$(TEMPORAL_PORT)"
+            - name: TEMPORAL_HOST
+              value: "$(TEMPORAL_HOSTNAME):$(TEMPORAL_PORT)"
             # Forces MockProvider when no LLM keys are wired; the worker
             # already detects empty keys, this is just belt-and-braces.
             - name: HARNESSFLOW_FORCE_MOCK

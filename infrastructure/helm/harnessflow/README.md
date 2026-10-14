@@ -116,6 +116,11 @@ identity. Before exposing a production service, provide a trusted CA to
 all three clients and use `verify-full`. The chart does not yet mount that
 CA automatically.
 
+The API and worker receive `TEMPORAL_HOST` as `hostname:port`, matching both
+applications' configuration contract. The API binds `0.0.0.0` inside its pod
+so the Kubernetes Service can reach it; the local development launcher
+continues to bind loopback.
+
 ## HPA on Temporal queue depth
 
 The worker HPA defaults to CPU-based autoscaling. The "right" signal for
